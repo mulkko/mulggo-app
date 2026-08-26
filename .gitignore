@@ -1,0 +1,26 @@
+# 환경변수 / API 키
+.env
+
+# 파이썬 가상환경
+venv/
+.venv/
+env/
+
+# 파이썬 캐시
+__pycache__/
+*.pyc
+
+# 주피터 노트북 체크포인트
+.ipynb_checkpoints/
+
+# OS/에디터 관련
+.DS_Store
+.vscode/
+
+# 로컬 테스트용 DB 파일 (쓸 경우)
+*.db
+*.sqlite3
+
+# 대용량/원본 데이터 (data/ 폴더 원칙상 대용량은 DB에 저장, 로컬 파일로 안 남기기)
+data/raw/
+data/*.csv
