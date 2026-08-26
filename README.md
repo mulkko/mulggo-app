@@ -99,24 +99,41 @@ mulkko/
 
 이 프로젝트는 **GitHub Desktop 사용을 권장**합니다. 터미널 명령어에 익숙하지 않은 팀원도 많아서, 버튼 클릭 기반의 GUI 도구로 진입장벽을 낮추기 위함입니다. (익숙해지면 터미널로 넘어가셔도 무방합니다.)
 
+**옵션 1 — GitHub Desktop** (git 전용 프로그램, 초보자에게 가장 직관적)
 - 다운로드: https://desktop.github.com
 - 설치 후 깃허브 계정으로 로그인 → "Add local repository"로 clone 받은 `mulkko` 폴더 불러오기
 - 브랜치 생성, 커밋, push, Pull Request까지 전부 버튼 클릭으로 가능
 
+**옵션 2 — VSCode Source Control 패널** (에디터 안에서 창 전환 없이 바로 가능)
+- VSCode 왼쪽 사이드바의 "Source Control"(가지 모양 아이콘) 클릭
+- 화면 맨 아래 왼쪽의 브랜치 이름 클릭 → 브랜치 전환/생성
+- 바뀐 파일 옆 "+" 클릭 → 스테이징, 위쪽 메시지 입력 후 체크마크(✓) 클릭 → 커밋
+- 동기화 아이콘(🔄) 클릭 → pull/push
+- Pull Request는 (GitHub Desktop과 마찬가지로) 브라우저에서 생성 — 또는 "GitHub Pull Requests and Issues" 확장 설치 시 VSCode 안에서도 가능
+
+(터미널 명령어에 익숙해지면 언제든 터미널로 넘어가셔도 무방합니다.)
+
 ## 개발 환경 설정 (초안 — 세부 사항은 진행하며 업데이트 예정)
 
-```bash
-# 1. 저장소 클론
-git clone <저장소 주소>
-cd mulkko
+**1. 저장소 클론**
 
-# 2. 패키지 설치
+- GitHub Desktop 사용 시: "Add" → "Clone repository"에서 `mulkko` 저장소 선택 후 clone (버튼 클릭만으로 가능, 터미널 불필요)
+- 터미널 사용 시:
+  ```bash
+  git clone <저장소 주소>
+  cd mulkko
+  ```
+
+**2. 이후 단계 (터미널 필요 — GUI로 대체 불가)**
+
+```bash
+# 패키지 설치
 pip install -r requirements.txt
 
-# 3. 환경변수 설정 (.env)
+# 환경변수 설정 (.env)
 # DB 접속 정보, API 키 등은 .env 파일에 별도 관리 (git에 올리지 않음)
 
-# 4. 실행 (프론트엔드)
+# 실행 (프론트엔드)
 streamlit run frontend/app.py
 ```
 
