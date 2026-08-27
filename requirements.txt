@@ -8,6 +8,5 @@ beautifulsoup4
 fastapi
 uvicorn
 sqlalchemy
-# DB 드라이버: 팀 결정에 따라 아래 중 하나 사용
-# psycopg2-binary   # PostgreSQL 사용 시
-# oracledb          # Oracle 사용 시
+#cx_Oracle
+cx_Oracle
