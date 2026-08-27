@@ -6,6 +6,7 @@
 import os
 import oracledb
 from dotenv import load_dotenv
+import streamlit
 
 # 1. 환경 변수 로드
 load_dotenv()
@@ -17,11 +18,17 @@ except Exception as e:
     # 이미 초기화되었거나 잡혀있는 경우 무시
     pass
 
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_SERVICE = os.getenv("DB_SERVICE")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+# DB_HOST = os.getenv("DB_HOST")
+# DB_PORT = os.getenv("DB_PORT")
+# DB_SERVICE = os.getenv("DB_SERVICE")
+# DB_USER = os.getenv("DB_USER")
+# DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+DB_HOST = st.secrets.get("DB_HOST") or os.getenv("DB_HOST")
+DB_PORT = st.secrets.get("DB_PORT") or os.getenv("DB_PORT")
+DB_SERVICE = st.secrets.get("DB_SERVICE") or os.getenv("DB_SERVICE")
+DB_USER = st.secrets.get("DB_USER") or os.getenv("DB_USER")
+DB_PASSWORD = st.secrets.get("DB_PASSWORD") or os.getenv("DB_PASSWORD")
 
 
 def get_connection():
