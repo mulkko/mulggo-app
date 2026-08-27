@@ -9,6 +9,4 @@ beautifulsoup4
 fastapi
 uvicorn
 sqlalchemy
-#cx_Oracle
-#cx_Oracle==8.3.0
-oracledb
+psycopg2-binary
