@@ -6,7 +6,7 @@
 import os
 import oracledb
 from dotenv import load_dotenv
-import streamlit
+import streamlit as st
 
 # 1. 환경 변수 로드
 load_dotenv()
