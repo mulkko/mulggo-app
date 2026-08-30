@@ -1,5 +1,5 @@
 # 기업마당(bizinfo) 지원사업정보 API 수집 스크립트
-# 페이지를 넘기면서 호출해 총 TARGET_COUNT건을 채운 뒤 data/bizinfo_sample.csv로 저장한다.
+# 페이지를 넘기면서 전체 공고를 다 받은 뒤 data/bizinfo_sample.csv로 저장한다.
 
 import csv
 import os
@@ -12,11 +12,10 @@ load_dotenv()
 BIZINFO_API_URL = "https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do"
 API_KEY = os.getenv("BIZINFO_API_KEY")
 
-TARGET_COUNT = 100
 PAGE_UNIT = 100
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
-OUTPUT_PATH = os.path.join(DATA_DIR, "bizinfo_sample.csv")
+OUTPUT_PATH = os.path.join(DATA_DIR, "bizinfo.csv")
 
 
 def fetch_page(page_index: int, page_unit: int) -> dict:
@@ -35,11 +34,11 @@ def fetch_page(page_index: int, page_unit: int) -> dict:
     return response.json()
 
 
-def fetch_all(target_count: int = TARGET_COUNT, page_unit: int = PAGE_UNIT) -> list:
+def fetch_all(page_unit: int = PAGE_UNIT) -> list:
     items = []
     page_index = 1
 
-    while len(items) < target_count:
+    while True:
         data = fetch_page(page_index, page_unit)
         page_items = data.get("jsonArray", [])
         if isinstance(page_items, dict):
@@ -56,7 +55,7 @@ def fetch_all(target_count: int = TARGET_COUNT, page_unit: int = PAGE_UNIT) -> l
 
         page_index += 1
 
-    return items[:target_count]
+    return items
 
 
 def save_to_csv(items: list, output_path: str) -> None:
@@ -75,6 +74,6 @@ def save_to_csv(items: list, output_path: str) -> None:
 
 
 if __name__ == "__main__":
-    items = fetch_all(TARGET_COUNT, PAGE_UNIT)
+    items = fetch_all(PAGE_UNIT)
     save_to_csv(items, OUTPUT_PATH)
     print(f"{len(items)}건 수집 완료 -> {OUTPUT_PATH}")
