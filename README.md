@@ -129,13 +129,25 @@ mulkko/
 # 패키지 설치
 pip install -r requirements.txt
 
-# 환경변수 설정 (.env)
-# DB 접속 정보, API 키 등은 .env 파일에 별도 관리 (git에 올리지 않음)
+# 환경변수 설정
+# 루트: .env.example을 복사해서 .env로 저장 후 값 채우기 (DB 접속 정보, API 키 — git에 올리지 않음)
+cp .env.example .env
 
-# 실행 (사용자용 프론트엔드 — React)
+# frontend: 마찬가지로 .env.example을 복사해서 .env로 저장
+cd frontend
+cp .env.example .env
+cd ..
+
+# 실행 (백엔드 — FastAPI, 기본 8000번 포트)
+python -m backend.main
+
+# 실행 (사용자용 프론트엔드 — React, 별도 터미널에서)
 cd frontend
 npm install
 npm run dev
+
+# 실행 (관리자용 프론트엔드 — Streamlit, 별도 터미널에서)
+streamlit run frontend-admin/app.py
 ```
 
 ## 추진 일정 (3.5주)
