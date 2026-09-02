@@ -40,7 +40,7 @@
 
 ## 기술 스택
 
-- **Frontend**: Streamlit (추후 시간 되면 React 전환 검토 — UI 자유도 한계 때문)
+- **Frontend**: React (Vite + TypeScript, 사용자용 화면) + Streamlit (frontend-admin/, 관리자용 화면)
 - **Backend**: Python (API 서버)
 - **DB**: PostgreSQL 또는 Oracle — **팀 논의 중, 확정 시 업데이트 예정**
 - **AI/ML**: LangChain (챗봇·에이전트), RAG(벡터DB), 자체 학습 ML 분류기(업종 매핑), 지도학습 재정렬 모델
@@ -52,25 +52,24 @@
 mulkko/
 ├── backend/
 │   ├── main.py            # API 서버 실행 진입점
-│   ├── api/                 # 엔드포인트 (매칭, 신청서 초안 등)
+│   ├── api/                 # 엔드포인트 (로그인/회원가입, 매칭, 신청서 초안 등)
+│   ├── auth/                 # 로그인/회원가입 로직
 │   ├── crawler/               # [코드] 원본 수집: API 호출/크롤링 → DB raw_listings 테이블에 저장
 │   ├── preprocessing/          # [코드] 원본 → 구조화 가공(자격요건·첨부자료 파싱) → DB processed_listings 테이블에 저장
 │   ├── db/                        # DB 스키마·모델 정의
-│   └── rag/                         # RAG 인덱싱/벡터DB 연동
+│   ├── rag/                         # RAG 인덱싱/벡터DB 연동
+│   ├── chatbot/                       # LangChain 사업구체화 챗봇 로직
+│   ├── ml/                              # 업종 자동매핑 분류기 + 매칭 재정렬 모델
+│   │   ├── classifier/
+│   │   └── ranker/
+│   └── assistant/                         # AI 신청서 어시스턴트 (PSST 초안 생성)
 │
-├── chatbot/
-│   └── chain.py               # LangChain 사업구체화 챗봇 로직
+├── frontend/                           # 사용자용 화면 (React + Vite + TypeScript, npm run dev로 실행)
+│   └── src/pages/                        # 화면별 컴포넌트, 기능별 폴더로 구성 (예: auth/Login.tsx, 이후 matching/, roadmap/ 등)
 │
-├── ml/
-│   ├── classifier/             # 업종 자동매핑 분류기 (텍스트 전처리 코드 포함)
-│   └── ranker/                   # 매칭 재정렬 모델
-│
-├── assistant/
-│   └── psst_generator.py       # AI 신청서 어시스턴트 (PSST 초안 생성)
-│
-├── frontend/
-│   ├── app.py                    # Streamlit 진입점 (streamlit run app.py로 실행)
-│   └── pages/                      # 화면별 파일 (매칭, 로드맵, 구체화, 신청서, 챗봇 등)
+├── frontend-admin/                    # 관리자용 화면 (Streamlit 유지 — 회원 목록, 공고 수집 대시보드)
+│   ├── app.py                            # Streamlit 진입점 (streamlit run frontend-admin/app.py로 실행)
+│   └── pages/                              # 관리자 화면별 파일
 │
 ├── data/                            # 작은 정적 참고자료 + ML 라벨링 데이터 + 로컬 테스트 샘플만 (아래 "데이터 흐름" 참고)
 ├── docs/                              # 기획 문서, 발표자료
@@ -133,8 +132,10 @@ pip install -r requirements.txt
 # 환경변수 설정 (.env)
 # DB 접속 정보, API 키 등은 .env 파일에 별도 관리 (git에 올리지 않음)
 
-# 실행 (프론트엔드)
-streamlit run frontend/app.py
+# 실행 (사용자용 프론트엔드 — React)
+cd frontend
+npm install
+npm run dev
 ```
 
 ## 추진 일정 (3.5주)
@@ -148,8 +149,7 @@ streamlit run frontend/app.py
 
 ## 미결정 사항
 
-- DB 종류: PostgreSQL(제안서 기준) vs Oracle(학원 환경 활용) — 확정 필요
-- DB 서버: 학원 컴퓨터 원격 접속 방식으로 공용 서버 운영 예정
+- DB 종류: PostgreSQL(제안서 기준)으로 확정
 
 ---
 *이 문서는 초안입니다. 팀 논의를 거쳐 내용이 수정될 수 있습니다.*
