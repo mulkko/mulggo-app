@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>mulkko 로컬 서버 링크</title>
+</head>
+<style>
+  *{padding:0; margin:0}
+  h1{text-align:center; bordeR:solid 1px red;}
+
+  table {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  th, td {
+    padding: 0;
+    text-align: left;
+    vertical-align: top;
+    border:solid 1px #ddd;
+    padding:10px 20px;
+  }
+
+  .mkup{
+    width:100%;
+    border:solid 1px red;
+  }
+  .mkup .top th{
+    text-align:center;
+  }
+  .mkup .tit{
+    font-weight:bold;
+  }
+</style>
+<body>
+  <h1>mulkko 로컬 서버 링크</h1>
+  <p>각 서버를 먼저 실행한 상태에서 아래 링크를 클릭하세요.</p>
+
+  <table class="mkup">
+    <colgroup>
+      <col style="width: 25%;">
+      <col style="width: 75%;">
+    </colgroup>
+    <tr  class="top">
+      <th>페이지명</th>
+      <th>주소</th>
+    </tr>
+    <tr>
+      <td>메인</td>
+      <td><a href="http://localhost:5173">http://localhost:5173</a></td>
+    </tr>
+    <tr>
+      <td class="tit" colspan="2">스타일 가이드</td>
+    </tr>
+    <tr>
+      <td>가이드</td>
+      <td><a href="#none">사용자용 화면 (React)</a></td>
+    </tr>
+    <tr>
+      <td class="tit" colspan="2"></td>
+    </tr>
+    <tr>
+      <td>로그인</td>
+      <td><a href="http://localhost:5173/login">사용자용 화면 (React)</a></td>
+    </tr>
+    <tr>
+      <td>회원가입</td>
+      <td><a href="http://localhost:5173/login">사용자용 화면 (React)</a></td>
+    </tr>
+    <tr>
+      <td class="tit" colspan="2">관리자페이지</td>
+    </tr>
+    <tr>
+      <td>관리자메인</td>
+      <td><a href="http://localhost:8501">관리자용 화면 (Streamlit)</a></td>
+    </tr>
+    <tr>
+      <td class="tit" colspan="2">API 관리</td>
+    </tr>
+    <tr>
+      <td>API 문서</td>
+      <td><a href="http://127.0.0.1:8000/docs">백엔드 API 문서 (FastAPI)</a></td>
+    </tr>
+  </table>
+</body>
+</html>
