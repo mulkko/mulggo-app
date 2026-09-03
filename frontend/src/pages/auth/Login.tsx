@@ -33,28 +33,30 @@ function Login() {
   };
 
   return (
-    <div>
+    <div className="login-page">
       <h1>로그인</h1>
       <form onSubmit={handleSubmit}>
-        <div>
+        <div className="form-field">
           <label htmlFor="email">이메일</label>
           <input
             id="email"
             type="email"
+            className="text-input"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
-        <div>
+        <div className="form-field">
           <label htmlFor="password">비밀번호</label>
           <input
             id="password"
             type="password"
+            className="text-input"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <button type="submit">로그인</button>
+        <button type="submit" className="btn-primary">로그인</button>
       </form>
 
       {success && <p>로그인 성공</p>}
