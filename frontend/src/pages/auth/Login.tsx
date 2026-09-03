@@ -1,4 +1,5 @@
 import { useState, type SubmitEvent } from "react";
+import styles from '../../styles/login.module.css'; // 객체 형태로 불러옴
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -33,31 +34,36 @@ function Login() {
   };
 
   return (
-    <div className="login-page">
-      <h1>로그인</h1>
-      <form onSubmit={handleSubmit}>
-        <div className="form-field">
-          <label htmlFor="email">이메일</label>
-          <input
-            id="email"
-            type="email"
-            className="text-input"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="form-field">
-          <label htmlFor="password">비밀번호</label>
-          <input
-            id="password"
-            type="password"
-            className="text-input"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        <button type="submit" className="btn-primary">로그인</button>
-      </form>
+    <div className={styles.loginPage}>
+      <div className={styles.titBox}>
+        <p className={styles.logo}><a href="#none">mulkko로고</a></p>
+        <h1>로그인</h1>
+      </div>
+      <div className={styles.loginBox}>
+        <form onSubmit={handleSubmit}>
+          <div className={styles.formField}>
+            <label htmlFor="email">이메일</label>
+            <input
+              id="email"
+              type="email"
+              className="text-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className={styles.formField}>
+            <label htmlFor="password">비밀번호</label>
+            <input
+              id="password"
+              type="password"
+              className="text-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="btnPrimary">로그인</button>
+        </form>
+      </div>
 
       {success && <p>로그인 성공</p>}
       {errors.length > 0 && (

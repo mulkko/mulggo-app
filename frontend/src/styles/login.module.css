@@ -1,0 +1,41 @@
+.loginPage {
+  max-width: 320px;
+  min-width:640px;
+  margin: 40px auto;
+  font-family: sans-serif;
+}
+.loginPage .formField{
+  text-align:left;
+  margin-bottom:20px;
+}
+.loginPage .formField label{
+  display:block;
+  margin-bottom:10px;
+}
+
+
+.titBox{
+}
+.titBox .logo{
+  width:75px;
+  height:75px;
+  position:relative;
+  left:50%;
+  margin-left:-35px;
+}
+.titBox .logo a{
+  display:block;
+  height:100%;
+  font-size:0;
+  background-color:#ddd;
+}
+.titBox h1{
+  font-size:24px;
+  font-weight:bold;
+  text-align:center;
+  margin:20px 0 40px 0;
+}
+
+.loginBox{
+  border:solid 1px green;
+}
