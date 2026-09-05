@@ -83,6 +83,7 @@ def load_image(path):
     return Image.open(path)
 
 
+<<<<<<< HEAD
 def ask_image(model, processor, image, question):
     """PIL Image + 질문 → 모델 응답 텍스트."""
     import torch
@@ -91,6 +92,49 @@ def ask_image(model, processor, image, question):
     messages = [{
         "role": "user",
         "content": [{"type": "image", "image": image}, {"type": "text", "text": question}],
+=======
+# ══════════════════════════════════════════════════════
+# [테스트] OCR 속도 개선 실험 — 이미지 리사이즈 (2026-09-05)
+# ══════════════════════════════════════════════════════
+# 배경: 사업자등록증 사진이 클수록(휴대폰 사진 등 3000~4000px) Qwen2.5-VL의
+#   이미지 prefill 비용이 커져서 OCR이 느려짐. 이미지를 줄여서 넣으면 빨라질 것으로 예상.
+#
+# 1차 시도(실패): load_image()에서 PIL로 직접 img.resize()해서 넘김.
+#   → CUDA error: device-side assert triggered 발생.
+#   → 원인 추정: qwen_vl_utils가 모델에 넣기 직전 이미지를 patch(28px 배수) /
+#     2x2 병합 단위에 맞춰 내부적으로 다시 리사이즈하는데, 우리가 미리 임의 크기로
+#     잘라놓으면 그 단위와 안 맞아서 vision 토큰을 텍스트에 합치는 단계에서 인덱스가
+#     어긋나는 것으로 보임. (서버 재시작 후에도 동일 이미지로 재현됨 → 일회성 GPU
+#     컨텍스트 오류 아니라 리사이즈 방식 자체의 문제로 판단)
+#
+# 2차 시도(현재 적용 중): 직접 리사이즈하지 않고, ask_image()에 max_pixels만 넘겨서
+#   qwen_vl_utils가 자기 규칙(patch/병합 단위)에 맞춰 알아서 축소하게 함.
+#   → 아래 MAX_OCR_PIXELS 값을 ask_image(..., max_pixels=MAX_OCR_PIXELS)로 전달
+#     (호출부: extract_biz_cert() 안의 ask_image 호출, 이 파일에서 검색 시 하나뿐).
+#
+# 되돌리는 법 (이 실험을 완전히 없던 일로 하고 싶을 때):
+#   1) 아래 MAX_OCR_PIXELS = None 으로 바꾸거나,
+#   2) extract_biz_cert() 안의 `ask_image(model, processor, img, q, max_pixels=MAX_OCR_PIXELS)`에서
+#      `max_pixels=MAX_OCR_PIXELS` 부분을 지우면 원래 상태(리사이즈 전혀 없음, 처음부터 잘 되던 버전)로 복귀.
+#   둘 다 안전하게 원복 가능 — load_image()나 다른 함수는 이 실험과 무관하게 그대로임.
+MAX_OCR_PIXELS = 1280 * 1280
+
+
+def ask_image(model, processor, image, question, max_new_tokens=512, max_pixels=None):
+    """PIL Image + 질문 → 모델 응답 텍스트.
+    max_pixels: [테스트] qwen_vl_utils가 자체 규칙에 맞춰 리사이즈할 때 쓰는 픽셀 상한.
+    None이면 기존 방식(리사이즈 없음)과 동일."""
+    import torch
+    from qwen_vl_utils import process_vision_info
+
+    image_content = {"type": "image", "image": image}
+    if max_pixels is not None:
+        image_content["max_pixels"] = max_pixels
+
+    messages = [{
+        "role": "user",
+        "content": [image_content, {"type": "text", "text": question}],
+>>>>>>> DA3_
     }]
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     image_inputs, _ = process_vision_info(messages)
@@ -98,7 +142,11 @@ def ask_image(model, processor, image, question):
         text=[text], images=image_inputs, padding=True, return_tensors="pt"
     ).to(model.device)
     with torch.no_grad():
+<<<<<<< HEAD
         out = model.generate(**inputs, max_new_tokens=512)
+=======
+        out = model.generate(**inputs, max_new_tokens=max_new_tokens)
+>>>>>>> DA3_
     out = [o[len(i):] for i, o in zip(inputs.input_ids, out)]
     result = processor.batch_decode(out, skip_special_tokens=True)[0]
     del inputs, out
@@ -138,6 +186,7 @@ def extract_biz_cert(image_path, model, processor):
     """
     img = load_image(image_path)
 
+<<<<<<< HEAD
     # ── 개인/법인 판별 (사업자등록번호 가운데 2자리 81~88 = 법인) ──
     reg_raw = ask_image(
         model, processor, img,
@@ -162,10 +211,36 @@ def extract_biz_cert(image_path, model, processor):
         )
 
     raw = ask_image(model, processor, img, q)
+=======
+    # 법인/개인 판별용 호출을 없애고 전체 항목을 한 번의 VLM 호출로 추출
+    # (이미지 prefill 비용이 커서 호출 2회 -> 1회로 줄이면 지연시간이 절반 가까이 줄어듦).
+    # 법인/개인 판별은 이 응답에 포함된 등록번호로 사후 계산.
+    q = (
+        "이 사업자등록증을 읽고 아래 JSON 형식으로만 답해줘. 설명하지 말고 JSON만. "
+        "해당 없는 항목은 빈 문자열로 둬. 반드시 한글로만 적고 한자는 쓰지 마.\n"
+        '{"법인명":"","상호":"","대표자":"","등록번호":"","법인등록번호":"",'
+        '"생년월일":"","개업연월일":"","사업장소재지":""}'
+    )
+    raw = ask_image(model, processor, img, q, max_pixels=MAX_OCR_PIXELS)  # [테스트] 롤백: max_pixels 인자 제거
+>>>>>>> DA3_
     parsed = parse_json(raw)
     if parsed is None:
         raise ValueError(f"OCR 결과에서 JSON을 파싱하지 못했습니다: {raw!r}")
 
+<<<<<<< HEAD
+=======
+    # ── 개인/법인 판별 (사업자등록번호 가운데 2자리 81~88 = 법인) ──
+    digits = "".join(c for c in parsed.get("등록번호", "") if c.isdigit())
+    biz_type = "법인" if (len(digits) >= 5 and 81 <= int(digits[3:5]) <= 88) else "개인"
+
+    if biz_type == "법인":
+        parsed.pop("상호", None)
+        parsed.pop("생년월일", None)
+    else:
+        parsed.pop("법인명", None)
+        parsed.pop("법인등록번호", None)
+
+>>>>>>> DA3_
     biz_cert = {KEY_MAP.get(k, k): v for k, v in parsed.items()}
     _normalize_dates(biz_cert)
     return biz_type, biz_cert

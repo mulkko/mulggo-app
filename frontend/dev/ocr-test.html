@@ -32,7 +32,15 @@
       const formData = new FormData();
       formData.append("file", fileInput.files[0]);
 
+<<<<<<< HEAD
       resultEl.textContent = "처리 중... (OCR 모델 로딩 포함, 시간이 걸릴 수 있습니다)";
+=======
+      const startedAt = performance.now();
+      let timerId = setInterval(() => {
+        const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
+        resultEl.textContent = `처리 중... (${elapsed}초 경과, OCR 모델 로딩 포함)`;
+      }, 100);
+>>>>>>> DA3_
 
       try {
         const response = await fetch(`${API_BASE_URL}/api/test/ocr-upload`, {
@@ -40,9 +48,19 @@
           body: formData,
         });
         const data = await response.json();
+<<<<<<< HEAD
         resultEl.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
         resultEl.textContent = "요청 실패: " + err;
+=======
+        clearInterval(timerId);
+        const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
+        resultEl.textContent = `소요 시간: ${elapsed}초\n\n` + JSON.stringify(data, null, 2);
+      } catch (err) {
+        clearInterval(timerId);
+        const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
+        resultEl.textContent = `요청 실패 (${elapsed}초 경과): ` + err;
+>>>>>>> DA3_
       }
     });
   </script>

@@ -17,6 +17,20 @@ from backend.assistant.biz_cert_ocr import extract_biz_cert, load_vision_model
 
 router = APIRouter(prefix="/api/test", tags=["test"])
 
+<<<<<<< HEAD
+=======
+# 모델은 프로세스당 1회만 로딩해 재사용 (요청마다 새로 올리면 매번 GPU 로딩 시간이 걸림)
+_MODEL = None
+_PROCESSOR = None
+
+
+def _get_model():
+    global _MODEL, _PROCESSOR
+    if _MODEL is None:
+        _MODEL, _PROCESSOR = load_vision_model()
+    return _MODEL, _PROCESSOR
+
+>>>>>>> DA3_
 UPLOAD_DIR = os.path.join("data", "test_uploads", "biz_registration")
 CSV_PATH = os.path.join("data", "test_uploads", "biz_registration_ocr_test.csv")
 
@@ -53,7 +67,11 @@ async def test_ocr_upload(file: UploadFile = File(...)) -> dict:
     }
 
     try:
+<<<<<<< HEAD
         model, processor = load_vision_model()
+=======
+        model, processor = _get_model()
+>>>>>>> DA3_
         entity_type, biz_cert = extract_biz_cert(save_path, model, processor)
     except Exception as e:
         result["error"] = f"OCR 실패: {e}"
