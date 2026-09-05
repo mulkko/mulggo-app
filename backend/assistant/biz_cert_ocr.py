@@ -83,16 +83,6 @@ def load_image(path):
     return Image.open(path)
 
 
-<<<<<<< HEAD
-def ask_image(model, processor, image, question):
-    """PIL Image + 질문 → 모델 응답 텍스트."""
-    import torch
-    from qwen_vl_utils import process_vision_info
-
-    messages = [{
-        "role": "user",
-        "content": [{"type": "image", "image": image}, {"type": "text", "text": question}],
-=======
 # ══════════════════════════════════════════════════════
 # [테스트] OCR 속도 개선 실험 — 이미지 리사이즈 (2026-09-05)
 # ══════════════════════════════════════════════════════
@@ -134,7 +124,6 @@ def ask_image(model, processor, image, question, max_new_tokens=512, max_pixels=
     messages = [{
         "role": "user",
         "content": [image_content, {"type": "text", "text": question}],
->>>>>>> DA3_
     }]
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     image_inputs, _ = process_vision_info(messages)
@@ -142,11 +131,7 @@ def ask_image(model, processor, image, question, max_new_tokens=512, max_pixels=
         text=[text], images=image_inputs, padding=True, return_tensors="pt"
     ).to(model.device)
     with torch.no_grad():
-<<<<<<< HEAD
-        out = model.generate(**inputs, max_new_tokens=512)
-=======
         out = model.generate(**inputs, max_new_tokens=max_new_tokens)
->>>>>>> DA3_
     out = [o[len(i):] for i, o in zip(inputs.input_ids, out)]
     result = processor.batch_decode(out, skip_special_tokens=True)[0]
     del inputs, out
@@ -186,32 +171,6 @@ def extract_biz_cert(image_path, model, processor):
     """
     img = load_image(image_path)
 
-<<<<<<< HEAD
-    # ── 개인/법인 판별 (사업자등록번호 가운데 2자리 81~88 = 법인) ──
-    reg_raw = ask_image(
-        model, processor, img,
-        "이 사업자등록증의 등록번호(사업자등록번호)만 숫자로 답해줘. "
-        "예: 123-45-67890. 다른 말은 하지 마.",
-    )
-    digits = "".join(c for c in reg_raw if c.isdigit())
-    biz_type = "법인" if (len(digits) >= 5 and 81 <= int(digits[3:5]) <= 88) else "개인"
-
-    # ── 판별에 맞는 항목 추출 ──
-    if biz_type == "법인":
-        q = (
-            "이 사업자등록증을 읽고 아래 JSON 형식으로만 답해줘. 설명하지 말고 JSON만. "
-            "반드시 한글로만 적고 한자는 쓰지 마.\n"
-            '{"법인명":"","대표자":"","등록번호":"","법인등록번호":"","개업연월일":"","사업장소재지":""}'
-        )
-    else:
-        q = (
-            "이 사업자등록증을 읽고 아래 JSON 형식으로만 답해줘. 설명하지 말고 JSON만. "
-            "반드시 한글로만 적고 한자는 쓰지 마.\n"
-            '{"상호":"","대표자":"","등록번호":"","생년월일":"","개업연월일":"","사업장소재지":""}'
-        )
-
-    raw = ask_image(model, processor, img, q)
-=======
     # 법인/개인 판별용 호출을 없애고 전체 항목을 한 번의 VLM 호출로 추출
     # (이미지 prefill 비용이 커서 호출 2회 -> 1회로 줄이면 지연시간이 절반 가까이 줄어듦).
     # 법인/개인 판별은 이 응답에 포함된 등록번호로 사후 계산.
@@ -222,13 +181,10 @@ def extract_biz_cert(image_path, model, processor):
         '"생년월일":"","개업연월일":"","사업장소재지":""}'
     )
     raw = ask_image(model, processor, img, q, max_pixels=MAX_OCR_PIXELS)  # [테스트] 롤백: max_pixels 인자 제거
->>>>>>> DA3_
     parsed = parse_json(raw)
     if parsed is None:
         raise ValueError(f"OCR 결과에서 JSON을 파싱하지 못했습니다: {raw!r}")
 
-<<<<<<< HEAD
-=======
     # ── 개인/법인 판별 (사업자등록번호 가운데 2자리 81~88 = 법인) ──
     digits = "".join(c for c in parsed.get("등록번호", "") if c.isdigit())
     biz_type = "법인" if (len(digits) >= 5 and 81 <= int(digits[3:5]) <= 88) else "개인"
@@ -240,7 +196,6 @@ def extract_biz_cert(image_path, model, processor):
         parsed.pop("법인명", None)
         parsed.pop("법인등록번호", None)
 
->>>>>>> DA3_
     biz_cert = {KEY_MAP.get(k, k): v for k, v in parsed.items()}
     _normalize_dates(biz_cert)
     return biz_type, biz_cert
