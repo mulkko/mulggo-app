@@ -10,7 +10,7 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
-<<<<<<< HEAD
+python-multipart  # 파일 업로드 처리 (FastAPI UploadFile, backend/api/test_ocr.py)
 
 # --- AI 신청서 어시스턴트 (backend/assistant/) ---
 openpyxl          # 필드매핑 xlsx 로드 (biz_cert_ocr.py)
@@ -23,6 +23,3 @@ langchain-core    # '대표자' 계열 라벨 판별 체인 (label_llm.py) — �
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 #   pip install "transformers>=4.49" qwen-vl-utils accelerate   # 기본정보 OCR (Qwen2.5-VL)
 #   pip install easyocr                                          # 업태·종목 표 OCR (category_ocr.py)
-=======
-python-multipart
->>>>>>> TA1_rh
