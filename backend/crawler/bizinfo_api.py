@@ -2,10 +2,13 @@
 # 페이지를 넘기면서 전체 공고를 다 받은 뒤 data/bizinfo_sample.csv로 저장한다.
 
 import csv
+import json
 import os
 
 import requests
 from dotenv import load_dotenv
+
+from backend.db.connection import get_connection
 
 load_dotenv()
 
@@ -73,7 +76,65 @@ def save_to_csv(items: list, output_path: str) -> None:
         writer.writerows(items)
 
 
+def save_to_db(items: list) -> int:
+    """announcements_raw_bizinfo 테이블에 신규 공고만 저장. pblanc_id 기준으로 이미 있는 건 건너뜀."""
+    if not items:
+        return 0
+
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT pblanc_id FROM announcements_raw_bizinfo")
+        existing_ids = {row[0] for row in cursor.fetchall()}
+
+        new_items = [item for item in items if item.get("pblancId") not in existing_ids]
+
+        for item in new_items:
+            cursor.execute(
+                """
+                INSERT INTO announcements_raw_bizinfo (
+                    pblanc_id, pblanc_nm, trget_nm, jrsd_instt_nm, exc_instt_nm,
+                    bsns_sumry_cn, pldir_sport_realm_lclas_code_nm, pldir_sport_realm_mlsfc_code_nm,
+                    reqst_begin_end_de, reqst_mth_papers_cn, hashtags, pblanc_url,
+                    rcept_engn_hmpg_url, file_nm, print_flpth_nm, print_file_nm, flpth_nm,
+                    inqire_co, creat_pnttm, updt_pnttm, source_raw, collected_at
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
+                )
+                """,
+                (
+                    item.get("pblancId"),
+                    item.get("pblancNm"),
+                    item.get("trgetNm"),
+                    item.get("jrsdInsttNm"),
+                    item.get("excInsttNm"),
+                    item.get("bsnsSumryCn"),
+                    item.get("pldirSportRealmLclasCodeNm"),
+                    item.get("pldirSportRealmMlsfcCodeNm"),
+                    item.get("reqstBeginEndDe"),
+                    item.get("reqstMthPapersCn"),
+                    item.get("hashtags"),
+                    item.get("pblancUrl"),
+                    item.get("rceptEngnHmpgUrl"),
+                    item.get("fileNm"),
+                    item.get("printFlpthNm"),
+                    item.get("printFileNm"),
+                    item.get("flpthNm"),
+                    int(item["inqireCo"]) if item.get("inqireCo") not in (None, "") else None,
+                    item.get("creatPnttm") or None,
+                    item.get("updtPnttm") or None,
+                    json.dumps(item, ensure_ascii=False),
+                ),
+            )
+
+        connection.commit()
+        return len(new_items)
+    finally:
+        connection.close()
+
+
 if __name__ == "__main__":
     items = fetch_all(PAGE_UNIT)
     save_to_csv(items, OUTPUT_PATH)
-    print(f"{len(items)}건 수집 완료 -> {OUTPUT_PATH}")
+    inserted = save_to_db(items)
+    print(f"{len(items)}건 수집 완료 -> {OUTPUT_PATH} / DB 신규 저장 {inserted}건")

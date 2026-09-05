@@ -1,0 +1,273 @@
+.page {
+  background: var(--color-bg-page);
+  padding: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  font-family: var(--font-family-base);
+  text-align: left;
+}
+
+.header {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 24px;
+}
+
+.eyebrow {
+  font-family: var(--font-family-mono);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--color-primary-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px;
+}
+
+.title {
+  font-weight: 900;
+  font-size: 32px;
+  color: var(--color-brand-navy);
+  margin: 0;
+}
+
+/* ===== 섹션 공통 ===== */
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sectionBar {
+  width: 4px;
+  height: 16px;
+  background: var(--color-primary-blue);
+  display: inline-block;
+}
+
+.sectionTitle {
+  font-weight: 700;
+  font-size: var(--font-size-h2);
+  color: var(--color-brand-navy);
+  margin: 0;
+}
+
+/* ===== 01. 컬러 팔레트 ===== */
+.colorGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.colorCard {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  width: 115px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.swatch {
+  height: 80px;
+  border-radius: var(--radius-sm);
+}
+
+.colorName {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.colorHex {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.colorRgb {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+  margin: 0;
+}
+
+.colorUsage {
+  font-weight: 500;
+  font-size: 10px;
+  color: var(--color-primary-blue);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.codeLabel {
+  display: inline-block;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--color-brand-navy);
+  width: fit-content;
+}
+
+/* ===== 02. 타이포그래피 ===== */
+.typoCard {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.typoRow {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+}
+
+.typoRow + .typoRow {
+  border-top: 1px solid var(--color-border);
+}
+
+.typoTag {
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  color: var(--color-primary-blue);
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.typoPreview {
+  color: var(--color-text-dark);
+  flex: 1;
+}
+
+.typoSpec {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.typoSpecDesc {
+  font-size: var(--font-size-caption);
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.typoSpecValue {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ===== 03. 인터랙티브 컴포넌트 ===== */
+.componentCard {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.componentRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.componentRow + .componentRow {
+  border-top: 1px solid var(--color-border);
+}
+
+.componentItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.btnPrimary {
+  background: var(--color-primary-blue);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.btnSecondary {
+  background: var(--color-soft-accent);
+  color: var(--color-brand-navy);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.btnOutline {
+  background: transparent;
+  color: var(--color-text-dark);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 20px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.btnDisabled {
+  background: var(--color-bg-page);
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.badgeSuccess {
+  display: inline-block;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.badgeMuted {
+  display: inline-block;
+  background: var(--color-soft-accent);
+  color: var(--color-brand-navy);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.badgeError {
+  display: inline-block;
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+}

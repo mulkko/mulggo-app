@@ -1,4 +1,5 @@
 import { useState, type SubmitEvent } from "react";
+import { Link } from "react-router-dom";
 import styles from '../../styles/login.module.css'; // 객체 형태로 불러옴
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -63,6 +64,9 @@ function Login() {
           </div>
           <button type="submit" className="btnPrimary">로그인</button>
         </form>
+        <p>
+          아직 계정이 없으신가요? <Link to="/signup">회원가입</Link>
+        </p>
       </div>
 
       {success && <p>로그인 성공</p>}

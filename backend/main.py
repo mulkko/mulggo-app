@@ -7,6 +7,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.auth import router as auth_router
+from backend.api.admin import router as admin_router
+from backend.api.test_ocr import router as test_ocr_router
 
 app = FastAPI(title="mulkko API")
 
@@ -20,6 +22,8 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(admin_router)
+app.include_router(test_ocr_router)
 
 
 def main():
