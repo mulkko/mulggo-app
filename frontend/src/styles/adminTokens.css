@@ -1,0 +1,30 @@
+:root {
+  /* Core Brand & Primary */
+  --color-primary-blue: #22b1f2;
+  --color-brand-navy: #0f2b46;
+  --color-soft-accent: #eaf6ff;
+  /* Semantic Status */
+  --color-success: #12b981;
+  --color-success-bg: #d1fae5;
+  --color-warning: #febc2e;
+  --color-error: #ef4444;
+  --color-error-bg: #fee2e2;
+  --color-dormant-bg: #d1efff;
+  /* Neutrals & Structural */
+  --color-text-dark: #1a1a1d;
+  --color-text-muted: #6e6f76;
+  --color-border: #e3f0fa;
+  --color-bg-page: #f4f5f8;
+  /* 타이포그래피 */
+  --font-family-base: 'Noto Sans KR', sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+  --font-size-h1: 28px;
+  --font-size-h2: 18px;
+  --font-size-h3: 15px;
+  --font-size-body: 14px;
+  --font-size-caption: 11px;
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}

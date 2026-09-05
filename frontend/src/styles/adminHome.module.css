@@ -1,0 +1,229 @@
+.header {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 20px;
+}
+
+.pageTitle {
+  font-weight: 900;
+  font-size: var(--font-size-h1);
+  color: var(--color-brand-navy);
+  margin: 0;
+}
+
+/* ===== 요약 카드 공통 ===== */
+.summaryCard {
+  background: var(--color-soft-accent);
+  border: 1.5px solid var(--color-primary-blue);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+.summaryCardPlain {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardHeaderTitle {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-brand-navy);
+  margin: 0;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+.statusLabel {
+  font-weight: 700;
+  font-size: var(--font-size-body);
+  color: var(--color-success);
+  margin: 0;
+}
+
+.countBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.countNum {
+  font-weight: 900;
+  font-size: 32px;
+  color: var(--color-brand-navy);
+  margin: 0;
+}
+
+.countSuffixBold {
+  font-weight: 700;
+  font-size: var(--font-size-body);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.countSuffixMedium {
+  font-weight: 500;
+  font-size: var(--font-size-body);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.crawlerTimeInfo {
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ===== 3단 그리드 ===== */
+.splitGrid {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.gridCard {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.gridCardTitle {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-brand-navy);
+  margin: 0;
+}
+
+.chartRows {
+  display: flex;
+  flex-direction: column;
+}
+
+.chartRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 66px;
+  padding: 16px 0;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chartRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.instName {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  font-size: var(--font-size-body);
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.barTrack {
+  width: 130px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-page);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--color-brand-navy);
+}
+
+.instCount {
+  width: 60px;
+  flex-shrink: 0;
+  text-align: right;
+  font-weight: 900;
+  font-size: var(--font-size-body);
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+/* ===== 배치 로그 ===== */
+.logsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.logItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 66px;
+  padding: 12px 0;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.logTime {
+  font-weight: 400;
+  font-size: var(--font-size-body);
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.statusBadgeSuccess {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.statusBadgeError {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}

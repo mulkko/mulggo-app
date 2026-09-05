@@ -1,0 +1,98 @@
+# CLAUDE.md
+
+이 저장소에서 작업할 때는 아래 내용을 기본 전제로 삼는다.
+
+## 1. 프로젝트 개요
+
+**mulkko** — 정부지원사업 매칭 AI 서비스 (부트캠프 최종 프로젝트, 팀 6인, 약 3주).
+막연한 사업 아이디어를 AI 질문으로 구체화하고, 자격 맞는 정부지원사업을 우대조건 충족순으로 골라주며, 성장 로드맵과 AI 신청서 초안 생성까지 돕는다.
+
+## 2. 기술 스택
+
+- **백엔드**: FastAPI
+- **프론트엔드**: React (Vite + TypeScript)
+- **DB**: Supabase (PostgreSQL)
+- **벡터DB**: Chroma (서버 모드)
+- **ORM**: SQLAlchemy
+
+## 3. 인증 방식
+
+- 비밀번호: **bcrypt** 해싱
+- 민감 필드: **Fernet** 암호화
+- 로컬 개발 환경: **SQLite** 사용 (Supabase 대신 로컬 DB로 개발)
+
+## 4. 폴더 구조
+
+```
+mulkko/
+├── backend/
+│   ├── main.py                 # FastAPI 앱 진입점
+│   ├── api/                    # 엔드포인트 (auth.py: 로그인/회원가입, admin.py: 관리자용)
+│   ├── auth/                   # 로그인/회원가입 검증 로직
+│   ├── crawler/                # 원본 수집 (API 호출/크롤링) → DB raw 테이블 저장
+│   │   └── bizinfo_api.py      # 기업마당 API 수집 스크립트
+│   ├── preprocessing/          # raw → 구조화 가공, DB processed 테이블 저장
+│   ├── db/                     # DB 연결/스키마 (connection.py, schema.sql)
+│   ├── rag/                    # RAG 인덱싱/벡터DB(Chroma) 연동
+│   ├── chatbot/                # LangChain 사업구체화 챗봇 로직
+│   ├── ml/                     # 업종 자동매핑 분류기 + 매칭 재정렬 모델
+│   └── assistant/              # AI 신청서 어시스턴트 (PSST 초안 생성)
+│
+├── frontend/                   # 사용자·관리자 화면 전부 여기 (React + Vite + TS)
+│   ├── dev/                    # dev_links.html, style_guide.html + 단독 기능 검증용 테스트 페이지 (예: ocr-test.html)
+│   └── src/
+│       ├── pages/              # 화면별 컴포넌트, 기능 폴더로 구성 (auth/, admin/ 등)
+│       ├── components/         # 여러 화면이 공유하는 컴포넌트 (AdminStyleGuide 등)
+│       ├── styles/             # 전역 CSS + 페이지별 *.module.css, 디자인 토큰(adminTokens.css)
+│       └── assets/             # 이미지 등 정적 리소스 (기능별 하위 폴더, 예: assets/admin/)
+│
+├── frontend-admin/              # (레거시) Streamlit 관리자 화면 — 더 이상 사용 안 함, 관리자 화면은 frontend/src/pages/admin으로 이전됨
+│
+├── data/                        # 소규모 정적 참고자료 + ML 라벨 데이터 + 로컬 테스트 샘플만 (대용량은 DB에)
+├── docs/                        # 기획 문서, 발표자료
+├── requirements.txt
+└── README.md
+```
+
+## 5. 코딩 컨벤션
+
+파일명에 담당자 이름이나 역할을 넣지 않는다 (예: `kim_login.py`, `ta1_utils.py` 금지). 언어별로 이미 통일되어 있는 방식을 따른다.
+
+- **백엔드(Python)**: 소문자 + 언더스코어(snake_case). 파일명(`bizinfo_api.py`, `connection.py`)과 함수/변수명(`fetch_page`, `save_to_db`) 모두 동일 (PEP8 표준).
+- **프론트엔드(React/TS)**: 컴포넌트 파일은 PascalCase(`Login.tsx`, `AdminHome.tsx`, React 표준), 짝꿍 CSS 모듈은 컴포넌트명을 소문자로 시작한 camelCase(`login.module.css`, `adminHome.module.css`), 변수/함수는 camelCase(`handleSubmit`).
+
+## 6. Git 브랜치 규칙
+
+`{역할}_{작업내용}` 형식 (예: `TA1_rh`, `DA3_ha`). 역할 코드는 README의 팀 구성 기준(DA1/DA2/DA3/TA1/TA2)을 따른다.
+
+## 7. 데이터 원칙
+
+- **raw 데이터는 가공 없이 원본 그대로 저장** (`crawler/`가 담당, 예: `announcements_raw_bizinfo` 테이블)
+- **가공은 별도 단계로 분리** — `preprocessing/`이 raw를 읽어서 구조화된 결과를 별도 테이블에 저장
+- 원본/가공본을 분리하는 이유: 전처리 로직 버그 발생 시 크롤링을 처음부터 다시 하지 않고 저장된 원본으로 재처리만 하면 됨
+- `data/` 폴더에는 대용량 원본/가공 데이터를 두지 않는다 (DB가 저장소 원칙)
+
+## 8. API 응답 포맷
+
+- 성공 응답:
+  ```json
+  { "success": true, "data": ... }
+  ```
+- 실패 응답:
+  ```json
+  { "success": false, "error": { "message": ..., "code": ... } }
+  ```
+- 상태 코드 규칙:
+  - `200` / `201` 성공
+  - `400` 잘못된 요청 (유효성 검사 실패)
+  - `401` 인증 안 됨
+  - `409` 중복 (이메일 중복 등)
+  - `422` 요청 형식 오류 (Pydantic 검증 실패)
+  - `500` 서버 에러
+
+## 9. 환경변수 관리
+
+- DB 접속정보, API 키, Fernet 암호화 키 등 민감정보는 전부 `.env` 파일에서 관리한다.
+- 코드나 `CLAUDE.md`, 커밋에 절대 하드코딩하지 않는다.
+- `.env`는 `.gitignore`에 포함되어야 한다.
+- 필요한 환경변수 목록은 `.env.example` 파일로 별도 관리한다 (실제 값 없이 키 이름만).
