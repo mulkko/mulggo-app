@@ -10,3 +10,15 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
+
+# --- AI 신청서 어시스턴트 (backend/assistant/) ---
+openpyxl          # 필드매핑 xlsx 로드 (biz_cert_ocr.py)
+pymupdf           # 사업자등록증 PDF -> 이미지 변환
+opencv-python-headless  # 이미지 전처리 (category_ocr.py, biz_cert_quality.py)
+lxml              # 신청서 HWPX 표 파싱·값 입력 (hwpx_fill.py) — 네임스페이스 보존
+langchain-core    # '대표자' 계열 라벨 판별 체인 (label_llm.py) — 로컬 Qwen 재사용, langchain 에 딸려 설치됨
+
+# OCR은 GPU 권장(CPU도 동작). 무거워서 기본 설치에서 제외 — 별도 설치 (CUDA 환경):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+#   pip install "transformers>=4.49" qwen-vl-utils accelerate   # 기본정보 OCR (Qwen2.5-VL)
+#   pip install easyocr                                          # 업태·종목 표 OCR (category_ocr.py)
