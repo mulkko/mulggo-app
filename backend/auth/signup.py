@@ -1,7 +1,12 @@
-# 회원가입 로직
-# DB 테이블이 아직 없어 실제 저장은 TODO로 남겨둔다.
+# 회원가입 로직 + 사업자등록증 OCR 연동
+# 비밀번호는 bcrypt 해싱 후 저장. 평문 비밀번호는 어디에도 남기지 않는다.
 
+import os
 import re
+
+import bcrypt
+
+from backend.db.connection import get_connection
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 SPECIAL_CHARS = "!@#$%^&*()_+-=[]{};:'\",.<>/?"
@@ -51,9 +56,35 @@ def validate_required_terms(agree_terms: bool, agree_privacy: bool) -> tuple[boo
     return len(errors) == 0, errors
 
 
-def save_user(name: str, email: str, password: str, nickname: str) -> None:
-    # TODO: 테이블 정의 후 구현 (비밀번호 해싱 포함)
-    pass
+def check_email_exists(email: str) -> bool:
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT 1 FROM users WHERE email = %s", (email,))
+        return cursor.fetchone() is not None
+    finally:
+        connection.close()
+
+
+def save_user(name: str, email: str, password: str, agree_terms: bool, agree_privacy: bool) -> dict:
+    password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO users (email, password_hash, name, created_at, agree_terms, agree_privacy)
+            VALUES (%s, %s, %s, NOW(), %s, %s)
+            RETURNING user_id, email, name
+            """,
+            (email, password_hash, name, agree_terms, agree_privacy),
+        )
+        row = cursor.fetchone()
+        connection.commit()
+        return {"user_id": row[0], "email": row[1], "name": row[2]}
+    finally:
+        connection.close()
 
 
 def signup(
@@ -61,10 +92,14 @@ def signup(
     email: str,
     password: str,
     password_confirm: str,
-    nickname: str,
     agree_terms: bool,
     agree_privacy: bool,
-) -> tuple[bool, list[str]]:
+) -> dict:
+    """
+    반환:
+      성공  {"success": True, "user": {"user_id", "email", "name"}}
+      실패  {"success": False, "code": "VALIDATION_ERROR" | "DUPLICATE_EMAIL", "errors": [...]}
+    """
     errors = []
 
     if not name:
@@ -82,14 +117,94 @@ def signup(
     if not is_valid_confirm:
         errors.append(confirm_error)
 
-    if not nickname:
-        errors.append("닉네임을 입력해주세요.")
-
     _, terms_errors = validate_required_terms(agree_terms, agree_privacy)
     errors.extend(terms_errors)
 
     if errors:
-        return False, errors
+        return {"success": False, "code": "VALIDATION_ERROR", "errors": errors}
 
-    save_user(name, email, password, nickname)
-    return True, []
+    if is_valid_email and check_email_exists(email):
+        return {"success": False, "code": "DUPLICATE_EMAIL", "errors": ["이미 가입된 이메일입니다."]}
+
+    user = save_user(name, email, password, agree_terms, agree_privacy)
+    return {"success": True, "user": user}
+
+
+# ══════════════════════════════════════════════════════
+# 사업자등록증 OCR → DB 저장 (회원가입 완료를 지연시키지 않도록 백그라운드에서 호출됨)
+# ══════════════════════════════════════════════════════
+def process_biz_cert_ocr(user_id: int, file_path: str, original_filename: str) -> None:
+    from backend.assistant.biz_cert_ocr import extract_biz_cert, get_cached_vision_model
+
+    try:
+        model, processor = get_cached_vision_model()
+        entity_type, biz_cert = extract_biz_cert(file_path, model, processor)
+    except Exception as e:
+        print(f"[biz_cert OCR 실패] user_id={user_id}: {e}")
+        return
+
+    # entity_types: 개인/법인 코드 (없으면 최초 1회 생성, TA/DA3 확인 전까지 임시 코드)
+    entity_type_code = "corporate" if entity_type == "법인" else "individual"
+
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute(
+            "INSERT INTO entity_types (code, name) VALUES (%s, %s) ON CONFLICT (code) DO NOTHING",
+            ("individual", "개인"),
+        )
+        cursor.execute(
+            "INSERT INTO entity_types (code, name) VALUES (%s, %s) ON CONFLICT (code) DO NOTHING",
+            ("corporate", "법인"),
+        )
+
+        cursor.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+        row = cursor.fetchone()
+        if row:
+            profile_id = row[0]
+        else:
+            cursor.execute(
+                """
+                INSERT INTO business_profiles (user_id, profile_type, entity_type_code, business_name, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, NOW(), NOW())
+                RETURNING profile_id
+                """,
+                (
+                    user_id,
+                    entity_type_code,
+                    entity_type_code,
+                    biz_cert.get("corp_name") or biz_cert.get("trade_name"),
+                ),
+            )
+            profile_id = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            INSERT INTO biz_registration_docs (
+                profile_id, entity_type_code, file_name, file_type, storage_path,
+                biz_no, corp_no, company_name, ceo_name, open_date, birth_date,
+                business_address, uploaded_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+            """,
+            (
+                profile_id,
+                entity_type_code,
+                original_filename,
+                os.path.splitext(original_filename)[1].lstrip("."),
+                file_path,
+                biz_cert.get("biz_no"),
+                biz_cert.get("corp_no"),
+                biz_cert.get("corp_name") or biz_cert.get("trade_name"),
+                biz_cert.get("ceo_name"),
+                biz_cert.get("open_date") or None,
+                biz_cert.get("birth_date") or None,
+                biz_cert.get("address_basic"),
+            ),
+        )
+        connection.commit()
+        print(f"[biz_cert OCR 성공] user_id={user_id}, profile_id={profile_id}")
+    except Exception as e:
+        print(f"[biz_cert DB 저장 실패] user_id={user_id}: {e}")
+    finally:
+        connection.close()
