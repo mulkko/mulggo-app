@@ -39,11 +39,11 @@ mulkko/
 │   └── assistant/              # AI 신청서 어시스턴트 (PSST 초안 생성)
 │
 ├── frontend/                   # 사용자·관리자 화면 전부 여기 (React + Vite + TS)
-│   ├── dev/                    # dev_links.html, style_guide.html + 단독 기능 검증용 테스트 페이지 (예: ocr-test.html)
+│   ├── dev/                    # dev_links.html(로컬 서버 링크 모음) + 단독 기능 검증용 테스트 페이지 (예: ocr-test.html)
 │   └── src/
 │       ├── pages/              # 화면별 컴포넌트, 기능 폴더로 구성 (auth/, admin/ 등)
-│       ├── components/         # 여러 화면이 공유하는 컴포넌트 (AdminStyleGuide 등)
-│       ├── styles/             # 전역 CSS + 페이지별 *.module.css, 디자인 토큰(adminTokens.css)
+│       ├── components/         # 여러 화면이 공유하는 컴포넌트 (AdminStyleGuide, WebStyleGuide 등)
+│       ├── styles/             # 전역 CSS + 페이지별 *.module.css, 디자인 토큰(adminTokens.css: 관리자, webTokens.css: 사용자)
 │       └── assets/             # 이미지 등 정적 리소스 (기능별 하위 폴더, 예: assets/admin/)
 │
 ├── frontend-admin/              # (레거시) Streamlit 관리자 화면 — 더 이상 사용 안 함, 관리자 화면은 frontend/src/pages/admin으로 이전됨
@@ -96,3 +96,10 @@ mulkko/
 - 코드나 `CLAUDE.md`, 커밋에 절대 하드코딩하지 않는다.
 - `.env`는 `.gitignore`에 포함되어야 한다.
 - 필요한 환경변수 목록은 `.env.example` 파일로 별도 관리한다 (실제 값 없이 키 이름만).
+
+## 10. 프론트엔드 디자인 토큰
+
+- 색상·타이포그래피·radius 값은 코드에 하드코딩하지 않고 `frontend/src/styles/adminTokens.css`(관리자 화면, 파란색 계열) / `webTokens.css`(사용자 화면, 틸그린·네이비 계열)의 CSS 변수(`:root`)로만 관리한다.
+- 값의 출처는 Figma `mulkko-style-guide` 파일(fileKey: `PpV1b4s9zsB1UHLGEtBQWP`)이다. 새 색상/컴포넌트가 필요하면 이 프레임에서 실측값(Dev Mode로 노드를 열어 실제 hex/padding/radius 확인)을 가져와 반영하고, 텍스트 스펙만으로 추측하지 않는다.
+- 변수 네이밍은 기존 규칙을 따른다: `--color-{이름}`(배경/베이스), `--color-{이름}-text`(그 색 위에 얹는 텍스트/보더), `--color-bg-*`(페이지·비활성 배경), `--radius-{용도}`(sm/md/lg/btn/pill).
+- 새 값을 추가했으면 반드시 해당 스타일가이드 컴포넌트(`components/AdminStyleGuide` 또는 `components/WebStyleGuide`)에도 같이 반영하고, `/style-guide`(관리자) 또는 `/web-style-guide`(사용자) 라우트에서 눈으로 확인한다. 코드와 스타일가이드 문서가 항상 일치해야 한다.

@@ -8,6 +8,7 @@ import AdminMembers from "./pages/admin/AdminMembers";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminRoute from "./pages/admin/AdminRoute";
 import AdminStyleGuide from "./components/AdminStyleGuide/AdminStyleGuide";
+import WebStyleGuide from "./components/WebStyleGuide/WebStyleGuide";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
+        <Route path="/web-style-guide" element={<WebStyleGuide />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route
           path="/admin"
