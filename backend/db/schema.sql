@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS matching_results (
 -- 관리자 대시보드의 "최근 배치 실행 로그"용. 특정 유저/공고를 가리키는 게 아니라
 -- 배치 1회 실행에 대한 집계 기록이라 FK 없음.
 CREATE TABLE IF NOT EXISTS crawl_batch_logs (
-    id BIGSERIAL PRIMARY KEY,
+    crawl_id BIGSERIAL PRIMARY KEY,
     source TEXT NOT NULL,                  -- 'bizinfo', 'kstartup' 등
     fetched_count INT NOT NULL,
     inserted_count INT NOT NULL,
