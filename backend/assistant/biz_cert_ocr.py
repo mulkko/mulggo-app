@@ -66,12 +66,36 @@ def load_vision_model():
     # [테스트] float16 -> bfloat16 (2026-09-06): VRAM 부족(8GB)으로 일부 레이어가 CPU로
     # 오프로딩될 때 fp16 혼합 연산이 불안정해져 확률이 깨지고("!!!" 반복 등 이상 출력) 하는
     # 문제 확인. bfloat16은 표현 범위가 fp32와 같아 오버플로우/NaN에 훨씬 덜 취약함.
+    # ===== 원본 (GPU 전용) 시작 =====
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         MODEL_ID, torch_dtype=torch.bfloat16, device_map="auto"
     )
+    # ===== 원본 (GPU 전용) 끝 =====
+
+    # ===== [대안] 모든 환경 호환 (CPU 폴백) 시작 =====
+    # GPU 없으면 float16이 CPU에서 에러날 수 있어서 float32로 폴백.
+    # CPU는 여전히 매우 느림(수 분/장 가능) — 진짜 해결은 GPU 확보.
+    # dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+    # model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+    #     MODEL_ID, torch_dtype=dtype, device_map="auto"
+    # )
+    # ===== [대안] 모든 환경 호환 (CPU 폴백) 끝 =====
     processor = AutoProcessor.from_pretrained(MODEL_ID)
     model.eval()
     return model, processor
+
+
+# 프로세스당 1회만 로딩해 재사용 (요청마다 새로 올리면 매번 GPU 로딩 시간이 걸림).
+# 이 모델을 쓰는 곳(test_ocr.py, signup.py 등)은 load_vision_model() 대신 이 함수를 쓸 것.
+_CACHED_MODEL = None
+_CACHED_PROCESSOR = None
+
+
+def get_cached_vision_model():
+    global _CACHED_MODEL, _CACHED_PROCESSOR
+    if _CACHED_MODEL is None:
+        _CACHED_MODEL, _CACHED_PROCESSOR = load_vision_model()
+    return _CACHED_MODEL, _CACHED_PROCESSOR
 
 
 def load_image(path):

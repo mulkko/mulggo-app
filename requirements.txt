@@ -10,7 +10,7 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
-python-multipart
+python-multipart  # 파일 업로드 처리 (FastAPI UploadFile, backend/api/test_ocr.py)
 
 # --- AI 신청서 어시스턴트 (backend/assistant/) ---
 openpyxl          # 필드매핑 xlsx 로드 (biz_cert_ocr.py)

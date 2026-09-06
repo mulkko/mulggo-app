@@ -162,6 +162,57 @@ INSTITUTION_SUFFIX_AFTER = ["재단", "포털", "협회", "센터", "공단", "�
 # 피하려고 "지원대상" 같이 나오는 경우만 좁혀서 인식한다.
 INCLUSION_OVERRIDE_RE = re.compile(r"지원\s*대상\s*(?:에|으로)?\s*(?:도)?\s*포함")
 
+# [2026-09-05 추가] 실측 확인: 강화군 소상공인 경영안정지원금 공고 — 별표1
+# (지원대상 업종 표) 제목이 "생활밀접업종(인천광역시 소상공인통계, 소상공인
+# 정책자금 지원 제외 업종 제외)"였음. "제외 업종"이라는 문구가 있긴 하지만
+# 바로 뒤에 "제외"가 한 번 더 붙는 이중부정 구조라 "이미 제외 대상은 뺀
+# (나머지) 목록"이라는 뜻 — 즉 뒤에 나오는 건 제외 목록이 아니라 정반대인
+# 지원대상(포함) 목록이다. 이걸 일반 "제외 업종" 헤더로 오인해서 wide_window
+# 안에서 뒤에 이어지는 지원대상 업종 표 전체(수십 개 항목)가 제외 목록으로
+# 잘못 잡혔다. "제외 업종" 바로 뒤에 또 "제외"가 붙는 이 특정 이중부정
+# 패턴만 헤더로 인정하지 않고 넘어간다.
+#
+# [2026-09-05 추가 2] 같은 공고에서 실측으로 하나 더 확인됨: "2. 지급
+# 제외대상" 목록 안에 "□ 소상공인 정책자금 지원 제외 업종 [별표3] 사업자"라는
+# 항목이 있는데, 이건 별표3 표 자체가 아니라 "별표3을 보라"는 단순 인용
+# 문장이다. 그런데도 진짜 "제외 업종" 문구라서 헤더로 인정되어, 그 뒤 2,000자
+# 안에 있는 별표1(지원대상 업종) 표 앞부분까지 다시 제외로 오염시켰다.
+# 진짜 표 헤더(예: 이 공고의 실제 별표3 헤더 "...소상공인 정책자금 지원
+# 제외 업종\n표준산업분류\n업종\n33409 중...")는 바로 뒤에 표 내용이 이어지지,
+# "[별표N]" 같은 대괄호 인용표시가 붙지 않는다 — 그래서 매칭 바로 뒤에
+# "[별표" / "(별표" 인용표시가 붙으면 표 헤더가 아니라 단순 인용으로 보고
+# 넘어간다.
+_APPENDIX_CITATION_RE = re.compile(r"^\s*[\[(]?\s*별표")
+
+# [2026-09-05 추가 3] 같은 공고에서 하나 더 확인됨: "2. 지급 제외대상" 목록보다도
+# 앞선 문장("사업자등록 상 지원대상 업종이면서 정책자금 지원제외 업종인 경우:
+# 미지급")은 표 헤더가 아니라 단순 조건 설명 한 문장인데, "제외 업종"이라는
+# 진짜 문구라서 여전히 헤더로 인정되고, wide_window(2,000자) 반경 안에 있는
+# 별표1(전혀 다른, 지원대상 업종을 나열하는 표)의 앞부분 항목들까지 다시
+# 제외로 오염시켰다. 이 문장과 별표1 항목들 사이에는 "별표1"이라는 새 부록
+# 경계가 하나 끼어 있다 — 즉 이미 다른 표/섹션으로 넘어간 뒤이므로 그 이전
+# 문장의 "제외 문맥"이 거기까지 이어진다고 보면 안 된다. 매칭 지점과 현재
+# 위치 사이에 "별표숫자" 경계가 하나라도 새로 나타나면 그 매칭은 무효로
+# 본다(자기 자신이 속한 별표의 헤더는 그 경계 앞에 있으므로 영향 없음).
+_APPENDIX_BOUNDARY_RE = re.compile(r"별표\s*\d")
+
+# "제외 업종 제외" 이중부정 구간을 다른 정규식이 재해석하지 못하도록 통째로
+# 지워버리는 데 쓴다 (아래 in_exclusion_section 계산부에서 사용).
+_DOUBLE_NEGATIVE_EXCLUSION_RE = re.compile(r"제외\s*업종\s*제외")
+
+
+def _has_real_exclusion_header(window):
+    for m in re.finditer(r"제외\s*업종", window):
+        after = window[m.end():m.end() + 15]
+        if re.match(r"\s*제외", after):
+            continue
+        if _APPENDIX_CITATION_RE.match(after):
+            continue
+        if _APPENDIX_BOUNDARY_RE.search(window[m.end():]):
+            continue
+        return True
+    return False
+
 
 def _load_ksic_index():
     """
@@ -310,10 +361,19 @@ def match_ksic_by_name(text):
                 # 그래서 "업종" 한정으로만 넓은 창(2,000자, 실측 최대거리 1,604자에
                 # 여유)을 쓰고, "대상"은 원래 400자 창(paragraph_context)만 쓴다.
                 wide_window_before = search_text[max(0, pos - 2000):pos]
+                # [2026-09-05 추가 4] "정책자금 지원 제외 업종 제외)" 같은 이중부정
+                # 문구는 `_has_real_exclusion_header`가 "제외 업종" 자체는 걸러주지만,
+                # 그 안에 우연히 들어있는 "지원 제외"라는 부분 문자열이 바로 아래
+                # `(참여|신청|지원)\s*제외` 정규식에 다시 걸려서 우회하는 문제가
+                # 실측 확인됨(강화군 공고). 아래 세 정규식에 넣기 전에 이 이중부정
+                # 구간 자체를 지워서, 그 안의 부분 문자열이 다른 패턴으로 재매칭되는
+                # 걸 원천 차단한다.
+                paragraph_context_checked = _DOUBLE_NEGATIVE_EXCLUSION_RE.sub(" ", paragraph_context)
                 in_exclusion_section = bool(
-                    re.search(r"제외\s*(업종|대상)", paragraph_context)
-                    or re.search(r"(참여|신청|지원)\s*제외", paragraph_context)
-                    or re.search(r"제외\s*업종", wide_window_before)
+                    _has_real_exclusion_header(paragraph_context_checked)
+                    or re.search(r"제외\s*대상", paragraph_context_checked)
+                    or re.search(r"(참여|신청|지원)\s*제외", paragraph_context_checked)
+                    or _has_real_exclusion_header(wide_window_before)
                     or ("제외" in fixed_window_before and "배제" in fixed_window_before)
                 )
 
@@ -358,7 +418,18 @@ def match_ksic_by_name(text):
 
                 entry = (pos, end, level, name, name_to_code[name])
 
-                if "제외" in context_before or in_exclusion_section:
+                # [2026-09-05 추가 5] 강화군 공고 실측 확인: "* 제조업·광업·건설업
+                # 및 운수업은 10인 미만" 문구가 "2. 지급 제외대상" 목록 항목들
+                # 사이(빈 줄 없이 이어짐)에 끼어 있어서, 몇 문장 앞의 무관한
+                # "정책자금 지원제외 업종" 언급이 200자 문단창에 걸려
+                # in_exclusion_section이 True가 됐다. is_sme_threshold_definition은
+                # "소상공인 법정정의 조항"이라 원래 어떤 문맥이든 항상 무시해야
+                # 하는데, 아래 elif 체인에서 제외 분기보다 순서가 밀려 있어 한 번도
+                # 실행되지 못하고 "제외"로 잘못 분류됐다. 이 가드만 제외 분기보다
+                # 먼저 검사해서 항상 우선 적용되게 한다.
+                if is_sme_threshold_definition:
+                    continue
+                elif "제외" in context_before or in_exclusion_section:
                     # [2026-09-03 수정] 처음엔 이 예외를 다른 가드보다 앞에 둬서
                     # 전체를 뒤집었더니, "지원대상...포함"이라는 흔한 표현이
                     # 제3자/예시/기관명 가드까지 전부 우회시켜버리는 부작용이
@@ -370,9 +441,9 @@ def match_ksic_by_name(text):
                         all_hits.append(entry)
                     else:
                         all_excluded.append(entry)
-                elif is_third_party or is_example or is_unrelated_policy or is_institution_name or is_sme_threshold_definition:
-                    # 신청기업 본인 업종이 아니라 하도급업체/예시/무관정책/기관명/
-                    # 소상공인 법정정의 조항인 경우 -> 무시
+                elif is_third_party or is_example or is_unrelated_policy or is_institution_name:
+                    # 신청기업 본인 업종이 아니라 하도급업체/예시/무관정책/기관명인
+                    # 경우 -> 무시
                     continue
                 else:
                     all_hits.append(entry)
@@ -408,9 +479,27 @@ def match_ksic_by_name(text):
         final_codes.append(code)
         level_breakdown[name] = level
 
-    excluded_info = [
-        {"명칭": name, "코드": code} for _, _, _, name, code in all_excluded
-    ]
+    # [버그 수정] all_hits와 달리 all_excluded는 레벨별 중복 위치(예: 상위
+    # 레벨의 "제조업"이 하위 레벨 "1차 금속 제조업" 안에 겹쳐 매칭되는 경우)를
+    # 걸러내지 않아서, 같은 자리가 여러 레벨에서 중복으로 잡혀 제외목록이
+    # 실제보다 부풀려지는 문제가 있었다(강화군 공고 실측: 같은 코드가 수십
+    # 번씩 중복). all_hits와 동일하게 위치 중복 제거 + 이름 중복 제거를 적용한다.
+    all_excluded.sort(key=lambda h: (h[0], level_rank[h[2]]))
+    kept_excluded = []
+    excluded_covered_ranges = []
+    for pos, end, level, name, code in all_excluded:
+        if any(s <= pos and end <= e for s, e in excluded_covered_ranges):
+            continue
+        kept_excluded.append((pos, end, level, name, code))
+        excluded_covered_ranges.append((pos, end))
+
+    seen_excluded = set()
+    excluded_info = []
+    for pos, end, level, name, code in kept_excluded:
+        if name in seen_excluded:
+            continue
+        seen_excluded.add(name)
+        excluded_info.append({"명칭": name, "코드": code})
 
     # [2026-09-03 수정] 서로 다른 코드가 비정상적으로 많이 잡히면, 실제
     # 복수산업이 아니라 "업종 분류기호 참고표"가 통째로 첨부된 것일 가능성이

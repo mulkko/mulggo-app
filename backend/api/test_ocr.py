@@ -14,7 +14,7 @@ import shutil
 from fastapi import APIRouter, File, UploadFile
 from PIL import UnidentifiedImageError
 
-from backend.assistant.biz_cert_ocr import extract_biz_cert, load_vision_model
+from backend.assistant.biz_cert_ocr import extract_biz_cert, get_cached_vision_model
 
 try:
     from pdf2image.exceptions import (
@@ -27,17 +27,6 @@ except ImportError:
     _PDF_ERRORS = ()
 
 router = APIRouter(prefix="/api/test", tags=["test"])
-
-# 모델은 프로세스당 1회만 로딩해 재사용 (요청마다 새로 올리면 매번 GPU 로딩 시간이 걸림)
-_MODEL = None
-_PROCESSOR = None
-
-
-def _get_model():
-    global _MODEL, _PROCESSOR
-    if _MODEL is None:
-        _MODEL, _PROCESSOR = load_vision_model()
-    return _MODEL, _PROCESSOR
 
 UPLOAD_DIR = os.path.join("data", "test_uploads", "biz_registration")
 CSV_PATH = os.path.join("data", "test_uploads", "biz_registration_ocr_test.csv")
@@ -83,7 +72,7 @@ async def test_ocr_upload(file: UploadFile = File(...)) -> dict:
         return result
 
     try:
-        model, processor = _get_model()
+        model, processor = get_cached_vision_model()
         entity_type, biz_cert = extract_biz_cert(save_path, model, processor)
     except (UnidentifiedImageError, FileNotFoundError, OSError) as e:
         # 파일 자체를 못 열었을 때 (손상된 파일, 이미지가 아닌 파일 등)
