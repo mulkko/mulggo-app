@@ -11,6 +11,14 @@
     DB에는 저장하지 않고, 결과를 <code>data/test_uploads/biz_registration_ocr_test.csv</code>에 한 줄씩 기록합니다.
   </p>
 
+  <!-- [테스트] 팀원 PC에서 이 페이지를 열었을 때 OCR 서버(백엔드) 주소를 자동으로 맞추거나,
+       필요하면 직접 바꿀 수 있는 입력창 (2026-09-06 추가). -->
+  <p>
+    OCR 서버 주소:
+    <input type="text" id="apiBaseInput" style="width:240px;">
+    <button id="apiBaseSaveBtn" type="button">저장</button>
+  </p>
+
   <input type="file" id="fileInput" accept="image/*,.pdf">
   <button id="uploadBtn" type="button">업로드 및 OCR 실행</button>
 
@@ -29,7 +37,33 @@
   </div>
 
   <script>
-    const API_BASE_URL = "http://127.0.0.1:8000";
+    // [테스트] OCR 서버 주소 결정 순서 (2026-09-06):
+    // 1) 예전에 이 브라우저에서 직접 저장해둔 주소가 있으면 그걸 사용
+    // 2) 없으면, 이 페이지를 지금 어느 주소로 열었는지 보고 자동 추론
+    //    (예: 팀원이 http://192.168.0.160:5173/... 로 열었으면 백엔드도 같은 PC의 8000번일 것으로 추정)
+    // 3) 그것도 안 되면(예: 파일을 그냥 더블클릭해서 연 경우) 기본값 127.0.0.1
+    function resolveApiBaseUrl() {
+      const saved = localStorage.getItem("ocr_api_base_url");
+      if (saved) return saved;
+
+      const host = window.location.hostname;
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        return `http://${host}:8000`;
+      }
+      return "http://127.0.0.1:8000";
+    }
+
+    let API_BASE_URL = resolveApiBaseUrl();
+
+    const apiBaseInput = document.getElementById("apiBaseInput");
+    apiBaseInput.value = API_BASE_URL;
+    document.getElementById("apiBaseSaveBtn").addEventListener("click", () => {
+      const val = apiBaseInput.value.trim().replace(/\/$/, "");
+      if (!val) return;
+      localStorage.setItem("ocr_api_base_url", val);
+      API_BASE_URL = val;
+      alert("저장했어요. 이제부터 이 주소로 요청을 보냅니다: " + val);
+    });
 
     // OCR 실패 종류(error_type, backend/api/test_ocr.py에서 내려줌)별 안내 문구.
     // - file_error: 파일 자체를 못 염 (손상/미지원 형식)
