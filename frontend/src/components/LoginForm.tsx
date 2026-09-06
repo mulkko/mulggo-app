@@ -1,41 +1,66 @@
 import { useState, type SubmitEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import styles from "../../styles/login.module.css";
-import { ADMIN_AUTH_KEY } from "./AdminRoute";
+import { Link, useNavigate } from "react-router-dom";
+import styles from "../styles/login.module.css";
+import { ADMIN_AUTH_KEY } from "../pages/admin/AdminRoute";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface AuthResponse {
   success: boolean;
-  errors: string[];
+  data: { user_id: number; email: string; name: string } | null;
+  error: { message: string; code: string } | null;
 }
 
-function AdminLogin() {
+interface LoginFormProps {
+  variant: "user" | "admin";
+}
+
+const VARIANT_CONFIG = {
+  user: {
+    title: "로그인",
+    endpoint: "/api/auth/login",
+  },
+  admin: {
+    title: "관리자 로그인",
+    endpoint: "/api/auth/admin-login",
+  },
+} as const;
+
+function LoginForm({ variant }: LoginFormProps) {
   const navigate = useNavigate();
+  const { title, endpoint } = VARIANT_CONFIG[variant];
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
-    setErrors([]);
+    setErrorMessage("");
+    setSuccess(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data: AuthResponse = await response.json();
 
-      if (data.success) {
+      if (!data.success) {
+        setErrorMessage(data.error?.message ?? "로그인에 실패했습니다.");
+        return;
+      }
+
+      if (variant === "admin") {
         localStorage.setItem(ADMIN_AUTH_KEY, "true");
         navigate("/admin");
       } else {
-        setErrors(data.errors);
+        setSuccess(true);
       }
     } catch {
-      setErrors(["서버에 연결할 수 없습니다."]);
+      setErrorMessage("서버에 연결할 수 없습니다.");
     }
   };
 
@@ -43,7 +68,7 @@ function AdminLogin() {
     <div className={styles.loginPage}>
       <div className={styles.titBox}>
         <p className={styles.logo}><a href="#none">mulkko로고</a></p>
-        <h1>관리자 로그인</h1>
+        <h1>{title}</h1>
       </div>
       <div className={styles.loginBox}>
         <form onSubmit={handleSubmit}>
@@ -69,17 +94,17 @@ function AdminLogin() {
           </div>
           <button type="submit" className="btnPrimary">로그인</button>
         </form>
+        {variant === "user" && (
+          <p>
+            아직 계정이 없으신가요? <Link to="/signup">회원가입</Link>
+          </p>
+        )}
       </div>
 
-      {errors.length > 0 && (
-        <ul>
-          {errors.map((error) => (
-            <li key={error}>{error}</li>
-          ))}
-        </ul>
-      )}
+      {success && <p>로그인 성공</p>}
+      {errorMessage && <p>{errorMessage}</p>}
     </div>
   );
 }
 
-export default AdminLogin;
+export default LoginForm;

@@ -1,18 +1,30 @@
+import { useEffect, useMemo, useState } from "react";
 import styles from "../../styles/adminMembers.module.css";
 
-const STATS = [
-  { label: "전체 회원", value: "1,284명", accent: false },
-  { label: "오늘 신규", value: "+18명", accent: true },
-  { label: "활성 (30일)", value: "742명", accent: false },
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const MEMBERS = [
-  { name: "김창업 님", email: "test1@mail.com", date: "2026.08.20", channel: "이메일 가입", type: "user" as const, status: "active" as const },
-  { name: "㈜소상공플러스", email: "biz1@sosangplus.co.kr", date: "2026.08.19", channel: "카카오 가입", type: "biz" as const, status: "active" as const },
-  { name: "박소상 님", email: "test3@mail.com", date: "2026.08.11", channel: "이메일 가입", type: "user" as const, status: "dormant" as const },
-  { name: "㈜펫프렌즈", email: "contact@petfriends.kr", date: "2026.08.02", channel: "구글 가입", type: "biz" as const, status: "active" as const },
-  { name: "정기술 님", email: "test5@mail.com", date: "2026.07.28", channel: "이메일 가입", type: "user" as const, status: "dormant" as const },
-];
+interface Member {
+  user_id: number;
+  name: string;
+  email: string;
+  created_at: string;
+  applicant_type: string | null;
+  last_login_at: string | null;
+  status: "active" | "dormant";
+}
+
+interface MembersResponse {
+  success: boolean;
+  data: {
+    members: Member[];
+    stats: { total: number; new_today: number; active_30d: number };
+  } | null;
+}
+
+function formatDateKST(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, ".").replace(/\.$/, "");
+}
 
 function UserIcon() {
   return (
@@ -42,6 +54,39 @@ function SearchIcon() {
 }
 
 function AdminMembers() {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [stats, setStats] = useState({ total: 0, new_today: 0, active_30d: 0 });
+  const [search, setSearch] = useState("");
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/admin/members`)
+      .then((res) => res.json())
+      .then((res: MembersResponse) => {
+        if (res.success && res.data) {
+          setMembers(res.data.members);
+          setStats(res.data.stats);
+        } else {
+          setLoadError(true);
+        }
+      })
+      .catch(() => setLoadError(true));
+  }, []);
+
+  const filteredMembers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter(
+      (m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
+    );
+  }, [members, search]);
+
+  const STATS = [
+    { label: "전체 회원", value: `${stats.total.toLocaleString()}명`, accent: false },
+    { label: "오늘 신규", value: `+${stats.new_today.toLocaleString()}명`, accent: true },
+    { label: "활성 (30일)", value: `${stats.active_30d.toLocaleString()}명`, accent: false },
+  ];
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -51,7 +96,13 @@ function AdminMembers() {
       <div className={styles.searchCard}>
         <div className={styles.searchInputWrap}>
           <SearchIcon />
-          <input type="text" className={styles.searchInput} placeholder="이름, 이메일로 검색" />
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="이름, 이메일로 검색"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
       </div>
 
@@ -68,19 +119,22 @@ function AdminMembers() {
         <div className={styles.listHeader}>
           <p className={styles.listHeaderTitle}>가입 회원 리스트</p>
         </div>
-        {MEMBERS.map((member) => (
-          <div className={styles.memberRow} key={member.email}>
+
+        {loadError && <p>회원 목록을 불러오지 못했습니다.</p>}
+
+        {filteredMembers.map((member) => (
+          <div className={styles.memberRow} key={member.user_id}>
             <div className={styles.memberInfo}>
               <span className={styles.avatarCircle}>
-                {member.type === "user" ? <UserIcon /> : <BuildingIcon />}
+                {member.applicant_type === "corporate" ? <BuildingIcon /> : <UserIcon />}
               </span>
               <div className={styles.memberText}>
                 <div className={styles.nameRow}>
-                  <p className={styles.memberName}>{member.name}</p>
+                  <p className={styles.memberName}>{member.name} 님</p>
                   <p className={styles.memberEmail}>({member.email})</p>
                 </div>
                 <p className={styles.memberMeta}>
-                  가입 {member.date} · {member.channel}
+                  가입 {formatDateKST(member.created_at)} · 이메일 가입
                 </p>
               </div>
             </div>

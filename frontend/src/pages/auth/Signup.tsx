@@ -1,18 +1,66 @@
-import { useState, type SubmitEvent } from "react";
+import { useRef, useState, type SubmitEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "../../styles/login.module.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+interface SignupResponse {
+  success: boolean;
+  data: { user_id: number; email: string; name: string } | null;
+  error: { message: string; code: string } | null;
+}
+
 function Signup() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [nickname, setNickname] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  // TODO: 회원가입 로직 대기 중 — 백엔드 연동 확정되면 /auth/signup fetch 붙이기
-  const handleSubmit = (event: SubmitEvent) => {
+  const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
+    setErrorMessage("");
+
+    if (password !== passwordConfirm) {
+      setErrorMessage("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("name", name);
+    formData.append("password", password);
+    formData.append("password_confirm", passwordConfirm);
+    formData.append("agree_terms", String(agreeTerms));
+    formData.append("agree_privacy", String(agreePrivacy));
+    if (fileInputRef.current?.files?.[0]) {
+      formData.append("biz_cert_file", fileInputRef.current.files[0]);
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+        method: "POST",
+        body: formData,
+      });
+      const data: SignupResponse = await response.json();
+
+      if (data.success) {
+        navigate("/login");
+      } else {
+        setErrorMessage(data.error?.message ?? "회원가입에 실패했습니다.");
+      }
+    } catch {
+      setErrorMessage("서버에 연결할 수 없습니다.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -64,14 +112,8 @@ function Signup() {
             />
           </div>
           <div className={styles.formField}>
-            <label htmlFor="nickname">닉네임</label>
-            <input
-              id="nickname"
-              type="text"
-              className="text-input"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-            />
+            <label htmlFor="biz-cert-file">사업자등록증 (선택)</label>
+            <input id="biz-cert-file" type="file" accept="image/*,.pdf" ref={fileInputRef} />
           </div>
           <div className={styles.formField}>
             <label htmlFor="agree-terms">
@@ -95,8 +137,12 @@ function Signup() {
               {" "}개인정보처리방침 동의
             </label>
           </div>
-          <button type="submit" className="btnPrimary">회원가입</button>
+          <button type="submit" className="btnPrimary" disabled={submitting}>
+            {submitting ? "가입 중..." : "회원가입"}
+          </button>
         </form>
+
+        {errorMessage && <p>{errorMessage}</p>}
       </div>
     </div>
   );

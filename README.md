@@ -152,6 +152,17 @@ npm run dev
 streamlit run frontend-admin/app.py
 ```
 
+## 자주 겪는 문제 (트러블슈팅)
+
+**관리자 페이지(회원 목록 등)가 안 뜨거나 "불러오지 못했습니다"라고 나올 때**
+1. 루트 `.env`와 `frontend/.env`가 실제로 존재하는지 확인 (`.env`는 git이 추적하지 않는 파일이라, 브랜치를 지우거나 되돌려도 안 살아나고, 실수로 지워지면 흔적도 안 남는다 — `.env.example`을 복사해서 값 채우기)
+2. 값을 채웠으면 **백엔드/프론트 서버를 반드시 재시작**할 것 — `.env`는 서버가 처음 뜰 때 딱 한 번만 읽어서, 켜져 있는 상태에서 파일만 고치면 반영이 안 됨
+3. DB 접속 정보(`DB_HOST`~`DB_PASSWORD`)는 Supabase 프로젝트(supabase.com) 로그인 → 프로젝트 설정 → Database에서 다시 확인 가능
+
+**pull 받은 뒤 서버가 갑자기 안 켜질 때**
+- 백엔드: `ModuleNotFoundError`가 뜨면 새로 추가된 패키지가 있다는 뜻 → `pip install -r requirements.txt` 다시 실행
+- 프론트: `'vite'은(는) 내부 또는 외부 명령...`처럼 실행 파일을 못 찾으면 → `frontend/` 안에서 `npm install` 다시 실행 (package.json이 바뀐 뒤 `node_modules`가 안 맞을 때 발생)
+
 ## 추진 일정 (3.5주)
 
 | 주차 | 목표 |

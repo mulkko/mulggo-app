@@ -1,8 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Main from "./pages";
-import Login from "./pages/auth/Login";
+import Splash from "./pages/splash/Splash";
 import Signup from "./pages/auth/Signup";
-import AdminLogin from "./pages/admin/AdminLogin";
+import LoginForm from "./components/LoginForm";
 import AdminHome from "./pages/admin/AdminHome";
 import AdminMembers from "./pages/admin/AdminMembers";
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -14,12 +13,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Main />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Splash />} />
+        <Route path="/login" element={<LoginForm variant="user" />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/web-style-guide" element={<WebStyleGuide />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<LoginForm variant="admin" />} />
         <Route
           path="/admin"
           element={

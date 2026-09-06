@@ -1,0 +1,17 @@
+# 물꼬(Mulkko) — 지역매핑 + 업종매칭(KSIC) 파이프라인 실행에 필요한 패키지만.
+# (Chroma 벡터검색 등 폐기된 구버전 파이프라인의 의존성은 제외 — chromadb,
+#  sentence-transformers, torch, transformers 등은 이 기능에 필요 없음)
+
+requests==2.32.5          # 첨부파일(printFlpthNm) 다운로드
+pdfplumber==0.11.10       # 텍스트 기반 PDF 추출
+pymupdf==1.28.2           # 스캔 PDF -> 이미지 렌더링(OCR 전 단계)
+pillow==12.3.0            # 이미지 처리(OCR 입력)
+numpy==2.3.5              # 이미지 배열 처리
+olefile==0.47             # HWP(OLE) 파일 저수준 파싱
+pyhwp==0.1b15             # HWP 본문 텍스트 추출
+paddleocr==3.7.0          # 스캔본/이미지 첨부파일 OCR
+openai==3.7.0             # 업종매칭 2단계(LLM) — OPENAI_API_KEY 환경변수 필요
+
+# paddleocr는 paddlepaddle(또는 paddlepaddle-gpu)이 별도로 필요합니다.
+# GPU 없이 CPU만 쓸 경우: pip install paddlepaddle
+# GPU(CUDA) 환경: pip install paddlepaddle-gpu (이 환경은 paddlepaddle-gpu==3.3.0 사용 중)

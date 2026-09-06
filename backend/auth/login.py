@@ -1,7 +1,10 @@
 # 로그인 로직 (아이디 = 이메일)
-# DB 테이블이 아직 없어 실제 조회/비밀번호 검증은 TODO로 남겨둔다.
 
 import re
+
+import bcrypt
+
+from backend.db.connection import get_connection
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -27,22 +30,76 @@ def validate_login_input(email: str, password: str) -> tuple[bool, list[str]]:
     return len(errors) == 0, errors
 
 
-def find_user_by_email(email: str):
-    # TODO: 테이블 정의 후 구현 (이메일로 사용자 조회)
-    pass
+def find_user_by_email(email: str) -> dict | None:
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT user_id, email, name, password_hash, is_admin FROM users WHERE email = %s",
+            (email,),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            return None
+        return {
+            "user_id": row[0],
+            "email": row[1],
+            "name": row[2],
+            "password_hash": row[3],
+            "is_admin": row[4],
+        }
+    finally:
+        connection.close()
 
 
-def verify_password(password: str, password_hash) -> bool:
-    # TODO: 테이블 정의 후 구현 (비밀번호 해시 비교)
-    pass
+def verify_password(password: str, password_hash: str) -> bool:
+    return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
-def login(email: str, password: str) -> tuple[bool, list[str]]:
+def update_last_login(user_id: int) -> None:
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("UPDATE users SET last_login_at = NOW() WHERE user_id = %s", (user_id,))
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def login(email: str, password: str) -> dict:
+    """
+    반환:
+      성공  {"success": True, "user": {"user_id", "email", "name"}}
+      실패  {"success": False, "code": "VALIDATION_ERROR" | "UNAUTHORIZED", "errors": [...]}
+    """
     is_valid, errors = validate_login_input(email, password)
     if not is_valid:
-        return False, errors
+        return {"success": False, "code": "VALIDATION_ERROR", "errors": errors}
 
     user = find_user_by_email(email)
-    # TODO: 테이블 정의 후 구현 (user 존재 여부 확인 + verify_password로 비밀번호 검증)
 
-    return False, ["로그인 기능은 DB 연동 후 사용할 수 있습니다."]
+    # 이메일이 없는 경우와 비밀번호가 틀린 경우를 같은 메시지로 처리
+    # (둘을 구분해서 알려주면 "이 이메일은 가입돼있다"는 정보가 새어나감).
+    invalid_credentials = {
+        "success": False,
+        "code": "UNAUTHORIZED",
+        "errors": ["이메일 또는 비밀번호가 일치하지 않습니다."],
+    }
+
+    if user is None:
+        return invalid_credentials
+
+    if not verify_password(password, user["password_hash"]):
+        return invalid_credentials
+
+    update_last_login(user["user_id"])
+
+    return {
+        "success": True,
+        "user": {
+            "user_id": user["user_id"],
+            "email": user["email"],
+            "name": user["name"],
+            "is_admin": user["is_admin"],
+        },
+    }

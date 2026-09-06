@@ -1,0 +1,6 @@
+# region_apply_full.py / extract_all_texts.py 배치 스크립트가 만드는
+# 대용량 중간 산출물(공고 원문, 지역매핑 결과 등) — DB 도입 전 로컬 테스트용.
+# 실제 데이터는 DB에 저장 원칙(README 참고)이라 커밋하지 않음.
+raw/
+outputs/
+processed/

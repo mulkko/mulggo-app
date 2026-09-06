@@ -23,7 +23,4 @@ __pycache__/
 
 # 대용량/원본 데이터 (data/ 폴더 원칙상 대용량은 DB에 저장, 로컬 파일로 안 남기기)
 data/raw/
-data/*.csv
-
-# 관리자 페이지 - Streamlit 버전 폐기, React(frontend/src/pages/admin)로 이전
-frontend-admin/
+data/**/*.csv
