@@ -17,21 +17,67 @@ const CUMULATIVE_CHART_BASE: ChartRow[] = [
   // { name: "중소벤처24", count: "6건", width: 55 },
 ];
 
-const BATCH_LOGS = [
-  { time: "09.05 16:49", label: "성공 · 1,508건", tone: "success" as const },
-  { time: "09.05 16:52", label: "성공 · 신규 0건", tone: "success" as const },
-];
+type BatchLog = {
+  source: string;
+  fetched_count: number;
+  inserted_count: number;
+  status: "success" | "error";
+  ran_at: string;
+};
+
+function formatLogTime(isoString: string): string {
+  const d = new Date(isoString);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 function AdminHome() {
   const [bizinfoCount, setBizinfoCount] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [crawling, setCrawling] = useState(false);
+  const [batchLogs, setBatchLogs] = useState<BatchLog[]>([]);
 
-  useEffect(() => {
+  const fetchCount = () => {
     fetch(`${API_BASE_URL}/admin/bizinfo-count`)
       .then((res) => res.json())
       .then((data: { count: number }) => setBizinfoCount(data.count))
       .catch(() => setLoadError(true));
+  };
+
+  const fetchBatchLogs = () => {
+    fetch(`${API_BASE_URL}/admin/batch-logs`)
+      .then((res) => res.json())
+      .then((data: { success: boolean; data: { logs: BatchLog[] } }) => setBatchLogs(data.data.logs))
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchCount();
+    fetchBatchLogs();
   }, []);
+
+  const handleManualCrawl = async () => {
+    setCrawling(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/bizinfo-crawl`, { method: "POST" });
+      const data: {
+        success: boolean;
+        data?: { fetched: number; inserted: number };
+        error?: { message: string };
+      } = await res.json();
+      if (!data.success) {
+        alert(`공고 API 호출에 실패했습니다: ${data.error?.message ?? "알 수 없는 오류"}`);
+      } else {
+        alert(`수집 완료: 전체 ${data.data!.fetched}건 확인, 신규 ${data.data!.inserted}건 추가`);
+      }
+      fetchCount();
+      fetchBatchLogs();
+    } catch {
+      alert("공고 API 호출에 실패했습니다.");
+    } finally {
+      setCrawling(false);
+    }
+  };
 
   const countLabel = loadError ? "불러오기 실패" : bizinfoCount === null ? "확인 중..." : `${bizinfoCount.toLocaleString()}건`;
 
@@ -44,6 +90,9 @@ function AdminHome() {
     <>
       <div className={styles.header}>
         <h1 className={styles.pageTitle}>공고 수집 현황</h1>
+        <button type="button" className="btnSecondary" onClick={handleManualCrawl} disabled={crawling}>
+          {crawling ? "호출 중..." : "수동호출"}
+        </button>
       </div>
 
       <div className={styles.summaryCard}>
@@ -95,15 +144,15 @@ function AdminHome() {
         <div className={styles.gridCard}>
           <p className={styles.gridCardTitle}>최근 배치 실행 로그</p>
           <div className={styles.logsList}>
-            {BATCH_LOGS.map((log) => (
-              <div className={styles.logItem} key={log.time}>
-                <p className={styles.logTime}>{log.time}</p>
+            {batchLogs.map((log) => (
+              <div className={styles.logItem} key={log.ran_at}>
+                <p className={styles.logTime}>{formatLogTime(log.ran_at)}</p>
                 <span
                   className={`${styles.statusBadge} ${
-                    log.tone === "success" ? styles.statusBadgeSuccess : styles.statusBadgeError
+                    log.status === "success" ? styles.statusBadgeSuccess : styles.statusBadgeError
                   }`}
                 >
-                  {log.label}
+                  {log.status === "success" ? "성공" : "실패"} · 신규 {log.inserted_count}건
                 </span>
               </div>
             ))}

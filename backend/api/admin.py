@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter
 
-from backend.crawler.bizinfo_api import fetch_page
+from backend.crawler.bizinfo_api import fetch_all, fetch_page, save_to_db
 from backend.db.connection import get_connection
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -22,6 +22,65 @@ def get_bizinfo_count() -> dict:
     return {"count": count}
 
 
+def _log_crawl(source: str, fetched_count: int, inserted_count: int, status: str) -> None:
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO crawl_batch_logs (source, fetched_count, inserted_count, status)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (source, fetched_count, inserted_count, status),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+@router.post("/bizinfo-crawl")
+def run_bizinfo_crawl() -> dict:
+    try:
+        items = fetch_all()
+        inserted = save_to_db(items)
+    except Exception as e:
+        _log_crawl("bizinfo", 0, 0, "error")
+        return {"success": False, "error": {"message": str(e), "code": "CRAWL_FAILED"}}
+
+    _log_crawl("bizinfo", len(items), inserted, "success")
+    return {"success": True, "data": {"fetched": len(items), "inserted": inserted}}
+
+
+@router.get("/batch-logs")
+def get_batch_logs() -> dict:
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT source, fetched_count, inserted_count, status, ran_at
+            FROM crawl_batch_logs
+            ORDER BY ran_at DESC
+            LIMIT 5
+            """
+        )
+        rows = cursor.fetchall()
+    finally:
+        connection.close()
+
+    logs = [
+        {
+            "source": source,
+            "fetched_count": fetched_count,
+            "inserted_count": inserted_count,
+            "status": status,
+            "ran_at": ran_at.isoformat(),
+        }
+        for source, fetched_count, inserted_count, status, ran_at in rows
+    ]
+    return {"success": True, "data": {"logs": logs}}
+
+
 KST = timezone(timedelta(hours=9))
 
 
@@ -32,9 +91,10 @@ def get_members() -> dict:
         cursor = connection.cursor()
         cursor.execute(
             """
-            SELECT user_id, name, email, created_at, applicant_type, last_login_at
-            FROM users
-            ORDER BY created_at DESC
+            SELECT u.user_id, u.name, u.email, u.created_at, bp.entity_type_code, u.last_login_at
+            FROM users u
+            LEFT JOIN business_profiles bp ON bp.user_id = u.user_id
+            ORDER BY u.created_at DESC
             """
         )
         rows = cursor.fetchall()

@@ -34,7 +34,7 @@
   --color-avatar-chip-bg: #efece2; /* 아바타 원형 배경, 칩 배경 */
   --color-app-bg: #efede6; /* 전체 body 배경 (실사용 기준값) */
   --color-inset-border: #e6e2d6; /* 카드 안쪽 보더(inset box-shadow) */
-  --color-border: #dcd8cc; /* 일반 보더, 점선 보더, 구분선 */
+  --color-border-web: #dcd8cc; /* 일반 보더, 점선 보더, 구분선 (adminTokens.css의 --color-border와 이름 충돌 방지) */
   --color-progress-track-a: #b9b4a4; /* 진행바 채움(중립 톤) */
   --color-progress-track-b: #cfcaba; /* 진행바 채움(중립 톤 변형) */
   --color-highlight-card: #fdf6e7; /* 강조 카드 배경(연크림) */
@@ -50,7 +50,7 @@
   --color-review-indigo-blue: #3753c1; /* ★검토중 — 보조 컬러, 확정 아님 */
   --color-review-royal-blue: #3b57d4; /* ★검토중 — 보조 컬러, 확정 아님 */
   --color-review-slate-blue: #5369cb; /* ★검토중 — 보조 컬러, 확정 아님 */
-  --color-error-bg: #f2d1d1; /* ERROR STATE / 에러 배지 배경 */
+  --color-error-bg-web: #f2d1d1; /* ERROR STATE / 에러 배지 배경 (adminTokens.css의 --color-error-bg와 이름 충돌 방지) */
   --color-error-text: #c04040; /* ERROR STATE / 에러 텍스트·보더 */
   --color-text-placeholder: #757575; /* placeholder & 보조 라벨 (피그마 실측) */
   --color-border-input: rgba(139, 141, 147, 0.3); /* 인풋 보더 (Stone Gray 30%) */
@@ -81,8 +81,8 @@
   --font-weight-numeric: 800;
 
   /* ===== Radius ===== */
-  --radius-sm: 2px; /* accent bar */
-  --radius-md: 11px; /* input */
+  --radius-sm-web: 2px; /* accent bar (adminTokens.css의 --radius-sm과 이름 충돌 방지) */
+  --radius-md-web: 11px; /* input (adminTokens.css의 --radius-md와 이름 충돌 방지) */
   --radius-lg: 12px; /* card */
   --radius-btn: 13px; /* button */
   --radius-pill: 99px; /* 원형 배지 */
