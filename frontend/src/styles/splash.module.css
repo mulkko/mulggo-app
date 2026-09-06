@@ -45,6 +45,7 @@
   font-weight: 900;
   letter-spacing: 1px;
   margin: 0;
+  color: #fff; /* index.css의 전역 h1 { color: var(--text-h) } 를 덮어써야 함 */
 }
 
 .tagline {
