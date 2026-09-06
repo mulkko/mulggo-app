@@ -1,5 +1,4 @@
-setuptools
-streamlit
+﻿setuptools
 langchain
 pandas
 scikit-learn
