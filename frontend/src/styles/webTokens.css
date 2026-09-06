@@ -1,0 +1,100 @@
+:root {
+  /* ===== 1. Core Brand & Interaction ===== */
+  --color-teal-green: #0f6e62; /* 텍스트 링크, 라이트 배지 텍스트 */
+  --color-light-teal: #3fb6a8; /* 보더 강조, 체크마크, 그라디언트 중간톤 */
+  --color-teal-mist: #dff3ef; /* 라이트 배지·입력창 배경 (Teal Green 짝) */
+  --color-navy-sphere: #104a8f; /* 로그인/회원가입 등 주요 CTA 버튼 배경 */
+  --color-brand-text-navy: #15328c; /* MULKKO 워드마크, 브랜드 강조 텍스트 (버튼과 별도 역할) */
+  --color-teal-gradient-top: #7fdccf; /* 스플래시 화면 그라디언트 상단색 */
+
+  /* ===== 2. Amber / Warning ===== */
+  --color-warm-amber: #e8a93c; /* 활성 탭 아이콘, 진행바 채움, D-day 배지 텍스트 */
+  --color-amber-mist: #fff3d6; /* D-day 배지 배경 (Warm Amber 짝) */
+  --color-amber-track: #f7e4bc; /* 진행바 트랙(연한 배경) */
+  --color-amber-text-dark: #b5761a; /* 하단 탭바 라벨 텍스트 */
+  --color-amber-text-darker: #8a6212; /* "AI 코멘트"·"마감 임박" 라벨 텍스트 */
+  --color-amber-text-deep: #7a5510; /* "새 아이디어" 등 강조 텍스트 */
+  --color-amber-text-deepest: #5f4308; /* "지역가산" 등 세부 안내 텍스트 */
+  --color-amber-hover: #f0d293; /* 메뉴 항목 hover 배경(호박색 계열) */
+
+  /* ===== 3. Navy/Blue Hover & Chip ===== */
+  --color-navy-hover-dark: #0b2170; /* 메뉴 hover 배경(진한 남색) */
+  --color-navy-hover-mid: #0b3868; /* 메뉴 hover 배경(중간 남색) */
+  --color-teal-hover: #34a296; /* 메뉴 hover 배경(틸) */
+  --color-blue-chip-bg: #e7ecf8; /* 기관명 등 라벨 칩 배경 (텍스트는 Brand Text Navy 짝) */
+  --color-blue-card-bg: #f3f8ff; /* 카드 배경(연한 파랑) */
+  --color-cream-hover: #eae5d8; /* 메뉴 hover 배경(크림) */
+  --color-teal-stripe: #cfebe5; /* 진행바 대각선 패턴색 + hover 배경 겸용 */
+
+  /* ===== 4. Neutrals & Backgrounds ===== */
+  --color-chip-bg: #f4f1e8; /* 칩/필 배경 (Stone Gray 텍스트 짝) */
+  --color-cream: #faf8f3; /* 하단 탭바 배경 */
+  --color-menu-hover: #f5f2ea; /* 메뉴 항목 기본 hover 배경 */
+  --color-divider-light: #f0ede4; /* 상단 구분선 */
+  --color-avatar-chip-bg: #efece2; /* 아바타 원형 배경, 칩 배경 */
+  --color-app-bg: #efede6; /* 전체 body 배경 (실사용 기준값) */
+  --color-inset-border: #e6e2d6; /* 카드 안쪽 보더(inset box-shadow) */
+  --color-border: #dcd8cc; /* 일반 보더, 점선 보더, 구분선 */
+  --color-progress-track-a: #b9b4a4; /* 진행바 채움(중립 톤) */
+  --color-progress-track-b: #cfcaba; /* 진행바 채움(중립 톤 변형) */
+  --color-highlight-card: #fdf6e7; /* 강조 카드 배경(연크림) */
+  --color-selected-card: #fcfbf7; /* 선택된 카드 배경(거의 흰색) */
+  --color-stone-mist: #efeff1; /* 입력창 배경 */
+  --color-white: #ffffff; /* 기본 배경 */
+  --color-ink-charcoal: #2e312e; /* 본문 텍스트 */
+  --color-stone-gray: #8b8d93; /* 보조 텍스트 */
+  --color-teal-accent-text: #8fe3d6; /* "진행 중인 사업 구체화" 등 강조 텍스트 + 마스코트 라인 컬러 */
+
+  /* ===== 기타 유지 항목 (이전 라운드 확정값, 이번 프로토타입 데이터엔 없음) ===== */
+  --color-signal-yellow: #ffbc00; /* CTA 배경 전용(건의사항 제출 등), 다크 텍스트와 짝 */
+  --color-review-indigo-blue: #3753c1; /* ★검토중 — 보조 컬러, 확정 아님 */
+  --color-review-royal-blue: #3b57d4; /* ★검토중 — 보조 컬러, 확정 아님 */
+  --color-review-slate-blue: #5369cb; /* ★검토중 — 보조 컬러, 확정 아님 */
+  --color-error-bg: #f2d1d1; /* ERROR STATE / 에러 배지 배경 */
+  --color-error-text: #c04040; /* ERROR STATE / 에러 텍스트·보더 */
+  --color-text-placeholder: #757575; /* placeholder & 보조 라벨 (피그마 실측) */
+  --color-border-input: rgba(139, 141, 147, 0.3); /* 인풋 보더 (Stone Gray 30%) */
+
+  /* ===== 로고 전용 (UI 팔레트와 완전히 분리 — 컴포넌트에 재사용 금지) ===== */
+  --logo-navy: #2a3286;
+  --logo-mint: #abe0d6;
+
+  /* ===== 타이포그래피 ===== */
+  --font-family-base: 'Noto Sans KR', sans-serif;
+  --font-family-numeric: 'Inter', sans-serif; /* 표·카드 수치 전용 */
+  --font-size-title-min: 20px;
+  --font-size-title-max: 24px;
+  --font-weight-title: 900;
+  --line-height-title: 1.4;
+  --font-size-heading-min: 14px;
+  --font-size-heading-max: 16px;
+  --font-weight-heading: 700;
+  --font-size-body-min: 12.5px;
+  --font-size-body-max: 13.5px;
+  --font-weight-body-min: 400;
+  --font-weight-body-max: 500;
+  --line-height-body-min: 1.5;
+  --line-height-body-max: 1.6;
+  --font-size-caption-min: 10.5px;
+  --font-size-caption-max: 11.5px;
+  --font-weight-caption: 500; /* 색상은 --color-stone-gray 사용 */
+  --font-weight-numeric: 800;
+
+  /* ===== Radius ===== */
+  --radius-sm: 2px; /* accent bar */
+  --radius-md: 11px; /* input */
+  --radius-lg: 12px; /* card */
+  --radius-btn: 13px; /* button */
+  --radius-pill: 99px; /* 원형 배지 */
+  --radius-card-min: 12px; /* 카드/버튼 공통 범위 */
+  --radius-card-max: 16px;
+
+  /* ===== 공통 규칙 ===== */
+  --icon-stroke-min: 1.7px;
+  --icon-stroke-max: 1.9px; /* 아이콘 stroke, 채움 없음(활성 상태만 색 채움) */
+  --spacing-screen-x-min: 20px;
+  --spacing-screen-x-max: 24px; /* 화면 좌우 여백 */
+
+  /* 그림자 규칙: raised 카드 = Navy Sphere 알파, 강조 카드 = inset 컬러 보더.
+     정확한 blur/offset/opacity 수치 미확정 — 확정되면 추가. */
+}
