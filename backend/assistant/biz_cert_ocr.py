@@ -63,8 +63,11 @@ def load_vision_model():
     import torch
     from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
+    # [테스트] float16 -> bfloat16 (2026-09-06): VRAM 부족(8GB)으로 일부 레이어가 CPU로
+    # 오프로딩될 때 fp16 혼합 연산이 불안정해져 확률이 깨지고("!!!" 반복 등 이상 출력) 하는
+    # 문제 확인. bfloat16은 표현 범위가 fp32와 같아 오버플로우/NaN에 훨씬 덜 취약함.
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-        MODEL_ID, torch_dtype=torch.float16, device_map="auto"
+        MODEL_ID, torch_dtype=torch.bfloat16, device_map="auto"
     )
     processor = AutoProcessor.from_pretrained(MODEL_ID)
     model.eval()
@@ -72,15 +75,21 @@ def load_vision_model():
 
 
 def load_image(path):
-    """이미지/PDF 경로 → PIL Image (PDF는 첫 페이지만)."""
-    from PIL import Image
+    """이미지/PDF 경로 → PIL Image (PDF는 첫 페이지만).
+    [테스트] 어두운 사진 OCR 실패 이슈로 자동 명암 보정(autocontrast) 추가 (2026-09-06).
+    이미 밝은 사진엔 영향 거의 없음. 원인이 다른 데 있는 걸로 확인되면
+    `ImageOps.autocontrast(...)` 대신 `img.convert("RGB")`만 반환하도록 되돌리면 됨."""
+    from PIL import Image, ImageOps
 
     ext = os.path.splitext(path)[1].lower()
     if ext == ".pdf":
         from pdf2image import convert_from_path
 
-        return convert_from_path(path, dpi=200)[0]
-    return Image.open(path)
+        img = convert_from_path(path, dpi=200)[0]
+    else:
+        img = Image.open(path)
+
+    return ImageOps.autocontrast(img.convert("RGB"), cutoff=1)
 
 
 # ══════════════════════════════════════════════════════
@@ -107,7 +116,10 @@ def load_image(path):
 #   2) extract_biz_cert() 안의 `ask_image(model, processor, img, q, max_pixels=MAX_OCR_PIXELS)`에서
 #      `max_pixels=MAX_OCR_PIXELS` 부분을 지우면 원래 상태(리사이즈 전혀 없음, 처음부터 잘 되던 버전)로 복귀.
 #   둘 다 안전하게 원복 가능 — load_image()나 다른 함수는 이 실험과 무관하게 그대로임.
-MAX_OCR_PIXELS = 1280 * 1280
+# 1280*1280에서는 등록번호 등 큰 글씨는 읽히는데 대표자 이름처럼 작은 글씨가
+# 뭉개져서 빈 값으로 나오는 사례 확인 (2026-09-06) → 해상도를 조금 올려서 재검증 중.
+# VRAM이 빠듯해서(8GB, 리사이즈 없인 CPU 오프로딩 발생) 너무 크게는 못 올림.
+MAX_OCR_PIXELS = 1600 * 1600
 
 
 def ask_image(model, processor, image, question, max_new_tokens=512, max_pixels=None):
@@ -131,7 +143,11 @@ def ask_image(model, processor, image, question, max_new_tokens=512, max_pixels=
         text=[text], images=image_inputs, padding=True, return_tensors="pt"
     ).to(model.device)
     with torch.no_grad():
-        out = model.generate(**inputs, max_new_tokens=max_new_tokens)
+        # do_sample=False (greedy): VRAM 부족으로 일부 레이어가 CPU로 오프로딩될 때
+        # fp16 혼합 연산이 불안정해져 확률이 전부 0이 되면서 샘플링(multinomial) 단계에서
+        # CUDA assert가 나는 걸 확인함 (2026-09-06). OCR은 정답이 정해진 작업이라
+        # 확률적 샘플링이 필요 없으므로 greedy로 고정 — 크래시 회피 + 결과 일관성 둘 다 개선.
+        out = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
     out = [o[len(i):] for i, o in zip(inputs.input_ids, out)]
     result = processor.batch_decode(out, skip_special_tokens=True)[0]
     del inputs, out
@@ -180,7 +196,7 @@ def extract_biz_cert(image_path, model, processor):
         '{"법인명":"","상호":"","대표자":"","등록번호":"","법인등록번호":"",'
         '"생년월일":"","개업연월일":"","사업장소재지":""}'
     )
-    raw = ask_image(model, processor, img, q, max_pixels=MAX_OCR_PIXELS)  # [테스트] 롤백: max_pixels 인자 제거
+    raw = ask_image(model, processor, img, q, max_pixels=MAX_OCR_PIXELS)  # [테스트] VRAM 부족(8GB)으로 리사이즈 없이는 CPU 오프로딩 발생, 리사이즈가 사실상 필수
     parsed = parse_json(raw)
     if parsed is None:
         raise ValueError(f"OCR 결과에서 JSON을 파싱하지 못했습니다: {raw!r}")
