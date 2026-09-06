@@ -5,6 +5,7 @@ import '@fontsource/noto-sans-kr/700.css'
 import './index.css'
 import './styles/adminTokens.css'
 import './styles/webTokens.css'
+import './styles/adminCommon.css'
 import './styles/common.css'
 import App from './App.tsx'
 

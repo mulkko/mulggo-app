@@ -21,16 +21,16 @@ const TYPOGRAPHY = [
 ];
 
 const BUTTONS = [
-  { label: "확인 및 가입", className: styles.btnPrimary, code: ".btnPrimary" },
-  { label: "이전 단계로", className: styles.btnSecondary, code: ".btnSecondary" },
-  { label: "취소하기", className: styles.btnOutline, code: ".btnOutline" },
-  { label: "선택 불가", className: styles.btnDisabled, code: ".btnDisabled", disabled: true },
+  { label: "확인 및 가입", className: "btnPrimary", code: ".btnPrimary" },
+  { label: "이전 단계로", className: "btnSecondary", code: ".btnSecondary" },
+  { label: "취소하기", className: "btnOutline", code: ".btnOutline" },
+  { label: "선택 불가", className: "btnDisabled", code: ".btnDisabled", disabled: true },
 ];
 
 const BADGES = [
-  { label: "활성", className: styles.badgeSuccess, code: ".badgeSuccess" },
-  { label: "휴면", className: styles.badgeMuted, code: ".badgeMuted" },
-  { label: "실패", className: styles.badgeError, code: ".badgeError" },
+  { label: "활성", className: "badgeSuccess", code: ".badgeSuccess" },
+  { label: "휴면", className: "badgeMuted", code: ".badgeMuted" },
+  { label: "실패", className: "badgeError", code: ".badgeError" },
 ];
 
 function AdminStyleGuide() {

@@ -54,3 +54,80 @@ CREATE TABLE IF NOT EXISTS matching_results (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (user_profile_id, announcement_id)
 );
+
+-- 관리자 대시보드의 "최근 배치 실행 로그"용. 특정 유저/공고를 가리키는 게 아니라
+-- 배치 1회 실행에 대한 집계 기록이라 FK 없음.
+CREATE TABLE IF NOT EXISTS crawl_batch_logs (
+    id BIGSERIAL PRIMARY KEY,
+    source TEXT NOT NULL,                  -- 'bizinfo', 'kstartup' 등
+    fetched_count INT NOT NULL,
+    inserted_count INT NOT NULL,
+    status TEXT NOT NULL,                  -- 'success' / 'error'
+    ran_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ══════════════════════════════════════════════════════
+-- 아래부터는 실제 운영 DB(Supabase)에 있는 회원/사업자 관련 테이블을 그대로 반영한 것.
+-- users 테이블은 실제로는 Supabase Auth가 관리하는 컬럼(instance_id, encrypted_password,
+-- confirmation_token, recovery_token 등 약 30개)이 더 있으나, 앱 코드가 직접 읽고 쓰는
+-- 컬럼만 여기 기록한다.
+-- ══════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(100),
+    role VARCHAR(255),
+    is_admin BOOLEAN NOT NULL DEFAULT false,
+    agree_terms BOOLEAN NOT NULL DEFAULT false,
+    agree_privacy BOOLEAN NOT NULL DEFAULT false,
+    last_login_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 개인/법인 코드표. 'prospective'(예비창업자)는 아직 확정 전 상태라 여기 없고 users.applicant_type에만 있음.
+CREATE TABLE IF NOT EXISTS entity_types (
+    code VARCHAR(10) PRIMARY KEY,          -- 'individual'(개인), 'corporate'(법인)
+    name VARCHAR(20) NOT NULL
+);
+
+-- 가입 시 user_id만 채워서 생성됨 (profile_type='예비창업자').
+-- 사업자등록증 OCR 성공 시 UPDATE로 profile_type='기존사업자', entity_type_code, business_name 등이 채워짐.
+CREATE TABLE IF NOT EXISTS business_profiles (
+    profile_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(user_id),
+    profile_type VARCHAR(20) NOT NULL,     -- '예비창업자' / '기존사업자'
+    entity_type_code VARCHAR(10) REFERENCES entity_types(code), -- OCR 성공 전까지 NULL
+    business_name TEXT,
+    industry_text TEXT,
+    region TEXT,
+    business_age_months INT,
+    annual_revenue BIGINT,
+    employee_count INT,
+    founder_age_group TEXT,
+    profile_attributes JSONB,
+    matching_profile_summary TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 사업자등록증 업로드 + OCR 결과 저장. 프로필당 여러 장 첨부 가능하므로 profile_id 기준 1:N.
+CREATE TABLE IF NOT EXISTS biz_registration_docs (
+    document_id BIGSERIAL PRIMARY KEY,
+    profile_id BIGINT NOT NULL REFERENCES business_profiles(profile_id),
+    entity_type_code VARCHAR(10) NOT NULL REFERENCES entity_types(code),
+    file_name TEXT NOT NULL,
+    file_type VARCHAR(10),
+    storage_path TEXT NOT NULL,
+    biz_no VARCHAR(12) NOT NULL,
+    corp_no VARCHAR(14),
+    company_name VARCHAR(100) NOT NULL,
+    ceo_name VARCHAR(100) NOT NULL,
+    open_date DATE NOT NULL,
+    birth_date DATE,
+    business_address TEXT NOT NULL,
+    head_address TEXT,
+    business_category JSONB,
+    uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

@@ -1,4 +1,4 @@
-.page {
+﻿.page {
   background: var(--color-cream);
   padding: 64px;
   display: flex;
@@ -9,7 +9,7 @@
 }
 
 .header {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-web);
   padding-bottom: 24px;
 }
 
@@ -29,7 +29,7 @@
   margin: 0;
 }
 
-/* ===== 섹션 공통 ===== */
+/* ===== ?뱀뀡 怨듯넻 ===== */
 .sectionTitleRow {
   display: flex;
   align-items: center;
@@ -42,7 +42,7 @@
   height: 16px;
   background: var(--color-aqua-teal);
   display: inline-block;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm-web);
 }
 
 .sectionTitle {
@@ -59,7 +59,7 @@
   margin: 24px 0 12px;
 }
 
-/* ===== 01. 컬러 팔레트 ===== */
+/* ===== 01. 而щ윭 ?붾젅??===== */
 .colorGrid {
   display: flex;
   flex-wrap: wrap;
@@ -68,8 +68,8 @@
 
 .colorCard {
   background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-web);
+  border-radius: var(--radius-md-web);
   padding: 12px;
   width: 115px;
   display: flex;
@@ -84,8 +84,8 @@
 
 .swatch {
   height: 80px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm-web);
+  border: 1px solid var(--color-border-web);
 }
 
 .colorName {
@@ -120,18 +120,18 @@
   display: inline-block;
   font-size: 10px;
   background: var(--color-cream);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-web);
   border-radius: 4px;
   padding: 2px 6px;
   color: var(--color-navy-sphere);
   width: fit-content;
 }
 
-/* ===== 02. 타이포그래피 ===== */
+/* ===== 02. ??댄룷洹몃옒??===== */
 .typoCard {
   background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-web);
+  border-radius: var(--radius-md-web);
   overflow: hidden;
 }
 
@@ -143,7 +143,7 @@
 }
 
 .typoRow + .typoRow {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-web);
 }
 
 .typoTag {
@@ -179,10 +179,10 @@
   margin: 0;
 }
 
-/* ===== 03. 인터랙티브 컴포넌트 ===== */
+/* ===== 03. ?명꽣?숉떚釉?而댄룷?뚰듃 ===== */
 .componentCard {
   background: var(--color-white);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-web);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
@@ -196,7 +196,7 @@
 }
 
 .componentRow + .componentRow {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-web);
 }
 
 .componentItem {
@@ -234,7 +234,7 @@
   font-weight: 700;
   font-size: 10.5px;
   padding: 10px 16px;
-  border: 1.5px solid var(--color-border);
+  border: 1.5px solid var(--color-border-web);
   border-radius: var(--radius-btn);
   cursor: pointer;
 }
@@ -272,7 +272,7 @@
 
 .pillError {
   display: inline-block;
-  background: var(--color-error-bg);
+  background: var(--color-error-bg-web);
   color: var(--color-error-text);
   font-weight: 700;
   font-size: 10.5px;
@@ -283,7 +283,7 @@
 .inputPreview {
   background: var(--color-stone-mist);
   border: 1px solid var(--color-border-input);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md-web);
   padding: 12px 14px;
   font-size: 13.5px;
   color: var(--color-text-placeholder);
@@ -292,7 +292,7 @@
 .inputError {
   background: var(--color-stone-mist);
   border: 1.5px solid var(--color-error-text);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md-web);
   padding: 12px 14px;
   font-size: 13.5px;
   color: var(--color-text-placeholder);
