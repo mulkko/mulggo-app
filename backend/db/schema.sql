@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 개인/법인 코드표. 'prospective'(예비창업자)는 아직 확정 전 상태라 여기 없고 users.applicant_type에만 있음.
+-- 개인/법인 코드표. 'prospective'(예비창업자)는 아직 확정 전 상태라 여기 없고 business_profiles.profile_type에만 있음.
 CREATE TABLE IF NOT EXISTS entity_types (
     code VARCHAR(10) PRIMARY KEY,          -- 'individual'(개인), 'corporate'(법인)
     name VARCHAR(20) NOT NULL
