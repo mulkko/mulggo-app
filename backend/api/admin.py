@@ -1,9 +1,12 @@
 # 관리자 대시보드용 엔드포인트
 # 기업마당(bizinfo) 총 공고 건수만 가볍게 확인 — 전체 목록은 안 받아오고 1페이지만 요청.
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter
 
 from backend.crawler.bizinfo_api import fetch_page
+from backend.db.connection import get_connection
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -17,3 +20,67 @@ def get_bizinfo_count() -> dict:
 
     count = int(items[0].get("totCnt", 0)) if items else 0
     return {"count": count}
+
+
+KST = timezone(timedelta(hours=9))
+
+
+@router.get("/members")
+def get_members() -> dict:
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT user_id, name, email, created_at, applicant_type, last_login_at
+            FROM users
+            ORDER BY created_at DESC
+            """
+        )
+        rows = cursor.fetchall()
+    finally:
+        connection.close()
+
+    now = datetime.now(timezone.utc)
+    today_kst = now.astimezone(KST).date()
+    active_cutoff = now - timedelta(days=30)
+
+    members = []
+    total_count = 0
+    new_today_count = 0
+    active_count = 0
+
+    for user_id, name, email, created_at, applicant_type, last_login_at in rows:
+        total_count += 1
+
+        if created_at.astimezone(KST).date() == today_kst:
+            new_today_count += 1
+
+        last_activity = last_login_at or created_at
+        is_active = last_activity >= active_cutoff
+        if is_active:
+            active_count += 1
+
+        members.append(
+            {
+                "user_id": user_id,
+                "name": name,
+                "email": email,
+                "created_at": created_at.isoformat(),
+                "applicant_type": applicant_type,
+                "last_login_at": last_login_at.isoformat() if last_login_at else None,
+                "status": "active" if is_active else "dormant",
+            }
+        )
+
+    return {
+        "success": True,
+        "data": {
+            "members": members,
+            "stats": {
+                "total": total_count,
+                "new_today": new_today_count,
+                "active_30d": active_count,
+            },
+        },
+    }

@@ -9,6 +9,7 @@ import bcrypt
 from backend.db.connection import get_connection
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
 SPECIAL_CHARS = "!@#$%^&*()_+-=[]{};:'\",.<>/?"
 PASSWORD_PATTERN = re.compile(
     r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[" + re.escape(SPECIAL_CHARS) + r"]).{8,}$"
@@ -74,11 +75,11 @@ def save_user(name: str, email: str, password: str, agree_terms: bool, agree_pri
         cursor = connection.cursor()
         cursor.execute(
             """
-            INSERT INTO users (email, password_hash, name, created_at, agree_terms, agree_privacy)
-            VALUES (%s, %s, %s, NOW(), %s, %s)
+            INSERT INTO users (email, password_hash, name, created_at, agree_terms, agree_privacy, applicant_type)
+            VALUES (%s, %s, %s, NOW(), %s, %s, %s)
             RETURNING user_id, email, name
             """,
-            (email, password_hash, name, agree_terms, agree_privacy),
+            (email, password_hash, name, agree_terms, agree_privacy, "prospective"),
         )
         row = cursor.fetchone()
         connection.commit()
@@ -99,6 +100,9 @@ def signup(
     반환:
       성공  {"success": True, "user": {"user_id", "email", "name"}}
       실패  {"success": False, "code": "VALIDATION_ERROR" | "DUPLICATE_EMAIL", "errors": [...]}
+
+    가입 시점엔 사업자등록증 유무와 무관하게 항상 applicant_type="prospective"(예비창업자)로 저장한다.
+    사업자등록증을 첨부해서 OCR이 성공하면 process_biz_cert_ocr()가 individual/corporate로 갱신한다.
     """
     errors = []
 
@@ -157,6 +161,12 @@ def process_biz_cert_ocr(user_id: int, file_path: str, original_filename: str) -
         cursor.execute(
             "INSERT INTO entity_types (code, name) VALUES (%s, %s) ON CONFLICT (code) DO NOTHING",
             ("corporate", "법인"),
+        )
+
+        # 예비창업자 → OCR 결과 기준으로 개인/법인 확정
+        cursor.execute(
+            "UPDATE users SET applicant_type = %s WHERE user_id = %s",
+            (entity_type_code, user_id),
         )
 
         cursor.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))

@@ -63,9 +63,20 @@ def load_vision_model():
     import torch
     from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
+    # ===== 원본 (GPU 전용) 시작 =====
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         MODEL_ID, torch_dtype=torch.float16, device_map="auto"
     )
+    # ===== 원본 (GPU 전용) 끝 =====
+
+    # ===== [대안] 모든 환경 호환 (CPU 폴백) 시작 =====
+    # GPU 없으면 float16이 CPU에서 에러날 수 있어서 float32로 폴백.
+    # CPU는 여전히 매우 느림(수 분/장 가능) — 진짜 해결은 GPU 확보.
+    # dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+    # model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+    #     MODEL_ID, torch_dtype=dtype, device_map="auto"
+    # )
+    # ===== [대안] 모든 환경 호환 (CPU 폴백) 끝 =====
     processor = AutoProcessor.from_pretrained(MODEL_ID)
     model.eval()
     return model, processor

@@ -56,6 +56,16 @@ def verify_password(password: str, password_hash: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
+def update_last_login(user_id: int) -> None:
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("UPDATE users SET last_login_at = NOW() WHERE user_id = %s", (user_id,))
+        connection.commit()
+    finally:
+        connection.close()
+
+
 def login(email: str, password: str) -> dict:
     """
     반환:
@@ -81,6 +91,8 @@ def login(email: str, password: str) -> dict:
 
     if not verify_password(password, user["password_hash"]):
         return invalid_credentials
+
+    update_last_login(user["user_id"])
 
     return {
         "success": True,
