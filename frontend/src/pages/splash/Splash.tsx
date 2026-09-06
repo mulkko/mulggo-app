@@ -1,10 +1,13 @@
+import { useNavigate } from "react-router-dom";
 import styles from '../../styles/splash.module.css'; // 객체 형태로 불러옴
 import logo from '../../assets/logo.svg';
 
 function Splash() {
-  // TODO: 화면을 탭하면 로그인 화면(/login)으로 이동하는 기능은 나중에 라우팅과 함께 연결한다.
+  const navigate = useNavigate();
+
+  // 화면을 탭하면 로그인 화면으로 이동한다.
   const handleTap = () => {
-    // TODO: navigate("/login")
+    navigate("/login");
   };
 
   return (

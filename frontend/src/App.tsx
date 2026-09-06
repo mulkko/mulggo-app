@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Main from "./pages";
+import Splash from "./pages/splash/Splash";
 import Signup from "./pages/auth/Signup";
 import LoginForm from "./components/LoginForm";
 import AdminHome from "./pages/admin/AdminHome";
@@ -13,7 +13,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Main />} />
+        <Route path="/" element={<Splash />} />
         <Route path="/login" element={<LoginForm variant="user" />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
