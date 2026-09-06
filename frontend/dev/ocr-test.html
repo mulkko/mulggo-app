@@ -17,6 +17,17 @@
   <h2>결과</h2>
   <pre id="result" style="background:#f4f4f4; padding:12px; white-space:pre-wrap;">(아직 업로드 안 함)</pre>
 
+  <!-- [테스트] OCR 결과 확인/수정 팝업 (2026-09-06 추가) -->
+  <!-- OCR은 틀릴 수 있어서, 결과를 바로 쓰지 않고 사용자가 확인/수정한 뒤 확정하는 흐름을 검증하는 용도. -->
+  <div id="reviewOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:24px; border-radius:8px; width:420px; max-height:80vh; overflow-y:auto;">
+      <h2 style="margin-top:0;">OCR 결과 확인</h2>
+      <p style="color:#555; font-size:14px;">자동으로 인식된 정보예요. 틀린 부분이 있으면 고치고 확인을 눌러주세요.</p>
+      <div id="reviewFields"></div>
+      <button id="reviewConfirmBtn" type="button" style="margin-top:12px; width:100%; padding:10px;">확인</button>
+    </div>
+  </div>
+
   <script>
     const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -35,6 +46,129 @@
       gpu_error: "[서버 오류] GPU 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.",
       unknown_error: "[알 수 없는 오류] 원인 불명의 오류가 발생했습니다.",
     };
+
+    // [테스트] OCR 결과 확인/수정 팝업용 필드 정의.
+    // key: extracted 객체의 필드명, label: 화면에 보여줄 한글 이름.
+    const REVIEW_FIELDS = [
+      { key: "company_name", label: "상호 / 법인명" },
+      { key: "ceo_name", label: "대표자명" },
+      { key: "biz_no", label: "사업자등록번호" },
+      { key: "corp_no", label: "법인등록번호" },
+      { key: "open_date", label: "개업연월일" },
+      { key: "birth_date", label: "생년월일" },
+      { key: "business_address", label: "사업장 소재지" },
+      { key: "entity_type", label: "구분 (법인/개인)" },
+    ];
+
+    // [테스트] 법인/개인 구분에 따라 애초에 존재하지 않는 필드는 "확인 필요"로 잘못 뜨면 안 돼서
+    // (법인등록번호는 법인만, 생년월일은 개인만 해당) 비활성화 처리.
+    // { 필드key: 이 entity_type일 때 해당 없음 }
+    const NOT_APPLICABLE_WHEN = {
+      corp_no: "개인",
+      birth_date: "법인",
+    };
+
+    function showReviewModal(extracted) {
+      const container = document.getElementById("reviewFields");
+      container.innerHTML = "";
+
+      REVIEW_FIELDS.forEach(({ key, label }) => {
+        const value = extracted[key] || "";
+        const notApplicable = NOT_APPLICABLE_WHEN[key] === extracted.entity_type;
+        const needsCheck = !value && !notApplicable;
+
+        const wrap = document.createElement("div");
+        wrap.style.marginBottom = "12px";
+
+        const labelEl = document.createElement("label");
+        labelEl.style.display = "block";
+        labelEl.style.fontSize = "13px";
+        labelEl.style.marginBottom = "4px";
+        labelEl.textContent = label;
+        if (needsCheck) {
+          const badge = document.createElement("span");
+          badge.textContent = " 확인 필요";
+          badge.style.color = "#c0392b";
+          badge.style.fontWeight = "bold";
+          labelEl.appendChild(badge);
+        } else if (notApplicable) {
+          const badge = document.createElement("span");
+          badge.textContent = " 해당 없음";
+          badge.style.color = "#999";
+          labelEl.appendChild(badge);
+        }
+
+        wrap.appendChild(labelEl);
+
+        if (notApplicable) {
+          // 해당 없는 필드: 입력창 자체를 안 주고 읽기 전용 텍스트만
+          const view = document.createElement("div");
+          view.dataset.key = key;
+          view.dataset.notApplicable = "true";
+          view.textContent = "-";
+          view.style.padding = "8px";
+          view.style.color = "#999";
+          wrap.appendChild(view);
+        } else if (needsCheck) {
+          // 빈 값(확인 필요): 처음부터 입력창으로 열어둠
+          const input = document.createElement("input");
+          input.type = "text";
+          input.dataset.key = key;
+          input.value = value;
+          input.style.width = "100%";
+          input.style.boxSizing = "border-box";
+          input.style.padding = "8px";
+          input.style.border = "1px solid #c0392b";
+          wrap.appendChild(input);
+        } else {
+          // 값이 이미 있는 필드: 읽기 전용 텍스트로 보여주다가, 클릭하면 그 자리에서 입력창으로 전환
+          const view = document.createElement("div");
+          view.dataset.key = key;
+          view.textContent = value;
+          view.title = "클릭해서 수정";
+          view.style.padding = "8px";
+          view.style.border = "1px solid #eee";
+          view.style.borderRadius = "4px";
+          view.style.cursor = "pointer";
+          view.addEventListener("click", () => {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.dataset.key = key;
+            input.value = value;
+            input.style.width = "100%";
+            input.style.boxSizing = "border-box";
+            input.style.padding = "8px";
+            input.style.border = "1px solid #ccc";
+            view.replaceWith(input);
+            input.focus();
+          });
+          wrap.appendChild(view);
+        }
+
+        container.appendChild(wrap);
+      });
+
+      document.getElementById("reviewOverlay").style.display = "flex";
+    }
+
+    document.getElementById("reviewConfirmBtn").addEventListener("click", () => {
+      const fields = document.querySelectorAll("#reviewFields [data-key]");
+      const corrected = {};
+      fields.forEach((el) => {
+        if (el.dataset.notApplicable === "true") {
+          corrected[el.dataset.key] = "";
+        } else if (el.tagName === "INPUT") {
+          corrected[el.dataset.key] = el.value;
+        } else {
+          corrected[el.dataset.key] = el.textContent;
+        }
+      });
+      document.getElementById("reviewOverlay").style.display = "none";
+      // [테스트] 지금은 DB 저장 없이 사용자가 확인/수정한 최종 값만 화면에 표시.
+      // 실제 회원가입 플로우 통합 시엔 이 값을 저장 API로 보내면 됨.
+      document.getElementById("result").textContent =
+        "사용자 확인 완료 — 최종 값:\n\n" + JSON.stringify(corrected, null, 2);
+    });
 
     document.getElementById("uploadBtn").addEventListener("click", async () => {
       const fileInput = document.getElementById("fileInput");
@@ -67,6 +201,8 @@
         if (!data.ocr_success) {
           const msg = ERROR_ALERTS[data.error_type] || ERROR_ALERTS.unknown_error;
           alert(msg);
+        } else {
+          showReviewModal(data.extracted || {});
         }
       } catch (err) {
         clearInterval(timerId);
