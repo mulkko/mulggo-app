@@ -165,6 +165,10 @@
   border-width: 2px;
 }
 
+.inputError {
+  border-color: var(--color-error-text);
+}
+
 .forgot {
   display: block;
   margin: calc(-1 * var(--spacing-login-detail) + 4px) 0 var(--spacing-login-detail);

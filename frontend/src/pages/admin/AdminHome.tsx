@@ -5,17 +5,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type ChartRow = { name: string; count: string; width: number };
 
-// TODO: K-스타트업(창업진흥원), 중소벤처24는 API 연동 전까지 주석 처리.
-// 연동되면 각 기관의 실제 건수로 채우고 주석 풀 것.
-const TODAY_CHART_BASE: ChartRow[] = [
-  // { name: "K-스타트업(창업진흥원)", count: "9건", width: 90 },
+// TODO: 중소벤처24는 API 연동 전까지 주석 처리.
+// 연동되면 실제 건수로 채우고 주석 풀 것.
+const OTHER_CHART_BASE: ChartRow[] = [
   // { name: "중소벤처24", count: "7건", width: 65 },
 ];
 
-const CUMULATIVE_CHART_BASE: ChartRow[] = [
-  // { name: "K-스타트업(창업진흥원)", count: "9건", width: 90 },
-  // { name: "중소벤처24", count: "6건", width: 55 },
-];
+const BAR_TRACK_WIDTH = 130;
 
 type BatchLog = {
   source: string;
@@ -34,6 +30,8 @@ function formatLogTime(isoString: string): string {
 function AdminHome() {
   const [bizinfoCount, setBizinfoCount] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [kstartupCount, setKstartupCount] = useState<number | null>(null);
+  const [kstartupError, setKstartupError] = useState(false);
   const [crawling, setCrawling] = useState(false);
   const [batchLogs, setBatchLogs] = useState<BatchLog[]>([]);
 
@@ -42,6 +40,13 @@ function AdminHome() {
       .then((res) => res.json())
       .then((data: { count: number }) => setBizinfoCount(data.count))
       .catch(() => setLoadError(true));
+  };
+
+  const fetchKstartupCount = () => {
+    fetch(`${API_BASE_URL}/admin/kstartup-count`)
+      .then((res) => res.json())
+      .then((data: { count: number }) => setKstartupCount(data.count))
+      .catch(() => setKstartupError(true));
   };
 
   const fetchBatchLogs = () => {
@@ -53,6 +58,7 @@ function AdminHome() {
 
   useEffect(() => {
     fetchCount();
+    fetchKstartupCount();
     fetchBatchLogs();
   }, []);
 
@@ -80,11 +86,21 @@ function AdminHome() {
   };
 
   const countLabel = loadError ? "불러오기 실패" : bizinfoCount === null ? "확인 중..." : `${bizinfoCount.toLocaleString()}건`;
+  const kstartupLabel = kstartupError
+    ? "불러오기 실패"
+    : kstartupCount === null
+      ? "확인 중..."
+      : `${kstartupCount.toLocaleString()}건`;
 
-  // 기업마당만 실제 값, 바 너비는 비교 대상이 없어서 트랙 꽉 채움(150px)
-  const bizinfoRow = { name: "기업마당", count: countLabel, width: 130 };
-  const todayChart = [bizinfoRow, ...TODAY_CHART_BASE];
-  const cumulativeChart = [bizinfoRow, ...CUMULATIVE_CHART_BASE];
+  // 기관별 실제 건수 비율대로 막대 너비 계산 (제일 큰 값이 트랙을 꽉 채움)
+  const maxCount = Math.max(bizinfoCount ?? 0, kstartupCount ?? 0) || 1;
+  const bizinfoWidth = bizinfoCount ? Math.round((bizinfoCount / maxCount) * BAR_TRACK_WIDTH) : 0;
+  const kstartupWidth = kstartupCount ? Math.round((kstartupCount / maxCount) * BAR_TRACK_WIDTH) : 0;
+
+  const bizinfoRow = { name: "기업마당", count: countLabel, width: bizinfoWidth };
+  const kstartupRow = { name: "K-스타트업(창업진흥원)", count: kstartupLabel, width: kstartupWidth };
+  const todayChart = [bizinfoRow, kstartupRow, ...OTHER_CHART_BASE];
+  const cumulativeChart = [bizinfoRow, kstartupRow, ...OTHER_CHART_BASE];
 
   return (
     <>

@@ -65,55 +65,15 @@ function LoginForm({ variant }: LoginFormProps) {
     }
   };
 
-  // 관리자 로그인 화면은 기존 마크업/스타일을 그대로 유지한다.
-  if (variant === "admin") {
-    return (
-      <div className={styles.loginPage}>
-        <div className={styles.titBox}>
-          <p className={styles.logo}><a href="#none">mulkko로고</a></p>
-          <h1>{title}</h1>
-        </div>
-        <div className={styles.loginBox}>
-          <form onSubmit={handleSubmit}>
-            <div className={styles.formField}>
-              <label htmlFor="email">이메일</label>
-              <input
-                id="email"
-                type="email"
-                className="text-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className={styles.formField}>
-              <label htmlFor="password">비밀번호</label>
-              <input
-                id="password"
-                type="password"
-                className="text-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <button type="submit" className="btnPrimary">로그인</button>
-          </form>
-        </div>
-
-        {success && <p>로그인 성공</p>}
-        {errorMessage && <p>{errorMessage}</p>}
-      </div>
-    );
-  }
-
-  // 사용자 로그인 화면 — webTokens.css / WebStyleGuide 기준 디자인 (겉모습만, 기능 로직은 위와 동일).
+  // webTokens.css / WebStyleGuide 기준 디자인. 관리자/사용자 공용(variant로 문구·동작만 분기).
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
         <div className={styles.badge}>
           <img src={logo} alt="물꼬 로고" />
         </div>
-        <p className={styles.wordmark}>MULKKO</p>
-        <p className={styles.tagline}>창업의 물꼬를 트다.</p>
+        <p className={styles.wordmark}>{variant === "admin" ? "MULKKO 관리자" : "MULKKO"}</p>
+        <p className={styles.tagline}>{variant === "admin" ? "관리자 전용 페이지입니다." : "창업의 물꼬를 트다."}</p>
         {/* 시안에는 없지만 스크린리더/문서 타이틀용으로 title을 숨겨 유지 */}
         <h1 className={styles.srOnly}>{title}</h1>
         <svg
@@ -128,13 +88,13 @@ function LoginForm({ variant }: LoginFormProps) {
       </div>
 
       <div className={styles.formArea}>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className={styles.field}>
-            <label htmlFor="email">아이디(이메일)</label>
+            <label htmlFor="email">아이디(이메일){variant === "admin" && " - 관리자 로그인"}</label>
             <input
               id="email"
               type="email"
-              className={styles.input}
+              className={`${styles.input} ${errorMessage ? styles.inputError : ""}`}
               placeholder="example@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -145,7 +105,7 @@ function LoginForm({ variant }: LoginFormProps) {
             <input
               id="password"
               type="password"
-              className={styles.input}
+              className={`${styles.input} ${errorMessage ? styles.inputError : ""}`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -154,9 +114,11 @@ function LoginForm({ variant }: LoginFormProps) {
           <button type="submit" className={styles.submitBtn}>로그인</button>
         </form>
 
-        <p className={styles.signupPrompt}>
-          아직 계정이 없으신가요? <Link to="/signup">회원가입</Link>
-        </p>
+        {variant === "user" && (
+          <p className={styles.signupPrompt}>
+            아직 계정이 없으신가요? <Link to="/signup">회원가입</Link>
+          </p>
+        )}
 
         {success && <p className={styles.success}>로그인 성공</p>}
         {errorMessage && <p className={styles.error}>{errorMessage}</p>}
