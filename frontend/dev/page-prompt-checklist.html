@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>사용자 화면 새 페이지 요청 체크리스트</title>
+<style>
+  body{font-family:sans-serif; max-width:800px; margin:40px auto; padding:0 20px; line-height:1.6;}
+  h1{font-size:22px;}
+  h2{font-size:17px; margin-top:28px; border-bottom:1px solid #ddd; padding-bottom:6px;}
+  code{background:#f4f3ec; padding:1px 5px; border-radius:3px;}
+  pre{background:#f4f3ec; padding:16px; border-radius:6px; white-space:pre-wrap;}
+  .note{color:#555; font-size:14px;}
+</style>
+</head>
+<body>
+  <h1>사용자 화면 새 페이지 요청 체크리스트</h1>
+  <p class="note">외부에서 프롬프트 검증받고 가져올 때, 아래 항목을 채워서 같이 주면 됩니다.<br>
+  (외부 검증 도구는 이 저장소 코드에 접근 못하니, 특히 파일 경로는 정확히 적어주세요.)</p>
+
+  <h2>1. 기술 스택</h2>
+  <ul>
+    <li>React + Vite + TypeScript, CSS Modules</li>
+    <li>컴포넌트 파일: PascalCase (<code>Xxx.tsx</code>), 짝꿍 CSS는 소문자 시작 camelCase (<code>xxx.module.css</code>)</li>
+  </ul>
+
+  <h2>2. 타겟 환경</h2>
+  <ul>
+    <li>모바일 우선 레이아웃</li>
+    <li>데스크톱에선 <code>frontend/src/styles/common.css</code>의 <code>.pageContainer</code> 클래스로 최대 640px 가운데 정렬</li>
+    <li>별도 데스크톱 전용 레이아웃(사이드바, 그리드 등) 없음</li>
+  </ul>
+
+  <h2>3. 디자인 값 출처</h2>
+  <ul>
+    <li>색상/폰트/radius는 하드코딩 금지, <code>frontend/src/styles/webTokens.css</code>의 CSS 변수만 사용</li>
+    <li>변수에 없는 새 값이면 Figma <code>mulkko-style-guide</code> 파일(fileKey: <code>PpV1b4s9zsB1UHLGEtBQWP</code>) Dev Mode 실측값 기준으로 추가</li>
+    <li>새 값 추가 시 <code>/dev/web-style-guide</code>(<code>frontend/src/components/WebStyleGuide/</code>)에도 같이 반영</li>
+  </ul>
+
+  <h2>4. 파일 위치</h2>
+  <ul>
+    <li>화면 컴포넌트: <code>frontend/src/pages/&lt;기능별폴더&gt;/Xxx.tsx</code></li>
+    <li>CSS: <code>frontend/src/styles/xxx.module.css</code></li>
+  </ul>
+
+  <h2>5. 라우팅</h2>
+  <ul>
+    <li><code>App.tsx</code>에 등록할 경로 (예: <code>/mypage</code>, <code>/signup/complete</code>)</li>
+  </ul>
+
+  <h2>6. 백엔드 연동 여부</h2>
+  <ul>
+    <li>필요한 API 있으면 엔드포인트 + 파일 위치까지 명시
+      <ul>
+        <li>기존 것 재사용: 예) <code>POST /api/auth/signup</code> (<code>backend/api/auth.py</code>)</li>
+        <li>신규 필요: 어느 파일에 추가할지 예상 위치 (예: <code>backend/api/xxx.py</code> 신설 또는 기존 파일에 추가)</li>
+      </ul>
+    </li>
+    <li>응답 형식은 <code>{success, data}</code> / <code>{success, error:{message, code}}</code> 고정</li>
+  </ul>
+
+  <h2>7. 예외 상태</h2>
+  <ul>
+    <li>로딩 중 / 에러 / 빈 데이터일 때 어떻게 보여줄지</li>
+  </ul>
+
+  <h2>작성 양식 (복사해서 채우기)</h2>
+  <pre>1. 화면: (Figma 링크 또는 캡처)
+2. 라우트: /
+3. 컴포넌트 파일: frontend/src/pages/.../Xxx.tsx
+4. CSS 파일: frontend/src/styles/xxx.module.css
+5. 백엔드 연동:
+   - 기존 API 재사용: METHOD /경로 (파일: backend/api/xxx.py)
+   - 신규 API 필요: METHOD /경로 (예상 파일: backend/api/xxx.py)
+   - 없음
+6. 로딩/에러/빈 상태 처리:
+7. 기타 참고사항:</pre>
+</body>
+</html>
