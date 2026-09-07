@@ -1,0 +1,306 @@
+/* ===== 사용자 회원가입 화면 =====
+   디자인 출처: Figma mulkko-style-guide / "개발용 화면_260907" node 28:55.
+   값은 webTokens.css(사용자 화면 공통 UI 토큰)만 사용한다.
+   로그인 화면(login.module.css .page 계열)과 동일한 인풋/버튼 공통 스펙을 따른다. */
+
+.page {
+  max-width: var(--mobile-frame-width);
+  width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  color: var(--color-ink-charcoal);
+}
+
+/* ===== 상단 헤더 ===== */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-login-detail);
+  height: 56px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  background: var(--color-navy-sphere);
+}
+
+.back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.back img {
+  width: 22px;
+  height: 22px;
+}
+
+/* h1 — index.css 전역 h1(56px 등)을 덮어씀 */
+.headerTitle {
+  margin: 0;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-h1);
+  letter-spacing: normal;
+  color: var(--color-white);
+}
+
+/* ===== 폼 영역 ===== */
+.form {
+  flex: 1;
+  box-sizing: border-box;
+  padding: 18px var(--spacing-outer) 32px;
+}
+
+/* h2 — index.css 전역 h2(24px 등)을 덮어씀 */
+.sectionTitle {
+  margin: 0 0 14px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-h2);
+  line-height: normal;
+  letter-spacing: normal;
+  color: var(--color-ink-charcoal);
+}
+
+.field {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: var(--font-size-input-label);
+  font-weight: var(--font-weight-input-label);
+  color: var(--color-ink-charcoal);
+}
+
+/* 공통 인풋 스펙 (로그인 화면과 동일) */
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  height: var(--input-height-min);
+  padding: var(--input-padding-y-min) var(--input-padding-x-min);
+  border: 1px solid var(--color-stone-gray);
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
+.input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-navy-sphere);
+  border-width: 2px;
+}
+
+/* ===== 사업자등록증 영역 ===== */
+/* .field 를 쓰지 않는다 — .field label 규칙이 BizCertUpload 내부 <label>(드롭존 등)까지
+   침범하기 때문. 여기선 바깥 여백만 준다. */
+.bizField {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.bizRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.bizLabel {
+  font-size: var(--font-size-input-label);
+  font-weight: var(--font-weight-input-label);
+  color: var(--color-ink-charcoal);
+}
+
+.bizHint {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-caption);
+  color: var(--color-stone-gray);
+}
+
+/* 사업자등록증 확인 완료 / 나중에 등록 요약 줄 */
+.bizSummary {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
+.linkBtn {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--font-size-caption);
+  color: var(--color-teal-green);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ===== 구분선 ===== */
+.divider {
+  height: 1px;
+  margin: 22px 0;
+  background: var(--color-border-web);
+}
+
+/* ===== 약관 동의 ===== */
+.agreeGroup {
+  margin-bottom: 24px;
+}
+
+.agreeAll {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+  cursor: pointer;
+}
+
+.agreeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.agreeItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-size-input-label);
+  font-weight: var(--font-weight-caption);
+  color: var(--color-ink-charcoal);
+  cursor: pointer;
+}
+
+.agreeView {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--font-size-caption);
+  color: var(--color-stone-gray);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 커스텀 체크박스 */
+.checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid var(--color-border-web);
+  border-radius: var(--radius-check);
+  background: var(--color-white);
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+
+.checkbox::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  transform: scale(0);
+  background: var(--color-white);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+.checkbox:checked {
+  background: var(--color-navy-sphere);
+  border-color: var(--color-navy-sphere);
+}
+
+.checkbox:checked::before {
+  transform: scale(1);
+}
+
+.checkboxAll {
+  width: 22px;
+  height: 22px;
+  border-color: var(--color-navy-sphere);
+}
+
+/* ===== 가입 버튼 (로그인 CTA와 동일 스펙) ===== */
+.submitBtn {
+  width: 100%;
+  height: 54px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--color-navy-sphere);
+  color: var(--color-white);
+  font-family: var(--font-family-base);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.submitBtn:hover {
+  opacity: 0.92;
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: var(--font-size-caption);
+  color: var(--color-error-text);
+}
+
+/* ===== 가입 완료 토스트 ===== */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: calc(var(--mobile-frame-width) - 2 * var(--spacing-outer));
+  padding: 12px 20px;
+  border-radius: var(--radius-input);
+  background: var(--color-ink-charcoal);
+  color: var(--color-white);
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  text-align: center;
+  animation: toastIn 160ms ease-out;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

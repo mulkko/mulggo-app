@@ -1,0 +1,68 @@
+/* 약관 보기 팝업 — webTokens.css(사용자 화면 공통 UI 토큰)만 사용.
+   제목/본문만 바꿔서 여러 약관에 재사용한다. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-outer);
+  box-sizing: border-box;
+  background: var(--color-scrim);
+}
+
+.panel {
+  width: 100%;
+  max-width: calc(var(--mobile-frame-width) - 2 * var(--spacing-outer));
+  max-height: 80vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 20px;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
+  font-family: var(--font-family-base);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* h2 — index.css 전역 h2(24px 등)를 덮어씀 */
+.title {
+  margin: 0;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-h2);
+  line-height: normal;
+  letter-spacing: normal;
+  color: var(--color-ink-charcoal);
+}
+
+.close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--color-stone-gray);
+  cursor: pointer;
+}
+
+.body {
+  margin: 0;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-body);
+  line-height: 1.6;
+  color: var(--color-ink-charcoal);
+  white-space: pre-line;
+}

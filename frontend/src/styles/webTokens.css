@@ -12,6 +12,7 @@
   --color-stone-mist: #efeff1; /* 공통 인풋 필드 배경 (로그인/회원가입 통합) */
   --color-border-web: #dcd8cc; /* 구분선, 파일 업로드 점선 테두리 (adminTokens.css의 --color-border와 이름 충돌 방지) */
   --color-white: #ffffff; /* 앱 기본 배경, 카드 배경, 활성 버튼 텍스트 */
+  --color-scrim: rgba(46, 49, 46, 0.5); /* 모달/팝업 뒤 배경 딤 (ink-charcoal 50%) */
   --color-error-bg-web: #f2d1d1; /* 에러 배지 배경 (adminTokens.css의 --color-error-bg와 이름 충돌 방지) */
   --color-error-text: #c04040; /* 에러 텍스트/보더 */
 
@@ -55,6 +56,7 @@
   /* ===== Radius ===== */
   --radius-input: 12px;
   --radius-btn: 14px; /* Primary CTA */
+  --radius-check: 6px; /* 체크박스 코너 (회원가입 약관 동의) */
   --radius-corner-safe: 28px; /* 안전 영역 코너 반경 */
 
   /* ===== 간격 ===== */

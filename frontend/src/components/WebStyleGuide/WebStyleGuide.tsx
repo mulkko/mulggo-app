@@ -11,6 +11,7 @@ const COLORS = [
   { name: "Stone Mist", hex: "#EFEFF1", usage: "공통 인풋 필드 배경", varName: "--color-stone-mist" },
   { name: "Border Web", hex: "#DCD8CC", usage: "구분선, 파일 업로드 점선 테두리", varName: "--color-border-web" },
   { name: "White", hex: "#FFFFFF", usage: "앱 기본 배경, 카드 배경, 활성 버튼 텍스트", varName: "--color-white" },
+  { name: "Scrim", hex: "rgba(46,49,46,0.5)", usage: "모달/팝업 뒤 배경 딤", varName: "--color-scrim" },
   { name: "Error BG", hex: "#F2D1D1", usage: "에러 배지 배경", varName: "--color-error-bg-web" },
   { name: "Error Text", hex: "#C04040", usage: "에러 텍스트/보더", varName: "--color-error-text" },
 ];
@@ -168,6 +169,30 @@ function WebStyleGuide() {
             <div className={styles.componentItem}>
               <div className={styles.toastPreview}>저장되었습니다</div>
               <span className={styles.codeLabel}>Toast · Heavy Metal 배경 · 하단 팝업</span>
+            </div>
+          </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.checkboxRow}>
+                <span className={styles.checkboxOn} />
+                <span className={styles.checkboxOff} />
+                <span className={styles.checkboxOffNavy} />
+              </div>
+              <span className={styles.codeLabel}>체크박스 · radius 6px (--radius-check) · ON: Navy Sphere</span>
+            </div>
+          </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.modalPreview}>
+                <div className={styles.modalPreviewPanel}>
+                  <div className={styles.modalPreviewHeader}>
+                    <span className={styles.modalPreviewTitle}>서비스 이용약관</span>
+                    <span className={styles.modalPreviewClose}>✕</span>
+                  </div>
+                  <p className={styles.modalPreviewBody}>약관 보기 팝업 (X · 배경 클릭 · Esc로 닫힘)</p>
+                </div>
+              </div>
+              <span className={styles.codeLabel}>Modal · Scrim 배경(--color-scrim) · radius 12px</span>
             </div>
           </div>
         </div>

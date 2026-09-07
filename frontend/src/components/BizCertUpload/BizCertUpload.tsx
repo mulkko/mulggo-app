@@ -134,16 +134,18 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
   };
 
   if (phase === "idle") {
+    // 라벨("사업자등록증 (선택)")은 부모(회원가입 화면)에서 그리므로 여기선 드롭존만.
     return (
-      <div className={styles.field}>
-        <label htmlFor="biz-cert-file">사업자등록증 (선택)</label>
+      <label className={styles.dropzone}>
         <input
-          id="biz-cert-file"
           type="file"
           accept="image/*,.pdf"
           onChange={handleFileChange}
+          className={styles.fileInput}
         />
-      </div>
+        <span className={styles.dropTitle}>파일을 드래그하거나 클릭해서 업로드</span>
+        <span className={styles.dropHint}>JPG, PNG, PDF · 최대 10MB</span>
+      </label>
     );
   }
 
@@ -159,10 +161,10 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
     return (
       <div className={styles.field}>
         <p className={styles.errorText}>{errorMessage}</p>
-        <button type="button" onClick={reset}>
+        <button type="button" className={styles.phaseBtn} onClick={reset}>
           다시 시도
         </button>
-        <button type="button" onClick={onSkip}>
+        <button type="button" className={styles.phaseBtn} onClick={onSkip}>
           나중에 하기
         </button>
       </div>

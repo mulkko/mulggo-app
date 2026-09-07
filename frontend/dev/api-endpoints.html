@@ -48,10 +48,20 @@
 
   <div class="endpoint">
     <h3><span class="method post">POST</span><code>/api/auth/signup</code></h3>
-    <p>회원가입. 로직: <code>backend/auth/signup.py</code>. 사업자등록증 첨부 시 OCR은 백그라운드 처리.</p>
+    <p>회원가입. 로직: <code>backend/auth/signup.py</code>. 사업자등록증은 선택 — 첨부해도 회원가입 성공엔 영향 없고 저장은 백그라운드 처리.</p>
     <table>
-      <tr><th>request (multipart/form-data)</th><td>email, name, password, password_confirm, agree_terms, agree_privacy, biz_cert_file(선택)</td></tr>
+      <tr><th>request (multipart/form-data)</th><td>email, name, password, password_confirm, agree_terms, agree_privacy, biz_cert_file(선택), biz_cert_data(선택, /biz-cert-ocr로 확인·수정한 확정값 JSON 문자열 — 있으면 재OCR 안 함)</td></tr>
       <tr><th>response</th><td>{success, data:{user_id, email, name}, error:{message, code}}</td></tr>
+      <tr><th>note</th><td>"전체 동의"는 서버로 안 보냄(프론트 편의). 비밀번호는 영문·숫자·특수문자 포함 8자 이상 서버 검증.</td></tr>
+    </table>
+  </div>
+
+  <div class="endpoint">
+    <h3><span class="method post">POST</span><code>/api/auth/biz-cert-ocr</code></h3>
+    <p>회원가입용 사업자등록증 OCR 미리보기. DB/디스크 저장 안 함 — 사용자가 확인·수정 후 <code>/api/auth/signup</code>에 <code>biz_cert_file</code>+<code>biz_cert_data</code>로 함께 제출. 로직: <code>backend/auth/signup.py</code>.</p>
+    <table>
+      <tr><th>request (multipart/form-data)</th><td>file (jpg/jpeg/png/pdf, 최대 10MB)</td></tr>
+      <tr><th>response</th><td>{ocr_success, extracted:{company_name, ceo_name, biz_no, corp_no, open_date, birth_date, business_address, entity_type}, error, error_type, error_label}</td></tr>
     </table>
   </div>
 
