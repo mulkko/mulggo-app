@@ -40,6 +40,10 @@ mulkko/
 │
 ├── frontend/                   # 사용자·관리자 화면 전부 여기 (React + Vite + TS)
 │   ├── dev/                    # dev_links.html(로컬 서버 링크 모음) + 단독 기능 검증용 테스트 페이지 (예: ocr-test.html)
+│   │                            #   - page-prompt-checklist.html: 새 사용자 화면 요청할 때 채우는 체크리스트
+│   │                            #   - api-endpoints.html: 백엔드 엔드포인트 목록 (수동 관리, 자동 동기화 안 됨)
+│   │                            #   - 파일명에 `_test`가 들어가면 개인 테스트용으로 간주해 git에서 제외됨(.gitignore, `frontend/dev/*_test.*`).
+│   │                            #     팀 공용 테스트 페이지는 `ocr-test.html`처럼 하이픈(-test)으로 구분.
 │   └── src/
 │       ├── pages/              # 화면별 컴포넌트, 기능 폴더로 구성 (auth/, admin/ 등)
 │       ├── components/         # 여러 화면이 공유하는 컴포넌트 (AdminStyleGuide, WebStyleGuide 등)
@@ -64,6 +68,8 @@ mulkko/
 ## 6. Git 브랜치 규칙
 
 `{역할}_{작업내용}` 형식 (예: `TA1_rh`, `DA3_ha`). 역할 코드는 README의 팀 구성 기준(DA1/DA2/DA3/TA1/TA2)을 따른다.
+
+- 작업 브랜치를 오래 방치하지 말고, 틈틈이 `main`을 merge해서 따라잡는다. 오래 묵혀두면(수십 커밋 이상 벌어지면) 나중에 합칠 때 충돌이 크게 나서 되돌리기 번거로워진다.
 
 ## 7. 데이터 원칙
 
@@ -103,4 +109,6 @@ mulkko/
 - 색상·타이포그래피·radius 값은 코드에 하드코딩하지 않고 `frontend/src/styles/adminTokens.css`(관리자 화면, 파란색 계열) / `webTokens.css`(사용자 화면, 틸그린·네이비 계열)의 CSS 변수(`:root`)로만 관리한다.
 - 값의 출처는 Figma `mulkko-style-guide` 파일(fileKey: `PpV1b4s9zsB1UHLGEtBQWP`)이다. 새 색상/컴포넌트가 필요하면 이 프레임에서 실측값(Dev Mode로 노드를 열어 실제 hex/padding/radius 확인)을 가져와 반영하고, 텍스트 스펙만으로 추측하지 않는다.
 - 변수 네이밍은 기존 규칙을 따른다: `--color-{이름}`(배경/베이스), `--color-{이름}-text`(그 색 위에 얹는 텍스트/보더), `--color-bg-*`(페이지·비활성 배경), `--radius-{용도}`(sm/md/lg/btn/pill).
-- 새 값을 추가했으면 반드시 해당 스타일가이드 컴포넌트(`components/AdminStyleGuide` 또는 `components/WebStyleGuide`)에도 같이 반영하고, `/style-guide`(관리자) 또는 `/web-style-guide`(사용자) 라우트에서 눈으로 확인한다. 코드와 스타일가이드 문서가 항상 일치해야 한다.
+- 새 값을 추가했으면 반드시 해당 스타일가이드 컴포넌트(`components/AdminStyleGuide` 또는 `components/WebStyleGuide`)에도 같이 반영하고, `/style-guide`(관리자) 또는 `/dev/web-style-guide`(사용자) 라우트에서 눈으로 확인한다. 코드와 스타일가이드 문서가 항상 일치해야 한다.
+- `adminTokens.css`와 `webTokens.css`는 둘 다 `main.tsx`에서 전역으로 로드되므로, **같은 변수 이름을 두 파일에 각각 다른 값으로 정의하면 안 된다** (나중에 로드되는 파일 값이 조용히 덮어씀). 새 변수를 추가하기 전에 다른 쪽 토큰 파일에 같은 이름이 이미 있는지 먼저 확인한다. 같은 색상/값이 이미 다른 이름으로 있으면 새로 만들지 말고 기존 변수를 재사용한다.
+- 사용자(web) 화면은 모바일 우선 레이아웃을 기본으로 하고, 데스크톱에서는 `frontend/src/styles/common.css`의 `.pageContainer` 클래스로 최대 640px 가운데 정렬한다. 별도의 데스크톱 전용 레이아웃(사이드바, 그리드 등)은 만들지 않는다.
