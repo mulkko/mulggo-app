@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>API 엔드포인트 목록</title>
+<style>
+  body{font-family:sans-serif; max-width:900px; margin:40px auto; padding:0 20px; line-height:1.6;}
+  h1{font-size:22px;}
+  h2{font-size:17px; margin-top:32px; border-bottom:1px solid #ddd; padding-bottom:6px;}
+  h3{font-size:14px; margin-bottom:4px;}
+  code{background:#f4f3ec; padding:1px 5px; border-radius:3px;}
+  .note{color:#555; font-size:14px;}
+  .endpoint{border:1px solid #e5e4e7; border-radius:6px; padding:12px 16px; margin-bottom:12px;}
+  .method{display:inline-block; font-weight:bold; padding:1px 8px; border-radius:4px; font-size:12px; margin-right:6px;}
+  .get{background:#dbeafe; color:#1e40af;}
+  .post{background:#dcfce7; color:#166534;}
+  table{border-collapse:collapse; width:100%; margin-top:6px;}
+  td, th{border:1px solid #ddd; padding:4px 8px; font-size:13px; text-align:left; vertical-align:top;}
+</style>
+</head>
+<body>
+  <h1>API 엔드포인트 목록</h1>
+  <p class="note">
+    실시간·정확한 스펙은 백엔드 켠 상태에서 <code>http://127.0.0.1:8000/docs</code>에서 확인하세요.<br>
+    이 문서는 서버 안 켠 상태에서 빠르게 참고하거나, 외부에서 프롬프트 작성할 때 붙여넣기용입니다.<br>
+    <b>엔드포인트가 추가/변경되면 이 파일도 같이 업데이트해야 합니다 (자동 동기화 안 됨).</b>
+  </p>
+
+  <h2>auth — backend/api/auth.py (prefix: /api/auth)</h2>
+
+  <div class="endpoint">
+    <h3><span class="method post">POST</span><code>/api/auth/login</code></h3>
+    <p>일반 회원 로그인. 로직: <code>backend/auth/login.py</code></p>
+    <table>
+      <tr><th>request (JSON)</th><td>email, password</td></tr>
+      <tr><th>response</th><td>{success, data:{user_id, email, name}, error:{message, code}}</td></tr>
+    </table>
+  </div>
+
+  <div class="endpoint">
+    <h3><span class="method post">POST</span><code>/api/auth/admin-login</code></h3>
+    <p>관리자 로그인 (is_admin 서버 검증 포함, 403 가능).</p>
+    <table>
+      <tr><th>request (JSON)</th><td>email, password</td></tr>
+      <tr><th>response</th><td>{success, data:{user_id, email, name}, error:{message, code}}</td></tr>
+    </table>
+  </div>
+
+  <div class="endpoint">
+    <h3><span class="method post">POST</span><code>/api/auth/signup</code></h3>
+    <p>회원가입. 로직: <code>backend/auth/signup.py</code>. 사업자등록증 첨부 시 OCR은 백그라운드 처리.</p>
+    <table>
+      <tr><th>request (multipart/form-data)</th><td>email, name, password, password_confirm, agree_terms, agree_privacy, biz_cert_file(선택)</td></tr>
+      <tr><th>response</th><td>{success, data:{user_id, email, name}, error:{message, code}}</td></tr>
+    </table>
+  </div>
+
+  <h2>admin — backend/api/admin.py (prefix: /admin)</h2>
+
+  <div class="endpoint">
+    <h3><span class="method get">GET</span><code>/admin/bizinfo-count</code></h3>
+    <p>기업마당 총 공고 건수 조회 (1페이지만 요청, 가벼움).</p>
+    <table><tr><th>response</th><td>{count}</td></tr></table>
+  </div>
+
+  <div class="endpoint">
+    <h3><span class="method post">POST</span><code>/admin/bizinfo-crawl</code></h3>
+    <p>기업마당 전체 수동 크롤링 + DB 저장. 실행 결과는 crawl_batch_logs에 기록됨.</p>
+    <table><tr><th>response</th><td>{success:true, data:{fetched, inserted}} 또는 {success:false, error:{message, code}}</td></tr></table>
+  </div>
+
+  <div class="endpoint">
+    <h3><span class="method get">GET</span><code>/admin/batch-logs</code></h3>
+    <p>최근 배치 실행 로그 5건 조회.</p>
+    <table><tr><th>response</th><td>{success, data:{logs:[{source, fetched_count, inserted_count, status, ran_at}]}}</td></tr></table>
+  </div>
+
+  <div class="endpoint">
+    <h3><span class="method get">GET</span><code>/admin/members</code></h3>
+    <p>관리자 회원 목록 + 통계.</p>
+    <table><tr><th>response</th><td>{success, data:{members:[{user_id, name, email, created_at, applicant_type, last_login_at, status}], stats:{total, new_today, active_30d}}}</td></tr></table>
+  </div>
+
+  <h2>test — backend/api/test_ocr.py (prefix: /api/test)</h2>
+  <p class="note">테스트 전용. 정식 회원가입 플로우와 무관, DB 저장 안 하고 CSV로만 남김.</p>
+
+  <div class="endpoint">
+    <h3><span class="method post">POST</span><code>/api/test/ocr-upload</code></h3>
+    <p>사업자등록증 OCR 파싱 테스트용.</p>
+    <table>
+      <tr><th>request (multipart/form-data)</th><td>file</td></tr>
+      <tr><th>response</th><td>{file_name, ocr_success, csv_saved, extracted, error, error_type, error_label}</td></tr>
+    </table>
+  </div>
+</body>
+</html>
