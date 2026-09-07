@@ -1,29 +1,132 @@
-/* [테스트] 디자인 미정 — 지금은 기능 검증용 최소 스타일. 화면 디자인 확정되면 다시 손볼 예정. */
+/* 사업자등록증 업로드 — 회원가입 화면(signup.module.css)과 같은 webTokens.css 토큰을 쓴다.
+   기능 로직은 BizCertUpload.tsx 그대로, 여기서는 겉모습만 정의한다.
+   업로드 대기(idle) 상태는 Figma "개발용 화면_260907" node 28:96 기준. */
 
 .field {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   text-align: left;
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
 }
 
-.field label {
-  display: block;
-  margin-bottom: 10px;
+/* ===== 업로드 대기 상태 — 점선 드롭존 ===== */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 96px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px dashed var(--color-border-web);
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  cursor: pointer;
 }
 
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dropTitle {
+  font-size: var(--font-size-input-label);
+  font-weight: var(--font-weight-input-label);
+  color: var(--color-navy-sphere);
+}
+
+.dropHint {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-caption);
+  color: var(--color-stone-gray);
+}
+
+/* ===== 인식 중 — 팝업 ===== */
+.loadingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 32px 24px;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
+  text-align: center;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border-web);
+  border-top-color: var(--color-navy-sphere);
+  border-radius: 50%;
+  animation: bizCertSpin 0.8s linear infinite;
+}
+
+@keyframes bizCertSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
+.loadingHint {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  color: var(--color-stone-gray);
+}
+
+/* ===== 에러 ===== */
 .errorText {
-  color: #c0392b;
+  margin: 0 0 8px;
+  color: var(--color-error-text);
+  font-size: var(--font-size-body);
+}
+
+/* ===== 확인/수정 단계 — 팝업 ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-outer);
+  box-sizing: border-box;
+  background: var(--color-scrim);
 }
 
 .reviewBox {
-  border: solid 1px #ddd;
+  width: 100%;
+  max-width: calc(var(--mobile-frame-width) - 2 * var(--spacing-outer));
+  max-height: 80vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-web);
+  border-radius: var(--radius-input);
   padding: 16px;
-  margin-bottom: 20px;
   text-align: left;
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
 }
 
 .reviewDesc {
-  color: #555;
-  font-size: 13px;
+  color: var(--color-stone-gray);
+  font-size: var(--font-size-caption);
   margin-bottom: 12px;
 }
 
@@ -33,29 +136,37 @@
 
 .fieldRow label {
   display: block;
-  font-size: 13px;
+  font-size: var(--font-size-input-label);
+  font-weight: var(--font-weight-input-label);
+  color: var(--color-ink-charcoal);
   margin-bottom: 4px;
 }
 
 .badgeWarn {
-  color: #c0392b;
-  font-weight: bold;
+  color: var(--color-error-text);
+  font-weight: 700;
 }
 
 .badgeMuted {
-  color: #999;
+  color: var(--color-stone-gray);
 }
 
 .input,
 .inputWarn {
   width: 100%;
   box-sizing: border-box;
-  padding: 8px;
-  border: 1px solid #ccc;
+  padding: var(--input-padding-y-min) var(--input-padding-x-min);
+  border: 1px solid var(--color-stone-gray);
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
 }
 
 .inputWarn {
-  border: 1px solid #c0392b;
+  border-color: var(--color-error-text);
+  color: var(--color-error-text);
 }
 
 .viewRow {
@@ -66,22 +177,49 @@
 
 .viewText {
   flex: 1;
-  padding: 8px;
-  border: 1px solid #eee;
-  border-radius: 4px;
+  padding: var(--input-padding-y-min) var(--input-padding-x-min);
+  border: 1px solid var(--color-border-web);
+  border-radius: var(--radius-check);
 }
 
 .viewTextMuted {
-  padding: 8px;
-  color: #999;
+  padding: var(--input-padding-y-min) var(--input-padding-x-min);
+  color: var(--color-stone-gray);
 }
 
 .editBtn {
   flex-shrink: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--color-stone-gray);
+  border-radius: var(--radius-check);
+  background: var(--color-white);
+  font-size: var(--font-size-caption);
+  color: var(--color-ink-charcoal);
+  cursor: pointer;
 }
 
 .confirmBtn {
   width: 100%;
-  padding: 10px;
+  height: 46px;
   margin-top: 8px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--color-navy-sphere);
+  color: var(--color-white);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 인식 중 / 에러 단계의 보조 버튼 (다시 시도 · 나중에 하기) */
+.phaseBtn {
+  margin-right: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-stone-gray);
+  border-radius: var(--radius-check);
+  background: var(--color-white);
+  font-size: var(--font-size-caption);
+  color: var(--color-ink-charcoal);
+  cursor: pointer;
 }
