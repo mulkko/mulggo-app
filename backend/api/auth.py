@@ -74,6 +74,8 @@ async def biz_cert_ocr_endpoint(file: UploadFile = File(...)) -> dict:
 
     ext = os.path.splitext(file.filename or "")[1].lower()
     tmp_path = None
+    business_category = ""
+    business_item = ""
     try:
         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
             tmp.write(content)
@@ -81,6 +83,20 @@ async def biz_cert_ocr_endpoint(file: UploadFile = File(...)) -> dict:
 
         model, processor = get_cached_vision_model()
         entity_type, biz_cert = extract_biz_cert(tmp_path, model, processor)
+
+        # [테스트] 업태/종목 (2026-09-07): 기본정보 OCR과 별도 파이프라인(EasyOCR)이라
+        # 실패 확률이 더 높음 — 실패해도 기본정보는 그대로 팝업에 뜨게 별도로 감쌈.
+        # 여러 행이 인식돼도 팝업은 단순 텍스트 2칸이라, 대표(첫) 업태 하나만 보여주고
+        # 종목은 콤마로 합쳐서 하나의 문자열로 보여준다.
+        try:
+            from backend.assistant.category_ocr import extract_categories
+
+            groups = extract_categories(tmp_path, qwen=(model, processor))
+            if groups:
+                business_category = groups[0].get("업태", "") or ""
+                business_item = ", ".join(i for i in groups[0].get("종목", []) if i.strip())
+        except Exception as e:
+            print(f"[업태/종목 추출 실패] {e}")
     except Exception as e:
         error_type, error_label = classify_ocr_error(e)
         result["error_type"] = error_type
@@ -93,6 +109,8 @@ async def biz_cert_ocr_endpoint(file: UploadFile = File(...)) -> dict:
 
     result["ocr_success"] = True
     result["extracted"] = _extracted_to_fields(entity_type, biz_cert)
+    result["extracted"]["business_category"] = business_category
+    result["extracted"]["business_item"] = business_item
     return result
 
 

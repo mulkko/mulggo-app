@@ -29,6 +29,8 @@ const REVIEW_FIELDS: { key: string; label: string }[] = [
   { key: "open_date", label: "개업연월일" },
   { key: "birth_date", label: "생년월일" },
   { key: "business_address", label: "사업장 소재지" },
+  { key: "business_category", label: "업태" },
+  { key: "business_item", label: "종목" },
 ];
 
 // 법인/개인 구분에 따라 애초에 존재하지 않는 필드 (법인등록번호는 법인만, 생년월일은 개인만).
