@@ -1,6 +1,7 @@
 .loginPage {
-  max-width: 320px;
-  min-width:640px;
+  max-width: 640px;
+  width: 100%;
+  box-sizing: border-box;
   margin: 40px auto;
 }
 .loginPage .formField{

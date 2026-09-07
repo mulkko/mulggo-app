@@ -75,13 +75,24 @@ def save_user(name: str, email: str, password: str, agree_terms: bool, agree_pri
         cursor = connection.cursor()
         cursor.execute(
             """
-            INSERT INTO users (email, password_hash, name, created_at, agree_terms, agree_privacy, applicant_type)
-            VALUES (%s, %s, %s, NOW(), %s, %s, %s)
+            INSERT INTO users (email, password_hash, name, created_at, agree_terms, agree_privacy)
+            VALUES (%s, %s, %s, NOW(), %s, %s)
             RETURNING user_id, email, name
             """,
-            (email, password_hash, name, agree_terms, agree_privacy, "prospective"),
+            (email, password_hash, name, agree_terms, agree_privacy),
         )
         row = cursor.fetchone()
+        user_id = row[0]
+
+        # 사업자등록증 없이 가입 = 예비창업자. OCR/확인 끝나면 save_biz_cert_data()가 "기존사업자"로 갱신.
+        cursor.execute(
+            """
+            INSERT INTO business_profiles (user_id, profile_type, created_at, updated_at)
+            VALUES (%s, %s, NOW(), NOW())
+            """,
+            (user_id, "예비창업자"),
+        )
+
         connection.commit()
         return {"user_id": row[0], "email": row[1], "name": row[2]}
     finally:
@@ -101,8 +112,8 @@ def signup(
       성공  {"success": True, "user": {"user_id", "email", "name"}}
       실패  {"success": False, "code": "VALIDATION_ERROR" | "DUPLICATE_EMAIL", "errors": [...]}
 
-    가입 시점엔 사업자등록증 유무와 무관하게 항상 applicant_type="prospective"(예비창업자)로 저장한다.
-    사업자등록증을 첨부해서 OCR이 성공하면 process_biz_cert_ocr()가 individual/corporate로 갱신한다.
+    가입 시점엔 사업자등록증 유무와 무관하게 business_profiles에 profile_type="예비창업자"로 행이 생긴다.
+    사업자등록증을 첨부해서 OCR/확인이 끝나면 save_biz_cert_data()가 "기존사업자"+entity_type_code로 갱신한다.
     """
     errors = []
 
@@ -158,16 +169,20 @@ def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fie
             ("corporate", "법인"),
         )
 
-        # 예비창업자 → 확정된 개인/법인 정보로 갱신
-        cursor.execute(
-            "UPDATE users SET applicant_type = %s WHERE user_id = %s",
-            (entity_type_code, user_id),
-        )
+        business_name = fields.get("company_name") or None
 
         cursor.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
         row = cursor.fetchone()
         if row:
             profile_id = row[0]
+            cursor.execute(
+                """
+                UPDATE business_profiles
+                SET profile_type = %s, entity_type_code = %s, business_name = %s, updated_at = NOW()
+                WHERE profile_id = %s
+                """,
+                ("기존사업자", entity_type_code, business_name, profile_id),
+            )
         else:
             cursor.execute(
                 """
@@ -175,12 +190,7 @@ def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fie
                 VALUES (%s, %s, %s, %s, NOW(), NOW())
                 RETURNING profile_id
                 """,
-                (
-                    user_id,
-                    entity_type_code,
-                    entity_type_code,
-                    fields.get("company_name") or None,
-                ),
+                (user_id, "기존사업자", entity_type_code, business_name),
             )
             profile_id = cursor.fetchone()[0]
 
@@ -200,7 +210,7 @@ def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fie
                 file_path,
                 fields.get("biz_no") or None,
                 fields.get("corp_no") or None,
-                fields.get("company_name") or None,
+                business_name,
                 fields.get("ceo_name") or None,
                 fields.get("open_date") or None,
                 fields.get("birth_date") or None,

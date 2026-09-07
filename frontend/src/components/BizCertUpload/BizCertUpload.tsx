@@ -24,6 +24,9 @@ const NOT_APPLICABLE_WHEN: Record<string, string> = {
   birth_date: "법인",
 };
 
+// DB(biz_registration_docs)가 NOT NULL로 요구하는 필드 — 확인 버튼 누르기 전에 채워져 있어야 함.
+const REQUIRED_FIELDS = ["company_name", "ceo_name", "biz_no", "open_date", "business_address"];
+
 const ERROR_FALLBACK = "알 수 없는 오류가 발생했습니다.";
 
 interface OcrResponse {
@@ -115,6 +118,18 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
 
   const handleConfirm = () => {
     if (!file) return;
+
+    // DB(biz_registration_docs)가 NOT NULL로 요구하는 필드는 비어있으면 저장 자체가 실패하므로,
+    // 여기서 먼저 막아서 사용자가 바로 고칠 수 있게 함.
+    const missing = REQUIRED_FIELDS.filter((key) => {
+      if (NOT_APPLICABLE_WHEN[key] === fields.entity_type) return false;
+      return !fields[key];
+    });
+    if (missing.length > 0) {
+      alert("빨간색으로 표시된 항목을 채워주세요.");
+      return;
+    }
+
     onConfirm(fields, file);
   };
 
