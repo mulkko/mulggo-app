@@ -39,3 +39,196 @@
 .loginBox{
   border:solid 1px green;
 }
+
+/* ===== 사용자 로그인 화면 ===== */
+/* 위 .loginPage/.titBox/.loginBox/.formField 는 관리자 로그인·회원가입 화면이
+   계속 사용하므로 건드리지 않고, 사용자 화면 전용 클래스를 아래에 추가한다.
+   값은 webTokens.css(사용자 화면 공통 UI 스타일가이드) 토큰만 사용한다.
+   폼 영역 스펙 출처: components/WebStyleGuide (/dev/web-style-guide). */
+
+.page {
+  max-width: var(--mobile-frame-width);
+  width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  color: var(--color-ink-charcoal);
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 52px var(--spacing-outer) 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /* 스플래시 화면과 동일한 그라디언트. 중간·하단 정지점은 토큰과 일치하고
+     상단색(#7fdccf)만 전용 토큰이 아직 없어 splash.module.css 값을 그대로 쓴다. */
+  background: linear-gradient(
+    180deg,
+    #7fdccf 0%,
+    var(--color-light-teal) 46%,
+    var(--color-navy-sphere) 100%
+  );
+}
+
+.badge {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge img {
+  width: 88px;
+  height: auto;
+}
+
+.wordmark {
+  margin: 20px 0 0;
+  font-family: var(--font-family-logo);
+  font-size: var(--font-size-logo);
+  font-weight: var(--font-weight-logo);
+  letter-spacing: var(--letter-spacing-logo);
+  color: var(--color-white);
+}
+
+.tagline {
+  margin: 8px 0 0;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-h1);
+  color: var(--color-white);
+}
+
+.wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  display: block;
+  width: 100%;
+  height: 62px;
+}
+
+.wave path {
+  fill: var(--color-white);
+}
+
+.formArea {
+  flex: 1;
+  box-sizing: border-box;
+  padding: 8px var(--spacing-outer) 32px;
+}
+
+.field {
+  margin-bottom: var(--spacing-login-detail);
+  text-align: left;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: var(--font-size-input-label);
+  font-weight: var(--font-weight-input-label);
+  color: var(--color-ink-charcoal);
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  height: var(--input-height-max);
+  padding: var(--input-padding-y-max) var(--input-padding-x-max);
+  border: 1px solid var(--color-stone-gray);
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
+.input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-navy-sphere);
+  border-width: 2px;
+}
+
+.forgot {
+  display: block;
+  margin: calc(-1 * var(--spacing-login-detail) + 4px) 0 var(--spacing-login-detail);
+  text-align: right;
+  font-size: 12px;
+  font-weight: var(--font-weight-body);
+  color: var(--color-teal-green);
+  text-decoration: none;
+}
+
+.submitBtn {
+  width: 100%;
+  height: 54px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--color-navy-sphere);
+  color: var(--color-white);
+  font-family: var(--font-family-base);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.submitBtn:hover {
+  opacity: 0.92;
+}
+
+.signupPrompt {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: var(--font-size-body);
+  color: var(--color-stone-gray);
+}
+
+.signupPrompt a {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-navy-sphere);
+  text-decoration: none;
+}
+
+.error {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: var(--font-size-caption);
+  color: var(--color-error-text);
+}
+
+.success {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: var(--font-size-caption);
+  color: var(--color-teal-green);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
