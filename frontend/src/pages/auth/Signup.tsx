@@ -1,5 +1,6 @@
-import { useRef, useState, type SubmitEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
 import styles from "../../styles/login.module.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -12,7 +13,6 @@ interface SignupResponse {
 
 function Signup() {
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,6 +22,23 @@ function Signup() {
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // 사업자등록증: 확인/수정까지 끝낸 값(bizCertFile+bizCertFields) 또는 "나중에 하기"(bizCertSkipped) 중 하나.
+  // 둘 다 비어있으면 아직 업로드 컴포넌트를 보여주는 중.
+  const [bizCertFile, setBizCertFile] = useState<File | null>(null);
+  const [bizCertFields, setBizCertFields] = useState<Record<string, string> | null>(null);
+  const [bizCertSkipped, setBizCertSkipped] = useState(false);
+
+  const handleBizCertConfirm = (fields: Record<string, string>, file: File) => {
+    setBizCertFields(fields);
+    setBizCertFile(file);
+  };
+
+  const handleBizCertReset = () => {
+    setBizCertFields(null);
+    setBizCertFile(null);
+    setBizCertSkipped(false);
+  };
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -39,8 +56,9 @@ function Signup() {
     formData.append("password_confirm", passwordConfirm);
     formData.append("agree_terms", String(agreeTerms));
     formData.append("agree_privacy", String(agreePrivacy));
-    if (fileInputRef.current?.files?.[0]) {
-      formData.append("biz_cert_file", fileInputRef.current.files[0]);
+    if (bizCertFile && bizCertFields) {
+      formData.append("biz_cert_file", bizCertFile);
+      formData.append("biz_cert_data", JSON.stringify(bizCertFields));
     }
 
     setSubmitting(true);
@@ -112,8 +130,26 @@ function Signup() {
             />
           </div>
           <div className={styles.formField}>
-            <label htmlFor="biz-cert-file">사업자등록증 (선택)</label>
-            <input id="biz-cert-file" type="file" accept="image/*,.pdf" ref={fileInputRef} />
+            {bizCertFields ? (
+              <p>
+                사업자등록증 확인 완료 ✓{" "}
+                <button type="button" onClick={handleBizCertReset}>
+                  변경
+                </button>
+              </p>
+            ) : bizCertSkipped ? (
+              <p>
+                사업자등록증 나중에 등록{" "}
+                <button type="button" onClick={handleBizCertReset}>
+                  지금 등록
+                </button>
+              </p>
+            ) : (
+              <BizCertUpload
+                onConfirm={handleBizCertConfirm}
+                onSkip={() => setBizCertSkipped(true)}
+              />
+            )}
           </div>
           <div className={styles.formField}>
             <label htmlFor="agree-terms">

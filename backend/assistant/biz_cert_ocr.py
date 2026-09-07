@@ -30,6 +30,17 @@ import tempfile
 import zipfile
 
 import openpyxl
+from PIL import UnidentifiedImageError
+
+try:
+    from pdf2image.exceptions import (
+        PDFInfoNotInstalledError,
+        PDFPageCountError,
+        PDFSyntaxError,
+    )
+    _PDF_ERRORS = (PDFInfoNotInstalledError, PDFPageCountError, PDFSyntaxError)
+except ImportError:
+    _PDF_ERRORS = ()
 
 MODEL_ID = "Qwen/Qwen2.5-VL-3B-Instruct"
 
@@ -200,6 +211,20 @@ def _normalize_dates(biz_cert):
         if m:
             biz_cert[key] = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
     return biz_cert
+
+
+def classify_ocr_error(exc: Exception) -> tuple[str, str]:
+    """예외 -> (error_type, 사용자용 한글 안내 문구).
+    test_ocr.py(테스트용)/backend/api/auth.py(회원가입용) 둘 다 이 분류를 재사용한다."""
+    if isinstance(exc, (UnidentifiedImageError, FileNotFoundError, OSError)):
+        return "file_error", "파일을 열 수 없습니다. 이미지가 손상되었거나 지원하지 않는 형식일 수 있어요."
+    if isinstance(exc, _PDF_ERRORS):
+        return "pdf_error", "PDF 변환에 실패했습니다. 서버 설정 문제일 수 있어요."
+    if isinstance(exc, ValueError):
+        return "recognition_error", "사업자등록증을 인식하지 못했습니다. 밝고 선명한 사진으로 다시 시도해주세요."
+    if isinstance(exc, RuntimeError) and "CUDA" in str(exc):
+        return "gpu_error", "서버 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+    return "unknown_error", "알 수 없는 오류가 발생했습니다."
 
 
 def extract_biz_cert(image_path, model, processor):

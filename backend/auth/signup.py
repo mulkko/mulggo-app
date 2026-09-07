@@ -135,25 +135,20 @@ def signup(
 
 
 # ══════════════════════════════════════════════════════
-# 사업자등록증 OCR → DB 저장 (회원가입 완료를 지연시키지 않도록 백그라운드에서 호출됨)
+# 사업자등록증 정보 → DB 저장
 # ══════════════════════════════════════════════════════
-def process_biz_cert_ocr(user_id: int, file_path: str, original_filename: str) -> None:
-    from backend.assistant.biz_cert_ocr import extract_biz_cert, get_cached_vision_model
-
-    try:
-        model, processor = get_cached_vision_model()
-        entity_type, biz_cert = extract_biz_cert(file_path, model, processor)
-    except Exception as e:
-        print(f"[biz_cert OCR 실패] user_id={user_id}: {e}")
-        return
-
-    # entity_types: 개인/법인 코드 (없으면 최초 1회 생성, TA/DA3 확인 전까지 임시 코드)
-    entity_type_code = "corporate" if entity_type == "법인" else "individual"
+def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fields: dict) -> None:
+    """확정된 사업자등록증 정보(fields)를 DB에 저장.
+    fields: {company_name, ceo_name, biz_no, corp_no, open_date, birth_date, business_address, entity_type}
+    (직접 OCR을 돌린 결과든, 사용자가 확인/수정 팝업에서 확정한 값이든 같은 형태).
+    실패해도 회원가입 자체엔 영향 없음(로그만 남김) — 백그라운드에서 호출됨."""
+    entity_type_code = "corporate" if fields.get("entity_type") == "법인" else "individual"
 
     connection = get_connection()
     try:
         cursor = connection.cursor()
 
+        # entity_types: 개인/법인 코드 (없으면 최초 1회 생성, TA/DA3 확인 전까지 임시 코드)
         cursor.execute(
             "INSERT INTO entity_types (code, name) VALUES (%s, %s) ON CONFLICT (code) DO NOTHING",
             ("individual", "개인"),
@@ -163,7 +158,7 @@ def process_biz_cert_ocr(user_id: int, file_path: str, original_filename: str) -
             ("corporate", "법인"),
         )
 
-        # 예비창업자 → OCR 결과 기준으로 개인/법인 확정
+        # 예비창업자 → 확정된 개인/법인 정보로 갱신
         cursor.execute(
             "UPDATE users SET applicant_type = %s WHERE user_id = %s",
             (entity_type_code, user_id),
@@ -184,7 +179,7 @@ def process_biz_cert_ocr(user_id: int, file_path: str, original_filename: str) -
                     user_id,
                     entity_type_code,
                     entity_type_code,
-                    biz_cert.get("corp_name") or biz_cert.get("trade_name"),
+                    fields.get("company_name") or None,
                 ),
             )
             profile_id = cursor.fetchone()[0]
@@ -203,18 +198,43 @@ def process_biz_cert_ocr(user_id: int, file_path: str, original_filename: str) -
                 original_filename,
                 os.path.splitext(original_filename)[1].lstrip("."),
                 file_path,
-                biz_cert.get("biz_no"),
-                biz_cert.get("corp_no"),
-                biz_cert.get("corp_name") or biz_cert.get("trade_name"),
-                biz_cert.get("ceo_name"),
-                biz_cert.get("open_date") or None,
-                biz_cert.get("birth_date") or None,
-                biz_cert.get("address_basic"),
+                fields.get("biz_no") or None,
+                fields.get("corp_no") or None,
+                fields.get("company_name") or None,
+                fields.get("ceo_name") or None,
+                fields.get("open_date") or None,
+                fields.get("birth_date") or None,
+                fields.get("business_address") or None,
             ),
         )
         connection.commit()
-        print(f"[biz_cert OCR 성공] user_id={user_id}, profile_id={profile_id}")
+        print(f"[biz_cert 저장 성공] user_id={user_id}, profile_id={profile_id}")
     except Exception as e:
         print(f"[biz_cert DB 저장 실패] user_id={user_id}: {e}")
     finally:
         connection.close()
+
+
+def process_biz_cert_ocr(user_id: int, file_path: str, original_filename: str) -> None:
+    """레거시 경로: 확인/수정 팝업 없이 파일만 온 경우, 백그라운드에서 직접 OCR 돌리고 저장.
+    (정상 경로는 /api/auth/biz-cert-ocr로 먼저 확인받은 뒤 save_biz_cert_data를 씀)"""
+    from backend.assistant.biz_cert_ocr import extract_biz_cert, get_cached_vision_model
+
+    try:
+        model, processor = get_cached_vision_model()
+        entity_type, biz_cert = extract_biz_cert(file_path, model, processor)
+    except Exception as e:
+        print(f"[biz_cert OCR 실패] user_id={user_id}: {e}")
+        return
+
+    fields = {
+        "company_name": biz_cert.get("corp_name") or biz_cert.get("trade_name") or "",
+        "ceo_name": biz_cert.get("ceo_name", ""),
+        "biz_no": biz_cert.get("biz_no", ""),
+        "corp_no": biz_cert.get("corp_no", ""),
+        "open_date": biz_cert.get("open_date", ""),
+        "birth_date": biz_cert.get("birth_date", ""),
+        "business_address": biz_cert.get("address_basic", ""),
+        "entity_type": entity_type,
+    }
+    save_biz_cert_data(user_id, file_path, original_filename, fields)
