@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter
 
 from backend.crawler.bizinfo_api import fetch_all, fetch_page, save_to_db
+from backend.crawler.kst_api import _build_session, fetch_announcements
 from backend.db.connection import get_connection
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -20,6 +21,13 @@ def get_bizinfo_count() -> dict:
 
     count = int(items[0].get("totCnt", 0)) if items else 0
     return {"count": count}
+
+
+@router.get("/kstartup-count")
+def get_kstartup_count() -> dict:
+    session = _build_session()
+    data = fetch_announcements(session, num_rows=1, page=1)
+    return {"count": data.get("totalCount", 0)}
 
 
 def _log_crawl(source: str, fetched_count: int, inserted_count: int, status: str) -> None:

@@ -2,6 +2,7 @@ import { useState, type SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../styles/login.module.css";
 import { ADMIN_AUTH_KEY } from "../pages/admin/AdminRoute";
+import logo from "../assets/logo.svg";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -64,45 +65,64 @@ function LoginForm({ variant }: LoginFormProps) {
     }
   };
 
+  // webTokens.css / WebStyleGuide 기준 디자인. 관리자/사용자 공용(variant로 문구·동작만 분기).
   return (
-    <div className={styles.loginPage}>
-      <div className={styles.titBox}>
-        <p className={styles.logo}><a href="#none">mulkko로고</a></p>
-        <h1>{title}</h1>
+    <div className={styles.page}>
+      <div className={styles.hero}>
+        <div className={styles.badge}>
+          <img src={logo} alt="물꼬 로고" />
+        </div>
+        <p className={styles.wordmark}>{variant === "admin" ? "MULKKO 관리자" : "MULKKO"}</p>
+        <p className={styles.tagline}>{variant === "admin" ? "관리자 전용 페이지입니다." : "창업의 물꼬를 트다."}</p>
+        {/* 시안에는 없지만 스크린리더/문서 타이틀용으로 title을 숨겨 유지 */}
+        <h1 className={styles.srOnly}>{title}</h1>
+        <svg
+          className={styles.wave}
+          viewBox="0 0 390 60"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path d="M0 34 C 78 6, 156 6, 234 26 C 300 43, 350 43, 390 30 L390 60 L0 60 Z" />
+        </svg>
       </div>
-      <div className={styles.loginBox}>
-        <form onSubmit={handleSubmit}>
-          <div className={styles.formField}>
-            <label htmlFor="email">이메일</label>
+
+      <div className={styles.formArea}>
+        <form onSubmit={handleSubmit} noValidate>
+          <div className={styles.field}>
+            <label htmlFor="email">아이디(이메일){variant === "admin" && " - 관리자 로그인"}</label>
             <input
               id="email"
               type="email"
-              className="text-input"
+              className={`${styles.input} ${errorMessage ? styles.inputError : ""}`}
+              placeholder="example@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div className={styles.formField}>
+          <div className={styles.field}>
             <label htmlFor="password">비밀번호</label>
             <input
               id="password"
               type="password"
-              className="text-input"
+              className={`${styles.input} ${errorMessage ? styles.inputError : ""}`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <button type="submit" className="btnPrimary">로그인</button>
+          <a href="#" className={styles.forgot}>비밀번호를 잊으셨나요?</a>
+          <button type="submit" className={styles.submitBtn}>로그인</button>
         </form>
+
         {variant === "user" && (
-          <p>
+          <p className={styles.signupPrompt}>
             아직 계정이 없으신가요? <Link to="/signup">회원가입</Link>
           </p>
         )}
-      </div>
 
-      {success && <p>로그인 성공</p>}
-      {errorMessage && <p>{errorMessage}</p>}
+        {success && <p className={styles.success}>로그인 성공</p>}
+        {errorMessage && <p className={styles.error}>{errorMessage}</p>}
+      </div>
     </div>
   );
 }
