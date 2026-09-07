@@ -1,0 +1,264 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>공고 브릿지</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#f9f9f7; --surface:#fcfcfb; --surface-2:#f0efe9;
+    --border:rgba(11,11,11,.12); --border-strong:rgba(11,11,11,.22);
+    --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --accent:#2a78d6; --accent-soft:#e3edfa; --accent-ink:#184f95;
+    --good:#0ca30c; --good-soft:#e3f6e0; --good-ink:#0a7d0a;
+    --warn:#c98500; --warn-soft:#fdf1d6; --warn-ink:#8a5c00;
+    --bad:#d03b3b; --bad-soft:#fbe6e5; --bad-ink:#a52929;
+    --code-bg:#14161a; --code-ink:#eae8e0;
+    --shadow: 0 1px 2px rgba(11,11,11,.05), 0 10px 24px -16px rgba(11,11,11,.22);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d0d0d; --surface:#17181a; --surface-2:#1f2022;
+      --border:rgba(255,255,255,.12); --border-strong:rgba(255,255,255,.24);
+      --ink:#f3f2ef; --ink-2:#c3c2b7; --muted:#8b8a85;
+      --accent:#5c9de8; --accent-soft:#173049; --accent-ink:#9cc4f2;
+      --good:#3fc23f; --good-soft:#12281a; --good-ink:#7adf7a;
+      --warn:#e3ab34; --warn-soft:#2b2210; --warn-ink:#f0c469;
+      --bad:#e2685a; --bad-soft:#301616; --bad-ink:#f0a89d;
+      --code-bg:#050506; --code-ink:#dedcd4;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 24px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d0d0d; --surface:#17181a; --surface-2:#1f2022;
+    --border:rgba(255,255,255,.12); --border-strong:rgba(255,255,255,.24);
+    --ink:#f3f2ef; --ink-2:#c3c2b7; --muted:#8b8a85;
+    --accent:#5c9de8; --accent-soft:#173049; --accent-ink:#9cc4f2;
+    --good:#3fc23f; --good-soft:#12281a; --good-ink:#7adf7a;
+    --warn:#e3ab34; --warn-soft:#2b2210; --warn-ink:#f0c469;
+    --bad:#e2685a; --bad-soft:#301616; --bad-ink:#f0a89d;
+    --code-bg:#050506; --code-ink:#dedcd4;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 24px -16px rgba(0,0,0,.6);
+  }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans KR','Malgun Gothic',sans-serif; font-size:15px; line-height:1.62; }
+  .mono{ font-family:'IBM Plex Mono',monospace; }
+  .wrap{ max-width:980px; margin:0 auto; padding:48px 28px 100px; }
+
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent-ink); background:var(--accent-soft); display:inline-block; padding:4px 10px; border-radius:4px; margin-bottom:14px; }
+  h1{ font-size:32px; font-weight:700; margin:0 0 10px; text-wrap:balance; letter-spacing:-.01em; }
+  .dek{ color:var(--ink-2); font-size:15.5px; max-width:68ch; margin:0 0 28px; }
+
+  section.block{ margin-bottom:46px; }
+  h2{ font-size:21px; font-weight:700; margin:0 0 6px; letter-spacing:-.01em; }
+  h2 .src{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; padding:3px 9px; border-radius:999px; margin-left:10px; vertical-align:middle; }
+  h2 .src.biz{ background:var(--accent-soft); color:var(--accent-ink); }
+  h2 .src.ks{ background:var(--good-soft); color:var(--good-ink); }
+  .block-dek{ color:var(--ink-2); font-size:14px; margin:0 0 18px; max-width:70ch; }
+
+  /* TA 전달 카드 */
+  .ta-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .ta-card{ background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); padding:20px 22px; }
+  .ta-card h3{ font-size:16px; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
+  .ta-card .badge{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .ta-card .badge.ready{ background:var(--good-soft); color:var(--good-ink); }
+  .ta-card .badge.prep{ background:var(--warn-soft); color:var(--warn-ink); }
+  .ta-card ul{ margin:12px 0 0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
+  .ta-card li{ display:grid; grid-template-columns:20px 1fr; gap:8px; font-size:13.5px; align-items:start; }
+  .ta-card li .n{ font-family:'IBM Plex Mono',monospace; color:var(--muted); }
+  .ta-card code{ font-family:'IBM Plex Mono',monospace; font-size:12px; background:var(--surface-2); padding:1px 5px; border-radius:4px; }
+
+  /* stepper / cascade (규칙엔진 해부도 스타일 재사용) */
+  .cascade{ display:flex; flex-direction:column; gap:0; }
+  .step{ display:grid; grid-template-columns:30px 1fr; gap:14px; position:relative; padding-bottom:16px; }
+  .step:last-child{ padding-bottom:0; }
+  .step .dot{ width:30px; height:30px; border-radius:50%; background:var(--accent-soft); color:var(--accent-ink);
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:700;
+    font-size:12px; flex-shrink:0; z-index:1; }
+  .step:not(:last-child)::before{ content:""; position:absolute; left:15px; top:30px; bottom:0; width:2px; background:var(--border-strong); }
+  .step-body{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 16px; box-shadow:var(--shadow); }
+  .step-title{ font-weight:700; font-size:13.5px; margin:0; }
+  .step-fn{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--accent-ink); }
+  .step-desc{ font-size:12.5px; color:var(--ink-2); margin:4px 0 0; }
+
+  .diff-row{ display:grid; grid-template-columns:110px 1fr 1fr; gap:10px; padding:9px 12px; border-radius:8px;
+    background:var(--surface-2); border:1px solid var(--border); font-size:13px; align-items:center; }
+  .diff-row + .diff-row{ margin-top:6px; }
+  .diff-row .lbl{ font-weight:600; color:var(--ink-2); font-size:12px; }
+  .diff-row .biz{ color:var(--accent-ink); }
+  .diff-row .ks{ color:var(--good-ink); }
+
+  .tbl-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
+  table.data{ width:100%; border-collapse:collapse; font-size:13px; min-width:520px; }
+  table.data th{ text-align:left; padding:9px 14px; background:var(--surface-2); font-size:11px;
+    text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; border-bottom:1px solid var(--border); }
+  table.data td{ padding:9px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data td.num{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; text-align:right; }
+
+  /* 바 차트 (실측 분포) */
+  .bar-row{ display:flex; align-items:center; gap:10px; padding:5px 0; }
+  .bar-label{ width:150px; flex-shrink:0; font-size:12px; color:var(--ink-2); text-align:right; }
+  .bar-track{ position:relative; flex:1; height:18px; background:var(--surface-2); border-radius:4px; }
+  .bar-fill{ height:100%; border-radius:4px 2px 2px 4px; background:var(--good); display:flex; align-items:center; }
+  .bar-value{ margin-left:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:600; white-space:nowrap; }
+
+  pre.code{ background:var(--code-bg); color:var(--code-ink); border-radius:8px; padding:12px 14px;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; line-height:1.6; overflow-x:auto; margin:0 0 4px; }
+
+  .callout{ display:flex; gap:12px; padding:14px 16px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface-2); font-size:13.5px; margin:0 0 14px; }
+  .callout.warn{ border-color:var(--warn); background:var(--warn-soft); }
+  .callout .mark{ font-family:'IBM Plex Mono',monospace; font-weight:700; color:var(--accent-ink); flex-shrink:0; }
+  .callout.warn .mark{ color:var(--warn-ink); }
+
+  .issue-list{ display:flex; flex-direction:column; gap:8px; }
+  .issue{ display:grid; grid-template-columns:26px 1fr; gap:10px; padding:11px 14px; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface); font-size:13.5px; }
+  .issue .n{ font-family:'IBM Plex Mono',monospace; font-weight:700; color:var(--bad-ink); }
+  .issue.resolved .n{ color:var(--good-ink); }
+  .issue.resolved{ background:var(--good-soft); border-color:var(--good); }
+  .issue b{ font-weight:600; }
+  .issue .scope{ display:inline-block; margin-top:4px; font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    font-weight:600; padding:2px 8px; border-radius:999px; background:var(--surface-2); color:var(--ink-2); }
+  .issue .scope.done{ background:var(--good-soft); color:var(--good-ink); }
+
+  footer{ margin-top:40px; padding-top:16px; border-top:1px solid var(--border); font-size:11.5px;
+    color:var(--muted); font-family:'IBM Plex Mono',monospace; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+
+  @media (max-width:640px){
+    .ta-grid{ grid-template-columns:1fr; }
+    .diff-row{ grid-template-columns:1fr; }
+    .bar-label{ width:100px; font-size:11px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">mulkko 백엔드 · 공고 통합 파이프라인 · 2026-09-07 (문의처 수정 반영)</span>
+    <h1>공고 브릿지</h1>
+    <p class="dek">기업마당·창업진흥원 원본(raw) 데이터를 통합 공고 테이블(<code class="mono">announcements</code>)로 옮기는 "중간다리" 코드 — 무엇을 만들었고, 데이터가 실제로 어떻게 나왔고, 아직 건드려야 할 게 뭔지 한 장에 정리.</p>
+  </header>
+
+  <section class="block">
+    <h2>TA 전달 자료</h2>
+    <p class="block-dek">각 소스마다 코드 파일 + 설명 문서 세트. 서로 완전히 독립적이라 따로 전달해도 된다.</p>
+    <div class="ta-grid">
+      <div class="ta-card">
+        <h3>기업마당 <span class="badge ready">실행 준비됨</span></h3>
+        <ul>
+          <li><span class="n">1</span><span>코드: <code>backend/crawler/bizinfo_api.py</code> + <code>backend/preprocessing/sync_bizinfo_announcements.py</code></span></li>
+          <li><span class="n">2</span><span>문서: <code>docs/bizinfo_announcements_pipeline.md</code></span></li>
+          <li><span class="n">3</span><span>전제조건: <code>announcements_raw_bizinfo</code>에 이미 크롤러가 데이터를 채우고 있음 — 단, 아래 <code>refrnc_nm</code> 컬럼 추가(ALTER TABLE) 먼저 필요</span></li>
+        </ul>
+      </div>
+      <div class="ta-card">
+        <h3>창업진흥원 <span class="badge prep">raw 적재 먼저 필요</span></h3>
+        <ul>
+          <li><span class="n">1</span><span>코드: <code>backend/preprocessing/sync_kstartup_announcements.py</code></span></li>
+          <li><span class="n">2</span><span>시더: <code>backend/crawler/kstartup_seed_loader.py</code> (라이브 크롤러 없어서 필요)</span></li>
+          <li><span class="n">3</span><span>문서: <code>docs/kstartup_announcements_pipeline.md</code></span></li>
+          <li><span class="n">4</span><span>원본 데이터: 데스크톱 <code>startup_260906_1653.csv</code>(29,991건) — 시더로 먼저 적재해야 함</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>공통 아키텍처 — 9단계, 어디도 새 판단 로직 없음</h2>
+    <p class="block-dek">두 소스 다 같은 뼈대. 기존 <code class="mono">extract_region()</code>/<code class="mono">decide_industry()</code>/<code class="mono">normalize_kstartup_region()</code>을 그대로 호출만 한다.</p>
+    <div class="cascade">
+      <div class="step"><div class="dot">1</div><div class="step-body"><p class="step-title">RAW 조회</p><span class="step-fn">load_raw_*_from_postgres()</span><p class="step-desc">PostgreSQL 접근 ①</p></div></div>
+      <div class="step"><div class="dot">2</div><div class="step-body"><p class="step-title">기본 전처리</p><span class="step-fn">clean_bizinfo() / clean_kstartup()</span><p class="step-desc">텍스트 정규화·결측치 보존·중복처리 — 판단 로직 없음</p></div></div>
+      <div class="step"><div class="dot">3</div><div class="step-body"><p class="step-title">공통 필드 변환</p><span class="step-fn">transform_*_to_common() + parse_target_conditions() + normalize_support_fields()</span></div></div>
+      <div class="step"><div class="dot">4</div><div class="step-body"><p class="step-title">지역 매핑</p><span class="step-fn">map_regions()</span><p class="step-desc">기존 함수 재호출</p></div></div>
+      <div class="step"><div class="dot">5</div><div class="step-body"><p class="step-title">업종코드 매핑</p><span class="step-fn">map_ksic()</span><p class="step-desc">기업마당: 기존 decide_industry() 재호출 / 창업진흥원: 팀 결정대로 고정값</p></div></div>
+      <div class="step"><div class="dot">6</div><div class="step-body"><p class="step-title">최종 검증</p><span class="step-fn">validate_announcements()</span><p class="step-desc">(통과분, 검토대상) 분리</p></div></div>
+      <div class="step"><div class="dot">7</div><div class="step-body"><p class="step-title">UPSERT</p><span class="step-fn">upsert_announcements()</span><p class="step-desc">PostgreSQL 접근 ② (announcements)</p></div></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>두 소스가 다른 지점 <span class="src biz">기업마당</span><span class="src ks">창업진흥원</span></h2>
+    <div class="diff-row"><span class="lbl">지역 매핑</span><span class="biz">extract_region() — 원문 텍스트 추론</span><span class="ks">normalize_kstartup_region() — 구조화 필드 직접 정규화 (더 신뢰도 높음, 253건 불일치 0건)</span></div>
+    <div class="diff-row"><span class="lbl">업종코드</span><span class="biz">decide_industry() 실제 매칭</span><span class="ks">매칭 시도 자체 안 함 → "업종무관(기본값)" 고정 (2026-09-04 팀 결정)</span></div>
+    <div class="diff-row"><span class="lbl">raw 데이터</span><span class="biz">이미 DB에 쌓이는 중 (크롤러 있음)</span><span class="ks">아직 없음 → 시더로 1회 적재 필요</span></div>
+    <div class="diff-row"><span class="lbl">연령/업력</span><span class="biz">원본 필드 자체가 없음 → NULL</span><span class="ks">신청대상 텍스트에서 직접 추출·단일화</span></div>
+  </section>
+
+  <section class="block">
+    <h2>전처리는 어떻게 했나 <span class="src biz">기업마당</span></h2>
+    <ul style="font-size:13.5px; color:var(--ink-2); padding-left:20px; margin:0 0 14px;">
+      <li>텍스트: <code class="mono">_x000D_</code>/NBSP/zero-width space/BOM 제거, CRLF→LF, 연속 공백 정리</li>
+      <li><code class="mono">bsns_sumry_cn</code>(사업개요): HTML 태그 제거 후 다시 정규화</li>
+      <li>URL 필드는 공백만 정리, 값 자체는 안 바꿈</li>
+      <li>중복은 <code class="mono">pblanc_id</code> 기준, <code class="mono">updt_pnttm</code> 최신 우선</li>
+      <li>신청기간: "2026-08-24 ~ 2026-09-11" 형식 파싱, "예산소진시까지"/"상시" 등은 원문 보존하고 날짜는 안 지어냄</li>
+      <li><b>[2026-09-07 수정]</b> 문의처(<code class="mono">contact</code>): 원본 raw CSV에 있던 <code class="mono">refrncNm</code>(담당기관+연락처, 1589건 중 1588건 값 존재)을 크롤러가 DB에 저장 안 하고 빠뜨리고 있던 걸 발견 — 크롤러 INSERT 컬럼에 추가해서 이제 채워짐</li>
+    </ul>
+    <div class="callout">
+      <span class="mark">검증 상태</span>
+      <span>실제 PostgreSQL 자격증명이 없어 <b>합성 데이터로 로직만 검증</b>했다(아래 값 전부 테스트 입력). 실 DB 연결 후 첫 실행 결과는 다시 확인 필요.</span>
+    </div>
+    <pre class="code">입력: "중소기업&nbsp; 지원  사업 공고" / "&lt;p&gt;사업개요_x000D_ 내용&lt;/p&gt;&lt;br&gt;" / refrncNm="부산테크노파크 글로벌사업팀 051-320-3555, yul@btp.or.kr"
+출력: title="중소기업 지원 사업 공고" / content="사업개요\n 내용"
+출력: category="수출 &gt; 해외진출", host_org_name="테스트기관"(수행기관), supervising_org="중소벤처기업부"(소관기관)
+출력: contact="부산테크노파크 글로벌사업팀 051-320-3555, yul@btp.or.kr" (수정 후)</pre>
+  </section>
+
+  <section class="block">
+    <h2>전처리는 어떻게 했나 <span class="src ks">창업진흥원</span></h2>
+    <p class="block-dek">이건 실제 원본 29,991건으로 돌린 진짜 결과다(2026-09-07, <code class="mono">15_clean_kstartup_raw_v2.py</code> 실행 리포트) — 합성 데이터 아님.</p>
+
+    <div class="tbl-wrap">
+      <table class="data">
+        <thead><tr><th>단계</th><th>건수</th></tr></thead>
+        <tbody>
+          <tr><td>원본</td><td class="num">29,991건</td></tr>
+          <tr><td>모집중(rcrt_prgs_yn=Y) 제외</td><td class="num">-29,749건</td></tr>
+          <tr><td>기준일 이전 마감 제외</td><td class="num">-0건</td></tr>
+          <tr><td><b>최종 모집중 공고</b></td><td class="num"><b>242건</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="font-size:13px; color:var(--ink-2); margin:16px 0 6px;">업력조건(<code class="mono">biz_enyy</code>) 단일화 분포 (실측):</p>
+    <div class="bar-row"><span class="bar-label">예비창업자~10년미만</span><div class="bar-track"><div class="bar-fill" style="width:29.3%"></div></div><span class="bar-value">71건</span></div>
+    <div class="bar-row"><span class="bar-label">예비창업자</span><div class="bar-track"><div class="bar-fill" style="width:18.6%"></div></div><span class="bar-value">45건</span></div>
+    <div class="bar-row"><span class="bar-label">10년미만</span><div class="bar-track"><div class="bar-fill" style="width:16.5%"></div></div><span class="bar-value">40건</span></div>
+    <div class="bar-row"><span class="bar-label">예비창업자~7년미만</span><div class="bar-track"><div class="bar-fill" style="width:13.2%"></div></div><span class="bar-value">32건</span></div>
+    <div class="bar-row"><span class="bar-label">7년미만</span><div class="bar-track"><div class="bar-fill" style="width:10.3%"></div></div><span class="bar-value">25건</span></div>
+    <div class="bar-row"><span class="bar-label">그 외 7종</span><div class="bar-track"><div class="bar-fill" style="width:12.0%"></div></div><span class="bar-value">29건</span></div>
+
+    <p style="font-size:13px; color:var(--ink-2); margin:18px 0 6px;">대상연령(<code class="mono">biz_trgt_age</code>) 단일화 분포 (실측):</p>
+    <div class="bar-row"><span class="bar-label">전연령</span><div class="bar-track"><div class="bar-fill" style="width:69.8%"></div></div><span class="bar-value">169건</span></div>
+    <div class="bar-row"><span class="bar-label">만 20세 이상</span><div class="bar-track"><div class="bar-fill" style="width:20.2%"></div></div><span class="bar-value">49건</span></div>
+    <div class="bar-row"><span class="bar-label">그 외 9종</span><div class="bar-track"><div class="bar-fill" style="width:10.0%"></div></div><span class="bar-value">24건</span></div>
+
+    <pre class="code" style="margin-top:14px;">입력(합성): aply_trgt_ctnt="만 20세 이상 ~ 만 39세 이하, 예비창업자로서 창업 3년 이내"
+출력: business_age_condition="예비창업자~3년미만", target_age_groups=["만 20세~39세"]
+출력: host_org_name="중소벤처기업부"(게시기관), supervising_org="창업진흥원"(주관기관)
+출력: regions=["서울특별시","부산광역시"], ksic_status="업종무관(기본값)"</pre>
+  </section>
+
+  <section class="block">
+    <h2>더 건드릴 부분 — 전부 여기 있음, 숨긴 거 없음</h2>
+    <p class="block-dek">이번 범위(연결 지점 구성)에서 의도적으로 안 고친 것들. 우선순위 순. 해결된 항목은 초록색으로 표시.</p>
+    <div class="issue-list">
+      <div class="issue"><span class="n">1</span><div><b><code class="mono">schema.sql</code>에 <code class="mono">announcements_raw_bizinfo</code>/<code class="mono">announcements_raw_kstartup</code>/<code class="mono">announcements</code> 정의가 없음</b> — 실제 크롤러 코드는 이미 이 테이블 전제로 짜여 있어서, 실 Supabase엔 schema.sql 밖에서 만들어져 있을 가능성이 높음. <b>실행 전 반드시 확인.</b><span class="scope">공통 · 최우선</span></div></div>
+      <div class="issue"><span class="n">2</span><div><b>창업진흥원 raw 데이터가 DB에 없음</b> — 시더(<code class="mono">kstartup_seed_loader.py</code>) 먼저 실행 필요, 그 안의 컬럼명이 실제 DB와 일치하는지도 미확인.<span class="scope">창업진흥원</span></div></div>
+      <div class="issue resolved"><span class="n">✓</span><div><b>[해결됨, 2026-09-07] 기업마당 크롤러가 <code class="mono">refrnc_nm</code>(문의처)을 저장 안 하던 문제</b> — 실제 raw CSV 확인 결과 <code class="mono">refrncNm</code>에 1588/1589건 값이 이미 있었는데 크롤러 INSERT 컬럼에서 빠져 있었음. <code class="mono">bizinfo_api.py</code> + <code class="mono">sync_bizinfo_announcements.py</code> 수정 완료. <b>단, 실 DB의 <code class="mono">announcements_raw_bizinfo</code> 테이블에 <code class="mono">refrnc_nm</code> 컬럼을 먼저 추가(ALTER TABLE)해야 하고, 이 수정 전에 이미 수집된 옛 행들은 크롤러 재실행 전까지 여전히 NULL.</b><span class="scope done">기업마당 · 완료</span></div></div>
+      <div class="issue"><span class="n">3</span><div><b><code class="mono">backend/ml/classifier/decide_industry.py</code>가 최신이 아님</b> — 자매 프로젝트에서 최근 이틀간 고친 버그(업종무관 오판정, 제외/제한 키워드 등) 3건이 반영 안 된 이전 버전. 이번엔 의도적으로 동기화 제외(사용자 확인).<span class="scope">기업마당</span></div></div>
+      <div class="issue"><span class="n">4</span><div><b><code class="mono">target_age_groups</code> 배열 감싸기</b> — ERD는 TEXT[]인데 정제 로직은 단일 문자열 생성 → 1개짜리 배열로 감쌈(확인받음). 여러 연령대 동시 허용 필요해지면 재검토.<span class="scope">창업진흥원</span></div></div>
+      <div class="issue"><span class="n">5</span><div><b>첨부파일 원문 추출을 매번 새로 함</b> — <code class="mono">map_ksic()</code>이 캐시 없이 매번 다운로드/OCR. 건수 많아지면 <code class="mono">announcements.content</code> 캐시 재사용 로직 필요.<span class="scope">기업마당</span></div></div>
+      <div class="issue"><span class="n">6</span><div><b><code class="mono">company_type</code>/<code class="mono">support_field_large</code>/<code class="mono">_medium</code> 컬럼 미포함</b> — 팀이 아직 검토 안 한 컬럼이라 이번엔 안 넣음. 원본엔 이미 값 존재(trgetNm 등) — 나중에 지원분야 필터 기능 만들 때 추가하면 됨.<span class="scope">기업마당</span></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>backend/crawler/bizinfo_api.py · backend/preprocessing/sync_bizinfo_announcements.py · sync_kstartup_announcements.py · backend/crawler/kstartup_seed_loader.py</span>
+    <span>2026-09-07 · mulkko</span>
+  </footer>
+
+</div>
+
+</body></html>
