@@ -1,0 +1,341 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  font-family: var(--font-family-base);
+  color: var(--color-ink-charcoal);
+}
+
+.header {
+  border-bottom: 1px solid var(--color-border-web);
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  font-size: var(--font-size-caption);
+  color: var(--color-stone-gray);
+  letter-spacing: 1px;
+  margin: 0 0 6px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0;
+  color: var(--color-navy-sphere);
+}
+
+.subheading {
+  font-size: var(--font-size-caption);
+  color: var(--color-stone-gray);
+  margin: 20px 0 8px;
+}
+
+/* ===== 섹션 공통 ===== */
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 40px 0 16px;
+}
+
+.sectionBar {
+  width: 4px;
+  height: 18px;
+  background: var(--color-navy-sphere);
+  border-radius: 2px;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ===== 01. 컬러 팔레트 ===== */
+.colorGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.colorCard, .colorCardWarning {
+  width: 160px;
+  padding: 12px;
+  border: 1px solid var(--color-border-web);
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+}
+
+.colorCardWarning {
+  border-color: var(--color-error-text);
+}
+
+.swatch {
+  width: 100%;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-web);
+  margin-bottom: 8px;
+}
+
+.colorName {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.colorHex {
+  font-size: 12px;
+  color: var(--color-stone-gray);
+  margin: 2px 0;
+}
+
+.colorUsage {
+  font-size: 11px;
+  color: var(--color-ink-charcoal);
+  margin: 4px 0;
+}
+
+.colorWarning {
+  font-size: 11px;
+  color: var(--color-error-text);
+  font-weight: 700;
+  margin: 4px 0;
+}
+
+.codeLabel {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--color-stone-gray);
+  background: var(--color-stone-mist);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+/* ===== 02. 타이포그래피 ===== */
+.typoCard {
+  background: var(--color-white);
+  border: 1px solid var(--color-border-web);
+  border-radius: var(--radius-input);
+  padding: 8px 20px;
+}
+
+.typoRow {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border-web);
+}
+
+.typoRow:last-child {
+  border-bottom: none;
+}
+
+.typoTag {
+  width: 60px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-stone-gray);
+}
+
+.logoPreview {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-family-logo);
+  font-size: var(--font-size-logo);
+  font-weight: var(--font-weight-logo);
+  letter-spacing: var(--letter-spacing-logo);
+  color: var(--color-navy-sphere);
+}
+
+.typoPreviewH1 {
+  flex: 1;
+  margin: 0;
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-h1);
+}
+
+.typoPreviewH2 {
+  flex: 1;
+  margin: 0;
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-h2);
+}
+
+.typoPreviewLabel {
+  flex: 1;
+  margin: 0;
+  font-size: var(--font-size-input-label);
+  font-weight: var(--font-weight-input-label);
+}
+
+.typoPreviewBody {
+  flex: 1;
+  margin: 0;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-body);
+}
+
+.typoPreviewCaption {
+  flex: 1;
+  margin: 0;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-caption);
+  color: var(--color-teal-green);
+}
+
+.typoSpec {
+  text-align: right;
+}
+
+.typoSpecDesc {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-ink-charcoal);
+}
+
+.typoSpecValue {
+  margin: 2px 0 0;
+  font-size: 10px;
+  color: var(--color-stone-gray);
+}
+
+/* ===== 03/04. 컴포넌트 카드 공통 ===== */
+.componentCard {
+  background: var(--color-white);
+  border: 1px solid var(--color-border-web);
+  border-radius: var(--radius-input);
+  padding: 20px;
+}
+
+.componentRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--color-border-web);
+}
+
+.componentRow:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.componentItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* ===== 03. 인풋 필드 ===== */
+.inputDefault, .inputFocused, .inputError {
+  width: var(--input-width-max);
+  max-width: 100%;
+  height: var(--input-height-max);
+  box-sizing: border-box;
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  border: 1px solid var(--color-stone-gray);
+  padding: var(--input-padding-y-max) var(--input-padding-x-max);
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
+.inputFocused {
+  border-color: var(--color-navy-sphere);
+  border-width: 2px;
+}
+
+.inputError {
+  border-color: var(--color-error-text);
+  color: var(--color-error-text);
+}
+
+.inputErrorHelp {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  color: var(--color-error-text);
+}
+
+/* ===== 04. 버튼 & 인터랙션 ===== */
+.btnPrimaryCta {
+  width: 368px;
+  max-width: 100%;
+  height: 54px;
+  border-radius: var(--radius-btn);
+  background: var(--color-navy-sphere);
+  color: var(--color-white);
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}
+
+.linkForgot {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-teal-green);
+  text-decoration: none;
+}
+
+.linkSignup {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-navy-sphere);
+  text-decoration: none;
+}
+
+.fileUpload {
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  border: 1.5px dashed var(--color-border-web);
+  border-radius: var(--radius-input);
+  color: var(--color-stone-gray);
+  font-size: var(--font-size-body);
+  text-align: center;
+}
+
+.toastPreview {
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--color-ink-charcoal);
+  color: var(--color-white);
+  font-size: var(--font-size-body);
+}
+
+/* ===== 05. 간격 & 레이아웃 ===== */
+.specList {
+  background: var(--color-white);
+  border: 1px solid var(--color-border-web);
+  border-radius: var(--radius-input);
+  padding: 4px 20px;
+}
+
+.specRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-web);
+  font-size: var(--font-size-body);
+}
+
+.specRow:last-child {
+  border-bottom: none;
+}
+
+.specRow span:first-child {
+  color: var(--color-ink-charcoal);
+}
+
+.specRow span:last-child {
+  color: var(--color-stone-gray);
+}

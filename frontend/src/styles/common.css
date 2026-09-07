@@ -1,4 +1,13 @@
 /* 실제 화면(React 컴포넌트)과 style_guide.html이 공통으로 사용하는 스타일. */
+
+/* 사용자(web) 화면 공용 래퍼: 모바일 레이아웃을 그대로 유지하면서 데스크톱에선 최대 640px로 가운데 정렬 */
+.pageContainer {
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
 .form-field {
   margin-bottom: 12px;
 }
