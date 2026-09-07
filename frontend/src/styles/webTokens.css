@@ -56,6 +56,7 @@
   /* ===== Radius ===== */
   --radius-input: 12px;
   --radius-btn: 14px; /* Primary CTA */
+  --radius-check: 6px; /* 체크박스 코너 (회원가입 약관 동의) */
   --radius-corner-safe: 28px; /* 안전 영역 코너 반경 */
 
   /* ===== 간격 ===== */

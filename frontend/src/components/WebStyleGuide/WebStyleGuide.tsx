@@ -171,6 +171,30 @@ function WebStyleGuide() {
               <span className={styles.codeLabel}>Toast · Heavy Metal 배경 · 하단 팝업</span>
             </div>
           </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.checkboxRow}>
+                <span className={styles.checkboxOn} />
+                <span className={styles.checkboxOff} />
+                <span className={styles.checkboxOffNavy} />
+              </div>
+              <span className={styles.codeLabel}>체크박스 · radius 6px (--radius-check) · ON: Navy Sphere</span>
+            </div>
+          </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.modalPreview}>
+                <div className={styles.modalPreviewPanel}>
+                  <div className={styles.modalPreviewHeader}>
+                    <span className={styles.modalPreviewTitle}>서비스 이용약관</span>
+                    <span className={styles.modalPreviewClose}>✕</span>
+                  </div>
+                  <p className={styles.modalPreviewBody}>약관 보기 팝업 (X · 배경 클릭 · Esc로 닫힘)</p>
+                </div>
+              </div>
+              <span className={styles.codeLabel}>Modal · Scrim 배경(--color-scrim) · radius 12px</span>
+            </div>
+          </div>
         </div>
       </section>
 

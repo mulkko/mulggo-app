@@ -312,6 +312,74 @@
   font-size: var(--font-size-body);
 }
 
+/* 체크박스 (회원가입 약관 동의) */
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.checkboxOn,
+.checkboxOff,
+.checkboxOffNavy {
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border-radius: var(--radius-check);
+  border: 1px solid var(--color-border-web);
+  background: var(--color-white);
+}
+
+.checkboxOffNavy {
+  border-color: var(--color-navy-sphere);
+}
+
+.checkboxOn {
+  border-color: var(--color-navy-sphere);
+  background: var(--color-navy-sphere);
+}
+
+/* 약관 보기 모달 (TermsModal) */
+.modalPreview {
+  width: 320px;
+  max-width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  border-radius: var(--radius-input);
+  background: var(--color-scrim);
+}
+
+.modalPreviewPanel {
+  padding: 16px;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
+}
+
+.modalPreviewHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.modalPreviewTitle {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-h2);
+  color: var(--color-ink-charcoal);
+}
+
+.modalPreviewClose {
+  color: var(--color-stone-gray);
+}
+
+.modalPreviewBody {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
 /* ===== 05. 간격 & 레이아웃 ===== */
 .specList {
   background: var(--color-white);
