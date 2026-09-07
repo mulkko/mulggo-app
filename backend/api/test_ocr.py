@@ -12,19 +12,12 @@ import os
 import shutil
 
 from fastapi import APIRouter, File, UploadFile
-from PIL import UnidentifiedImageError
 
-from backend.assistant.biz_cert_ocr import extract_biz_cert, get_cached_vision_model
-
-try:
-    from pdf2image.exceptions import (
-        PDFInfoNotInstalledError,
-        PDFPageCountError,
-        PDFSyntaxError,
-    )
-    _PDF_ERRORS = (PDFInfoNotInstalledError, PDFPageCountError, PDFSyntaxError)
-except ImportError:
-    _PDF_ERRORS = ()
+from backend.assistant.biz_cert_ocr import (
+    classify_ocr_error,
+    extract_biz_cert,
+    get_cached_vision_model,
+)
 
 router = APIRouter(prefix="/api/test", tags=["test"])
 
@@ -65,33 +58,15 @@ async def test_ocr_upload(file: UploadFile = File(...)) -> dict:
         "error_label": None,  # 사용자에게 그대로 보여줄 한글 안내 문구
     }
 
-    def _fail(error_type, label, exc):
-        result["error_type"] = error_type
-        result["error_label"] = label
-        result["error"] = f"OCR 실패: {exc}"
-        return result
-
     try:
         model, processor = get_cached_vision_model()
         entity_type, biz_cert = extract_biz_cert(save_path, model, processor)
-    except (UnidentifiedImageError, FileNotFoundError, OSError) as e:
-        # 파일 자체를 못 열었을 때 (손상된 파일, 이미지가 아닌 파일 등)
-        return _fail("file_error", "파일을 열 수 없습니다. 이미지가 손상되었거나 지원하지 않는 형식일 수 있어요.", e)
-    except _PDF_ERRORS as e:
-        # PDF -> 이미지 변환 실패 (주로 서버에 poppler 미설치)
-        return _fail("pdf_error", "PDF 변환에 실패했습니다. 서버 설정 문제일 수 있어요.", e)
-    except ValueError as e:
-        # 모델이 사진은 읽었지만 정해진 JSON 형식으로 답을 못 준 경우 (biz_cert_ocr.py의 parse_json 실패).
-        # 어둡거나 흐릿한 사진에서 자주 발생.
-        return _fail("recognition_error", "사업자등록증을 인식하지 못했습니다. 밝고 선명한 사진으로 다시 시도해주세요.", e)
-    except RuntimeError as e:
-        if "CUDA" in str(e):
-            # GPU 연산 중 크래시 (device-side assert 등). 서버/모델 쪽 문제라 사용자가 고칠 수 없음.
-            return _fail("gpu_error", "서버 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", e)
-        return _fail("unknown_error", "알 수 없는 오류가 발생했습니다.", e)
     except Exception as e:
-        # 위에서 분류하지 못한 나머지 전부
-        return _fail("unknown_error", "알 수 없는 오류가 발생했습니다.", e)
+        error_type, error_label = classify_ocr_error(e)
+        result["error_type"] = error_type
+        result["error_label"] = error_label
+        result["error"] = f"OCR 실패: {e}"
+        return result
 
     result["ocr_success"] = True
 

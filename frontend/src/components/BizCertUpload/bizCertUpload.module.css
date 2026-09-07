@@ -1,0 +1,87 @@
+/* [테스트] 디자인 미정 — 지금은 기능 검증용 최소 스타일. 화면 디자인 확정되면 다시 손볼 예정. */
+
+.field {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.errorText {
+  color: #c0392b;
+}
+
+.reviewBox {
+  border: solid 1px #ddd;
+  padding: 16px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.reviewDesc {
+  color: #555;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.fieldRow {
+  margin-bottom: 12px;
+}
+
+.fieldRow label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.badgeWarn {
+  color: #c0392b;
+  font-weight: bold;
+}
+
+.badgeMuted {
+  color: #999;
+}
+
+.input,
+.inputWarn {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid #ccc;
+}
+
+.inputWarn {
+  border: 1px solid #c0392b;
+}
+
+.viewRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewText {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.viewTextMuted {
+  padding: 8px;
+  color: #999;
+}
+
+.editBtn {
+  flex-shrink: 0;
+}
+
+.confirmBtn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+}
