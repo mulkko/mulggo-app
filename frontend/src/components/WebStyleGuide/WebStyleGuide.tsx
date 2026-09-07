@@ -1,10 +1,192 @@
-import styles from "./WebStyleGuide.module.css";
+import styles from "./webStyleGuide.module.css";
 
-// TODO: 사용자 화면 스타일가이드 새로 작성 예정 (기존 버전 초기화)
+const COLORS = [
+  { name: "Navy Sphere", hex: "#104A8F", usage: "주요 액션 버튼(CTA), 핵심 활성화 링크", varName: "--color-navy-sphere" },
+  { name: "Teal Green", hex: "#0F6E62", usage: "안내 링크 텍스트, 보조 상호작용 요소", varName: "--color-teal-green" },
+  { name: "Light Teal", hex: "#3FB6A8", usage: "컬러 팔레트 등록값 (용도 팀 확인 필요)", varName: "--color-light-teal" },
+  { name: "Teal Mist", hex: "#DFF3EF", usage: "컬러 팔레트 등록값 (용도 팀 확인 필요)", varName: "--color-teal-mist" },
+  { name: "Ink Charcoal", hex: "#2E312E", usage: "주요 텍스트, 입력란 타이틀 라벨", varName: "--color-ink-charcoal" },
+  { name: "Stone Gray", hex: "#8B8D93", usage: "서브텍스트, 버튼 테두리, 공통 인풋 테두리", varName: "--color-stone-gray" },
+  { name: "Text Placeholder", hex: "#757575", usage: "입력란 placeholder 텍스트", varName: "--color-text-placeholder" },
+  { name: "Stone Mist", hex: "#EFEFF1", usage: "공통 인풋 필드 배경", varName: "--color-stone-mist" },
+  { name: "Border Web", hex: "#DCD8CC", usage: "구분선, 파일 업로드 점선 테두리", varName: "--color-border-web" },
+  { name: "White", hex: "#FFFFFF", usage: "앱 기본 배경, 카드 배경, 활성 버튼 텍스트", varName: "--color-white" },
+  { name: "Error BG", hex: "#F2D1D1", usage: "에러 배지 배경", varName: "--color-error-bg-web" },
+  { name: "Error Text", hex: "#C04040", usage: "에러 텍스트/보더", varName: "--color-error-text" },
+];
+
+const LOGO_COLORS = [
+  { name: "Logo Navy", hex: "#2A3286", varName: "--logo-navy" },
+  { name: "Logo Mint", hex: "#ABE0D6", varName: "--logo-mint" },
+];
+
 function WebStyleGuide() {
   return (
     <div className={styles.page}>
-      <p>사용자 화면 스타일가이드 준비 중</p>
+      <header className={styles.header}>
+        <p className={styles.eyebrow}>MULKKO DESIGN SYSTEM</p>
+        <h1 className={styles.title}>공통 UI 스타일가이드 (로그인 · 회원가입)</h1>
+      </header>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>01. COLOR PALETTE</h2>
+        </div>
+        <div className={styles.colorGrid}>
+          {COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className={styles.subheading}>로고 전용 (UI 팔레트와 분리 — 컴포넌트에 재사용 금지)</p>
+        <div className={styles.colorGrid}>
+          {LOGO_COLORS.map((color) => (
+            <div className={styles.colorCardWarning} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorWarning}>재사용 금지</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>02. TYPOGRAPHY SYSTEM</h2>
+        </div>
+        <div className={styles.typoCard}>
+          <div className={styles.typoRow}>
+            <span className={styles.typoTag}>LOGO</span>
+            <p className={styles.logoPreview}>MULKKO</p>
+            <div className={styles.typoSpec}>
+              <p className={styles.typoSpecDesc}>Inter Black / 워드마크</p>
+              <p className={styles.typoSpecValue}>32px / 900 / letter-spacing +1.92px</p>
+            </div>
+          </div>
+          <div className={styles.typoRow}>
+            <span className={styles.typoTag}>H1</span>
+            <p className={styles.typoPreviewH1}>회원가입 / 로그인</p>
+            <div className={styles.typoSpec}>
+              <p className={styles.typoSpecDesc}>화면 타이틀</p>
+              <p className={styles.typoSpecValue}>16px / 700</p>
+            </div>
+          </div>
+          <div className={styles.typoRow}>
+            <span className={styles.typoTag}>H2</span>
+            <p className={styles.typoPreviewH2}>가입 정보 입력</p>
+            <div className={styles.typoSpec}>
+              <p className={styles.typoSpecDesc}>섹션 헤더</p>
+              <p className={styles.typoSpecValue}>15px / 700</p>
+            </div>
+          </div>
+          <div className={styles.typoRow}>
+            <span className={styles.typoTag}>LABEL</span>
+            <p className={styles.typoPreviewLabel}>이메일</p>
+            <div className={styles.typoSpec}>
+              <p className={styles.typoSpecDesc}>입력란 라벨</p>
+              <p className={styles.typoSpecValue}>13px / 700</p>
+            </div>
+          </div>
+          <div className={styles.typoRow}>
+            <span className={styles.typoTag}>BODY</span>
+            <p className={styles.typoPreviewBody}>다람쥐 헌 쳇바퀴에 타고파</p>
+            <div className={styles.typoSpec}>
+              <p className={styles.typoSpecDesc}>본문/값</p>
+              <p className={styles.typoSpecValue}>13.5px / 400</p>
+            </div>
+          </div>
+          <div className={styles.typoRow}>
+            <span className={styles.typoTag}>CAPTION</span>
+            <p className={styles.typoPreviewCaption}>비밀번호를 잊으셨나요?</p>
+            <div className={styles.typoSpec}>
+              <p className={styles.typoSpecDesc}>캡션/링크</p>
+              <p className={styles.typoSpecValue}>11px / 400</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>03. INPUT FIELD (공통 통합 스펙)</h2>
+        </div>
+        <div className={styles.componentCard}>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.inputDefault}>example@email.com</div>
+              <span className={styles.codeLabel}>DEFAULT</span>
+            </div>
+            <div className={styles.componentItem}>
+              <div className={styles.inputFocused}>example@email.com</div>
+              <span className={styles.codeLabel}>FOCUSED</span>
+            </div>
+            <div className={styles.componentItem}>
+              <div className={styles.inputError}>invalid-email</div>
+              <p className={styles.inputErrorHelp}>* 올바른 이메일 형식이 아닙니다</p>
+              <span className={styles.codeLabel}>ERROR</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>04. 버튼 & 인터랙션</h2>
+        </div>
+        <div className={styles.componentCard}>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <button type="button" className={styles.btnPrimaryCta}>로그인</button>
+              <span className={styles.codeLabel}>Primary CTA · 368×54 · radius 14px</span>
+            </div>
+            <div className={styles.componentItem}>
+              <a href="#none" className={styles.linkForgot}>비밀번호를 잊으셨나요?</a>
+              <span className={styles.codeLabel}>Teal Green · 12px</span>
+            </div>
+            <div className={styles.componentItem}>
+              <a href="#none" className={styles.linkSignup}>회원가입</a>
+              <span className={styles.codeLabel}>Navy Sphere · Bold 13px</span>
+            </div>
+          </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.fileUpload}>+ 사업자등록증 첨부 (선택)</div>
+              <span className={styles.codeLabel}>점선 테두리 · Border Web</span>
+            </div>
+            <div className={styles.componentItem}>
+              <div className={styles.toastPreview}>저장되었습니다</div>
+              <span className={styles.codeLabel}>Toast · Heavy Metal 배경 · 하단 팝업</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>05. 간격 & 레이아웃</h2>
+        </div>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>기본 외부 마진</span><span>24px</span></div>
+          <div className={styles.specRow}><span>로그인 세부 간격</span><span>14px</span></div>
+          <div className={styles.specRow}><span>회원가입 디테일 간격</span><span>10px</span></div>
+          <div className={styles.specRow}><span>모바일 표준 가로폭</span><span>420px (최대 제한)</span></div>
+          <div className={styles.specRow}><span>안전 영역 코너 반경</span><span>28px</span></div>
+          <div className={styles.specRow}><span>앱 섀도우</span><span>Drop Shadow · 60px Blur · Navy Sphere 35%</span></div>
+        </div>
+      </section>
     </div>
   );
 }

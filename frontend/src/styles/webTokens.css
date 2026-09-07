@@ -1,59 +1,19 @@
 :root {
-  /* ===== 1. Core Brand & Interaction ===== */
-  --color-teal-green: #0f6e62; /* 텍스트 링크, 라이트 배지 텍스트 */
-  --color-light-teal: #3fb6a8; /* 보더 강조, 체크마크, 그라디언트 중간톤 */
-  --color-teal-mist: #dff3ef; /* 라이트 배지·입력창 배경 (Teal Green 짝) */
-  --color-navy-sphere: #104a8f; /* 로그인/회원가입 등 주요 CTA 버튼 배경 */
-  --color-brand-text-navy: #15328c; /* MULKKO 워드마크, 브랜드 강조 텍스트 (버튼과 별도 역할) */
-  --color-teal-gradient-top: #7fdccf; /* 스플래시 화면 그라디언트 상단색 */
+  /* ===== 색상 — Primary & Brand ===== */
+  --color-navy-sphere: #104a8f; /* 주요 액션 버튼(CTA), 핵심 활성화 링크 */
+  --color-teal-green: #0f6e62; /* 안내 링크 텍스트, 보조 상호작용 요소 */
+  --color-light-teal: #3fb6a8; /* 컬러 팔레트 등록값 — 인풋 스펙 등에서는 미사용, 용도 팀 확인 필요 */
+  --color-teal-mist: #dff3ef; /* 컬러 팔레트 등록값 — 인풋 스펙 등에서는 미사용, 용도 팀 확인 필요 */
 
-  /* ===== 2. Amber / Warning ===== */
-  --color-warm-amber: #e8a93c; /* 활성 탭 아이콘, 진행바 채움, D-day 배지 텍스트 */
-  --color-amber-mist: #fff3d6; /* D-day 배지 배경 (Warm Amber 짝) */
-  --color-amber-track: #f7e4bc; /* 진행바 트랙(연한 배경) */
-  --color-amber-text-dark: #b5761a; /* 하단 탭바 라벨 텍스트 */
-  --color-amber-text-darker: #8a6212; /* "AI 코멘트"·"마감 임박" 라벨 텍스트 */
-  --color-amber-text-deep: #7a5510; /* "새 아이디어" 등 강조 텍스트 */
-  --color-amber-text-deepest: #5f4308; /* "지역가산" 등 세부 안내 텍스트 */
-  --color-amber-hover: #f0d293; /* 메뉴 항목 hover 배경(호박색 계열) */
-
-  /* ===== 3. Navy/Blue Hover & Chip ===== */
-  --color-navy-hover-dark: #0b2170; /* 메뉴 hover 배경(진한 남색) */
-  --color-navy-hover-mid: #0b3868; /* 메뉴 hover 배경(중간 남색) */
-  --color-teal-hover: #34a296; /* 메뉴 hover 배경(틸) */
-  --color-blue-chip-bg: #e7ecf8; /* 기관명 등 라벨 칩 배경 (텍스트는 Brand Text Navy 짝) */
-  --color-blue-card-bg: #f3f8ff; /* 카드 배경(연한 파랑) */
-  --color-cream-hover: #eae5d8; /* 메뉴 hover 배경(크림) */
-  --color-teal-stripe: #cfebe5; /* 진행바 대각선 패턴색 + hover 배경 겸용 */
-
-  /* ===== 4. Neutrals & Backgrounds ===== */
-  --color-chip-bg: #f4f1e8; /* 칩/필 배경 (Stone Gray 텍스트 짝) */
-  --color-cream: #faf8f3; /* 하단 탭바 배경 */
-  --color-menu-hover: #f5f2ea; /* 메뉴 항목 기본 hover 배경 */
-  --color-divider-light: #f0ede4; /* 상단 구분선 */
-  --color-avatar-chip-bg: #efece2; /* 아바타 원형 배경, 칩 배경 */
-  --color-app-bg: #efede6; /* 전체 body 배경 (실사용 기준값) */
-  --color-inset-border: #e6e2d6; /* 카드 안쪽 보더(inset box-shadow) */
-  --color-border-web: #dcd8cc; /* 일반 보더, 점선 보더, 구분선 (adminTokens.css의 --color-border와 이름 충돌 방지) */
-  --color-progress-track-a: #b9b4a4; /* 진행바 채움(중립 톤) */
-  --color-progress-track-b: #cfcaba; /* 진행바 채움(중립 톤 변형) */
-  --color-highlight-card: #fdf6e7; /* 강조 카드 배경(연크림) */
-  --color-selected-card: #fcfbf7; /* 선택된 카드 배경(거의 흰색) */
-  --color-stone-mist: #efeff1; /* 입력창 배경 */
-  --color-white: #ffffff; /* 기본 배경 */
-  --color-ink-charcoal: #2e312e; /* 본문 텍스트 */
-  --color-stone-gray: #8b8d93; /* 보조 텍스트 */
-  --color-teal-accent-text: #8fe3d6; /* "진행 중인 사업 구체화" 등 강조 텍스트 + 마스코트 라인 컬러 */
-
-  /* ===== 기타 유지 항목 (이전 라운드 확정값, 이번 프로토타입 데이터엔 없음) ===== */
-  --color-signal-yellow: #ffbc00; /* CTA 배경 전용(건의사항 제출 등), 다크 텍스트와 짝 */
-  --color-review-indigo-blue: #3753c1; /* ★검토중 — 보조 컬러, 확정 아님 */
-  --color-review-royal-blue: #3b57d4; /* ★검토중 — 보조 컬러, 확정 아님 */
-  --color-review-slate-blue: #5369cb; /* ★검토중 — 보조 컬러, 확정 아님 */
-  --color-error-bg-web: #f2d1d1; /* ERROR STATE / 에러 배지 배경 (adminTokens.css의 --color-error-bg와 이름 충돌 방지) */
-  --color-error-text: #c04040; /* ERROR STATE / 에러 텍스트·보더 */
-  --color-text-placeholder: #757575; /* placeholder & 보조 라벨 (피그마 실측) */
-  --color-border-input: rgba(139, 141, 147, 0.3); /* 인풋 보더 (Stone Gray 30%) */
+  /* ===== 색상 — Neutral & Form ===== */
+  --color-ink-charcoal: #2e312e; /* 주요 텍스트, 입력란 타이틀 라벨 */
+  --color-stone-gray: #8b8d93; /* 서브텍스트, 일반 버튼 테두리, 비활성 라벨, 공통 인풋 필드 테두리 */
+  --color-text-placeholder: #757575; /* 입력란 placeholder 텍스트 */
+  --color-stone-mist: #efeff1; /* 공통 인풋 필드 배경 (로그인/회원가입 통합) */
+  --color-border-web: #dcd8cc; /* 구분선, 파일 업로드 점선 테두리 (adminTokens.css의 --color-border와 이름 충돌 방지) */
+  --color-white: #ffffff; /* 앱 기본 배경, 카드 배경, 활성 버튼 텍스트 */
+  --color-error-bg-web: #f2d1d1; /* 에러 배지 배경 (adminTokens.css의 --color-error-bg와 이름 충돌 방지) */
+  --color-error-text: #c04040; /* 에러 텍스트/보더 */
 
   /* ===== 로고 전용 (UI 팔레트와 완전히 분리 — 컴포넌트에 재사용 금지) ===== */
   --logo-navy: #2a3286;
@@ -61,40 +21,50 @@
 
   /* ===== 타이포그래피 ===== */
   --font-family-base: 'Noto Sans KR', sans-serif;
-  --font-family-numeric: 'Inter', sans-serif; /* 표·카드 수치 전용 */
-  --font-size-title-min: 20px;
-  --font-size-title-max: 24px;
-  --font-weight-title: 900;
-  --line-height-title: 1.4;
-  --font-size-heading-min: 14px;
-  --font-size-heading-max: 16px;
-  --font-weight-heading: 700;
-  --font-size-body-min: 12.5px;
-  --font-size-body-max: 13.5px;
-  --font-weight-body-min: 400;
-  --font-weight-body-max: 500;
-  --line-height-body-min: 1.5;
-  --line-height-body-max: 1.6;
-  --font-size-caption-min: 10.5px;
-  --font-size-caption-max: 11.5px;
-  --font-weight-caption: 500; /* 색상은 --color-stone-gray 사용 */
-  --font-weight-numeric: 800;
+  --font-family-logo: 'Inter', sans-serif;
+
+  --font-size-logo: 32px;
+  --font-weight-logo: 900;
+  --letter-spacing-logo: 1.92px;
+
+  --font-size-h1: 16px; /* 예: "회원가입 / 로그인" */
+  --font-weight-h1: 700;
+
+  --font-size-h2: 15px; /* 예: "가입 정보 입력" */
+  --font-weight-h2: 700;
+
+  --font-size-input-label: 13px;
+  --font-weight-input-label: 700;
+
+  --font-size-body: 13.5px;
+  --font-weight-body: 400;
+
+  --font-size-caption: 11px;
+  --font-weight-caption: 400;
+
+  /* ===== 인풋 필드 — 공통 통합 스펙 (로그인/회원가입 구분 없음) ===== */
+  --input-height-min: 46px;
+  --input-height-max: 50px;
+  --input-width-min: 368px;
+  --input-width-max: 372px;
+  --input-padding-y-min: 12px;
+  --input-padding-y-max: 14px;
+  --input-padding-x-min: 14px;
+  --input-padding-x-max: 16px;
 
   /* ===== Radius ===== */
-  --radius-sm-web: 2px; /* accent bar (adminTokens.css의 --radius-sm과 이름 충돌 방지) */
-  --radius-md-web: 11px; /* input (adminTokens.css의 --radius-md와 이름 충돌 방지) */
-  --radius-lg: 12px; /* card */
-  --radius-btn: 13px; /* button */
-  --radius-pill: 99px; /* 원형 배지 */
-  --radius-card-min: 12px; /* 카드/버튼 공통 범위 */
-  --radius-card-max: 16px;
+  --radius-input: 12px;
+  --radius-btn: 14px; /* Primary CTA */
+  --radius-corner-safe: 28px; /* 안전 영역 코너 반경 */
 
-  /* ===== 공통 규칙 ===== */
-  --icon-stroke-min: 1.7px;
-  --icon-stroke-max: 1.9px; /* 아이콘 stroke, 채움 없음(활성 상태만 색 채움) */
-  --spacing-screen-x-min: 20px;
-  --spacing-screen-x-max: 24px; /* 화면 좌우 여백 */
+  /* ===== 간격 ===== */
+  --spacing-outer: 24px; /* 기본 외부 마진 */
+  --spacing-login-detail: 14px; /* 로그인 세부 간격 */
+  --spacing-signup-detail: 10px; /* 회원가입 디테일 간격 */
 
-  /* 그림자 규칙: raised 카드 = Navy Sphere 알파, 강조 카드 = inset 컬러 보더.
-     정확한 blur/offset/opacity 수치 미확정 — 확정되면 추가. */
+  /* ===== 레이아웃 ===== */
+  --mobile-frame-width: 420px; /* 모바일 표준 가로폭(최대 제한) */
+
+  /* ===== 그림자 ===== */
+  --shadow-app: 0 0 60px rgba(16, 74, 143, 0.35); /* Drop Shadow, 60px Blur, Navy Sphere 35% */
 }

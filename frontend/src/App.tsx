@@ -17,7 +17,7 @@ function App() {
         <Route path="/login" element={<LoginForm variant="user" />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
-        <Route path="/web-style-guide" element={<WebStyleGuide />} />
+        <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />
         <Route
           path="/admin"
