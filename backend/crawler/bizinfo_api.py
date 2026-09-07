@@ -97,9 +97,9 @@ def save_to_db(items: list) -> int:
                     bsns_sumry_cn, pldir_sport_realm_lclas_code_nm, pldir_sport_realm_mlsfc_code_nm,
                     reqst_begin_end_de, reqst_mth_papers_cn, hashtags, pblanc_url,
                     rcept_engn_hmpg_url, file_nm, print_flpth_nm, print_file_nm, flpth_nm,
-                    inqire_co, creat_pnttm, updt_pnttm, source_raw, collected_at
+                    inqire_co, creat_pnttm, updt_pnttm, refrnc_nm, source_raw, collected_at
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
                 )
                 """,
                 (
@@ -123,6 +123,7 @@ def save_to_db(items: list) -> int:
                     int(item["inqireCo"]) if item.get("inqireCo") not in (None, "") else None,
                     item.get("creatPnttm") or None,
                     item.get("updtPnttm") or None,
+                    item.get("refrncNm"),
                     json.dumps(item, ensure_ascii=False),
                 ),
             )
