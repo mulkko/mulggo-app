@@ -11,7 +11,7 @@ const COLORS = [
   { name: "Stone Mist", hex: "#EFEFF1", usage: "공통 인풋 필드 배경", varName: "--color-stone-mist" },
   { name: "Border Web", hex: "#DCD8CC", usage: "구분선, 파일 업로드 점선 테두리", varName: "--color-border-web" },
   { name: "White", hex: "#FFFFFF", usage: "앱 기본 배경, 카드 배경, 활성 버튼 텍스트", varName: "--color-white" },
-  { name: "Scrim", hex: "rgba(46,49,46,0.5)", usage: "모달/팝업 뒤 배경 딤", varName: "--color-scrim" },
+  { name: "Scrim", hex: "rgba(0,0,0,0.3)", usage: "모달/팝업 뒤 배경 딤", varName: "--color-scrim" },
   { name: "Error BG", hex: "#F2D1D1", usage: "에러 배지 배경", varName: "--color-error-bg-web" },
   { name: "Error Text", hex: "#C04040", usage: "에러 텍스트/보더", varName: "--color-error-text" },
 ];
