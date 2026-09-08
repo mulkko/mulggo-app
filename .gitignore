@@ -33,5 +33,8 @@ data/uploads/
 data/test_uploads/
 frontend/dev/*_test.*
 
+# 관리자 "통합 반영" 실행 로그 (subprocess stdout)
+logs/
+
 # 전처리 파이프라인 dry-run 결과물 (로컬 확인용)
 dryrun_sync_*.xlsx

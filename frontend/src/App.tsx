@@ -4,6 +4,7 @@ import Signup from "./pages/auth/Signup";
 import LoginForm from "./components/LoginForm";
 import AdminHome from "./pages/admin/AdminHome";
 import AdminMembers from "./pages/admin/AdminMembers";
+import AnnouncementsSync from "./pages/admin/AnnouncementsSync";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminRoute from "./pages/admin/AdminRoute";
 import AdminStyleGuide from "./components/AdminStyleGuide/AdminStyleGuide";
@@ -33,6 +34,8 @@ function App() {
         >
           <Route index element={<AdminHome />} />
           <Route path="members" element={<AdminMembers />} />
+          {/* [임시] raw -> announcements 통합 반영 실행/모니터 */}
+          <Route path="announcements-sync" element={<AnnouncementsSync />} />
         </Route>
       </Routes>
     </BrowserRouter>

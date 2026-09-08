@@ -7,8 +7,12 @@
 
 import csv
 import io
+import os
+import subprocess
+import sys
 import threading
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import JSONResponse, Response
@@ -23,6 +27,9 @@ RAW_TABLES = {
     "bizinfo": "announcements_raw_bizinfo",
     "kstartup": "announcements_raw_kstartup",
 }
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SYNC_LOG_DIR = PROJECT_ROOT / "logs"
 
 
 def _count_rows(table: str) -> int:
@@ -189,6 +196,126 @@ def run_crawl(source: str, background_tasks: BackgroundTasks) -> JSONResponse:
         status_code=202,
         content={"success": True, "data": {"source": source, "status": "started"}},
     )
+
+
+# ── 통합 테이블 반영 (raw -> announcements) ──────────────────────
+# [임시] 관리자 화면 "통합 반영(임시)" 메뉴에서 호출. sync_*_announcements.py
+# 파이프라인(raw 읽어서 지역/업종 매핑 후 announcements 로 UPSERT)을 별도
+# 파이썬 프로세스(subprocess)로 돌리고, 그 stdout/stderr를 logs/sync_<source>.log
+# 에 남긴다. 화면은 /admin/sync-status 로 그 로그를 폴링해서 텍스트로 보여준다.
+#
+# 별도 프로세스로 도는 이유:
+#   - stdout이 uvicorn 콘솔과 안 섞임(파일로 격리)
+#   - bizinfo는 첨부 다운로드+OCR로 수 시간 -> 요청 스레드에서 떼어냄
+#   - uvicorn 재시작되면 같이 죽지만, 파이프라인이 only_unprocessed=True 라
+#     재실행하면 안 끝난 것만 이어서 처리됨
+
+SYNC_MODULES = {
+    "bizinfo": "backend.preprocessing.sync_bizinfo_announcements",
+    "kstartup": "backend.preprocessing.sync_kstartup_announcements",
+}
+_running_syncs: set[str] = set()
+
+
+def _sync_log_path(source: str) -> Path:
+    return SYNC_LOG_DIR / f"sync_{source}.log"
+
+
+def _run_sync(source: str) -> None:
+    SYNC_LOG_DIR.mkdir(exist_ok=True)
+    log_path = _sync_log_path(source)
+    started = datetime.now().isoformat(timespec="seconds")
+    returncode = None
+    try:
+        with open(log_path, "w", encoding="utf-8") as log_file:
+            log_file.write(f"=== 시작: {started} · source={source} ===\n")
+            log_file.flush()
+            completed = subprocess.run(  # noqa: S603 - 고정된 내부 모듈만 실행
+                [sys.executable, "-m", SYNC_MODULES[source]],
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+                cwd=str(PROJECT_ROOT),
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            )
+            returncode = completed.returncode
+            ended = datetime.now().isoformat(timespec="seconds")
+            if returncode == 0:
+                log_file.write(f"\n=== 성공: {ended} (returncode=0) ===\n")
+            else:
+                log_file.write(f"\n=== 실패: {ended} (returncode={returncode}) ===\n")
+    except Exception as e:  # noqa: BLE001 - 백그라운드라 삼키고 로그로 남긴다
+        try:
+            with open(log_path, "a", encoding="utf-8") as log_file:
+                log_file.write(f"\n=== 실행 자체 실패: {type(e).__name__}: {e} ===\n")
+        except OSError:
+            pass
+
+    # crawl_batch_logs 에도 결과 한 줄 남긴다 (announcements 현재 건수 기준)
+    status = "success" if returncode == 0 else "error"
+    try:
+        count = _count_rows("announcements")
+    except Exception:  # noqa: BLE001
+        count = 0
+    _log_crawl(f"{source}-sync", count, count, status)
+
+    with _running_lock:
+        _running_syncs.discard(source)
+
+
+@router.post("/sync")
+def run_sync(source: str, background_tasks: BackgroundTasks) -> JSONResponse:
+    """raw -> announcements 통합 반영을 백그라운드로 시작하고 즉시 반환한다."""
+    if source not in SYNC_MODULES:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "error": {
+                    "message": f"알 수 없는 소스: {source} (가능: {', '.join(SYNC_MODULES)})",
+                    "code": "UNKNOWN_SOURCE",
+                },
+            },
+        )
+
+    with _running_lock:
+        if source in _running_syncs:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "success": False,
+                    "error": {
+                        "message": f"{source} 통합 반영이 이미 진행 중입니다.",
+                        "code": "ALREADY_RUNNING",
+                    },
+                },
+            )
+        _running_syncs.add(source)
+
+    background_tasks.add_task(_run_sync, source)
+    return JSONResponse(
+        status_code=202,
+        content={"success": True, "data": {"source": source, "status": "started"}},
+    )
+
+
+@router.get("/sync-status")
+def get_sync_status(source: str) -> dict:
+    """통합 반영 진행 상태 + 로그 파일 tail(최대 20KB)."""
+    if source not in SYNC_MODULES:
+        return {"success": False, "error": {"message": f"알 수 없는 소스: {source}", "code": "UNKNOWN_SOURCE"}}
+
+    with _running_lock:
+        running = source in _running_syncs
+
+    log_path = _sync_log_path(source)
+    log_text = ""
+    if log_path.exists():
+        raw = log_path.read_text(encoding="utf-8", errors="replace")
+        log_text = raw[-20000:]
+        if len(raw) > 20000:
+            log_text = "…(앞부분 생략)…\n" + log_text
+
+    return {"success": True, "data": {"source": source, "running": running, "log": log_text}}
 
 
 @router.get("/batch-logs")
