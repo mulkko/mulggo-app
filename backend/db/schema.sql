@@ -259,12 +259,33 @@ CREATE TABLE IF NOT EXISTS biz_registration_docs (
     uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- KSIC(한국표준산업분류 11차) 코드 -> 이름/계층 조회용 사전.
+-- 시드: data/ksic_clean_v2.csv (분류기 backend/ml/classifier/explicit_match.py가
+-- 쓰는 바로 그 파일) <- backend/preprocessing/load_ksic_codes.py 로 UPSERT 적재 (1,202행).
+--   code = 세세분류(5자리, PK), name = 세세분류명, large/medium/small/detail = 대/중/소/세.
+-- 공고 매칭(announcements.ksic_codes_matched)이 뱉는 코드의 이름/계층을 풀거나,
+-- profile_business_types.ksic_code(FK) 무결성 근거로 쓴다.
+-- 참고: nts_industry_codes(국세청 업종코드) 테이블은 실제 DB엔 존재하나 현재 미사용
+-- (유저/공고 둘 다 텍스트->분류기->KSIC 로 비교, 국세청 연계 안 씀). 이 파일에 정의 없음.
+CREATE TABLE IF NOT EXISTS ksic_codes (
+    code VARCHAR(10) PRIMARY KEY,
+    name TEXT NOT NULL,
+    large_code VARCHAR(2),
+    large_name VARCHAR(50),
+    medium_code VARCHAR(4),
+    medium_name VARCHAR(50),
+    small_code VARCHAR(6),
+    small_name VARCHAR(50),
+    detail_code VARCHAR(8),
+    detail_name VARCHAR(50)
+);
+
 -- 사업자등록증의 "사업의 종류"(업태·종목) — 표 형태라 여러 행 가능 (profile_id 기준 1:N).
 -- backend/assistant/category_ocr.py(EasyOCR+Qwen 보정)가 채우고, backend/auth/signup.py의
 -- save_biz_cert_data()에서 biz_registration_docs 저장 직후 같이 저장한다.
 -- nts_industry_code/ksic_code는 업종 자동매핑(DA2, backend/ml/classifier) 담당 — 우리 OCR
 -- 파이프라인은 채우지 않고 NULL로 둔다.
--- 주의: nts_industry_codes, ksic_codes 테이블 정의는 이 파일에 아직 없음 (실제 DB엔 존재).
+-- 주의: nts_industry_codes 테이블 정의는 이 파일에 아직 없음 (실제 DB엔 존재, 현재 미사용).
 CREATE TABLE IF NOT EXISTS profile_business_types (
     business_type_id BIGSERIAL PRIMARY KEY,
     profile_id BIGINT NOT NULL REFERENCES business_profiles(profile_id),
