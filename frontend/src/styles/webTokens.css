@@ -20,6 +20,10 @@
   --logo-navy: #2a3286;
   --logo-mint: #abe0d6;
 
+  /* ===== 카카오톡 브랜드 전용 (UI 팔레트 아님 — 컴포넌트에 재사용 금지) ===== */
+  --brand-kakao-yellow: #fee500; /* 카카오 공식 브랜드 색상(고정값) — "카카오톡 공유하기" 버튼 배경 */
+  --brand-kakao-label: #391b1b; /* 카카오 공식 브랜드 색상(고정값) — 카카오 버튼 아이콘 fill·텍스트 */
+
   /* ===== 타이포그래피 ===== */
   --font-family-base: 'Noto Sans KR', sans-serif;
   --font-family-logo: 'Inter', sans-serif;
@@ -112,4 +116,51 @@
   --shadow-inset-card: inset 0 0 0 1.2px rgba(139, 141, 147, 0.25); /* 사업개요 / 공고내용 카드 테두리 */
   --shadow-inset-teal: inset 0 0 0 1px #3fb6a8; /* 신청서류 카드 강조 테두리 */
   --shadow-inset-gray-strong: inset 0 0 0 1.5px rgba(139, 141, 147, 0.3); /* "지원 시 체크"(미지원) 상태 버튼 테두리 */
+
+  /* ===== 마이페이지 화면 전용 ===== */
+  /* 색상 */
+  --color-report-bg: #eaf7f4; /* "나의 분석 리포트" 카드 배경 */
+  --color-fill-history-bg: #fdf6e7; /* "채우기 이용내역" 카드 배경 */
+  --color-badge-download-bg: #fff3d6; /* "다운로드 가능" 뱃지 배경 (뱃지 텍스트는 --color-tab-active-icon 재사용) */
+  --color-border-dashed: rgba(139, 141, 147, 0.3); /* "+ 새 분석 시작하기" 점선 버튼 테두리 (hover 시 --color-light-teal) */
+  --color-delete-hover: rgba(139, 141, 147, 0.15); /* 카드 우측 상단 삭제(X) 버튼 hover 배경 (아이콘 stroke는 --color-stone-gray 재사용) */
+  /* 프로필 요약 카드 배경/화살표는 --color-white / --color-stone-gray 재사용 */
+  /* 분석 리포트 제목은 --color-teal-green, "채우기" 설명 텍스트는 --color-dday-text 재사용 */
+  /* "지원함" 상태 뱃지는 --color-teal-green(텍스트) + --color-teal-mist(배경) 재사용 */
+
+  /* 그림자 (프로필 요약 카드 테두리는 --shadow-inset-card 재사용) */
+  --shadow-inset-report: inset 0 0 0 1.2px rgba(63, 182, 168, 0.35); /* 분석 리포트 카드 기본 테두리 */
+  --shadow-inset-report-hover: inset 0 0 0 1.2px #3fb6a8; /* 분석 리포트 카드 hover 테두리 */
+  --shadow-inset-amber: inset 0 0 0 1.2px rgba(232, 169, 60, 0.45); /* "채우기 이용내역" 카드 테두리 */
+  --shadow-inset-neutral: inset 0 0 0 1.2px #e3e3e6; /* "나의 지원내역" 카드 테두리 */
+  /* radius 13px는 --radius-cta, 14px는 --radius-card, 12px는 --radius-input 재사용 */
+
+  /* ===== 프로필 수정 화면 전용 ===== */
+  /* 색상 */
+  --color-light-teal-hover-strong: #34a296; /* "저장하기" 버튼 hover 배경 (--color-light-teal의 hover 상태 — 공고 상세 CTA의 --color-light-teal-hover(#2e9c8f)와는 다른 값) */
+  /* 인풋 배경은 --color-stone-mist, 아바타 배경은 --color-teal-mist, "사진 변경" 텍스트는 --color-teal-green,
+     구분선은 --color-border-nav, select 화살표/서브텍스트는 --color-stone-gray, Inter(숫자·이메일) 폰트는 --font-family-logo 재사용 */
+
+  /* 크기 */
+  --input-height-form: 48px; /* 프로필 수정 인풋·select 공통 높이 (로그인/회원가입의 46~50px 가변 스펙과 별개) */
+  --btn-height-save: 52px; /* "저장하기" 버튼 높이 (공고 상세 CTA 50px와 별개) */
+
+  /* Radius */
+  --radius-thumb: 9px; /* 사업자등록증 업로드 행 썸네일 (인풋 12px보다 살짝 작음) */
+  /* 인풋·select radius 12px는 --radius-input, "저장하기" 버튼 radius 13px는 --radius-cta 재사용 */
+
+  /* ===== 서류 미리보기 화면 전용 ===== */
+  /* 색상 */
+  --color-bg-doc-preview: #f7f7f8; /* 서류 미리보기 본문·헤더 배경 */
+  --color-scrim-download: rgba(23, 26, 25, 0.45); /* 다운로드 모달 오버레이 딤 (--color-scrim(0,0,0,.3)보다 진하고 그린블랙 톤 — 다른 값) */
+  /* "나의 정보로 채우기" CTA·모달 "로컬 저장소에 저장하기" 버튼 배경은 --color-light-teal + hover --color-light-teal-hover-strong 재사용,
+     아이콘 원 배경은 --color-white + --shadow-inset-card, 문서 아이콘 stroke·설명 텍스트는 --color-stone-gray, 제목은 --color-ink-charcoal 재사용,
+     카카오 버튼은 --brand-kakao-yellow / --brand-kakao-label 사용 */
+
+  /* Radius */
+  --radius-modal: 18px; /* 다운로드 모달 카드 */
+  /* CTA·모달 버튼 radius 13px는 --radius-cta, 모달 하단 버튼 12px는 --radius-input, CTA 높이 52px는 --btn-height-save 재사용 */
+
+  /* 그림자 */
+  --shadow-modal: 0 24px 50px -20px rgba(21, 50, 140, 0.4); /* 다운로드 모달 카드 */
 }

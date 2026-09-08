@@ -41,6 +41,37 @@ const DETAIL_COLORS = [
   { name: "Light Teal Hover", hex: "#2E9C8F", usage: '"원 공고 홈페이지로 이동" 버튼 hover 배경', varName: "--color-light-teal-hover" },
 ];
 
+// 마이페이지 화면에서 추가된 색상 토큰
+const MYPAGE_COLORS = [
+  { name: "Report BG", hex: "#EAF7F4", usage: '"나의 분석 리포트" 카드 배경', varName: "--color-report-bg" },
+  { name: "Fill History BG", hex: "#FDF6E7", usage: '"채우기 이용내역" 카드 배경', varName: "--color-fill-history-bg" },
+  { name: "Badge Download BG", hex: "#FFF3D6", usage: '"다운로드 가능" 뱃지 배경', varName: "--color-badge-download-bg" },
+  { name: "Border Dashed", hex: "rgba(139,141,147,0.3)", usage: '"+ 새 분석 시작하기" 점선 버튼 테두리', varName: "--color-border-dashed" },
+  { name: "Delete Hover", hex: "rgba(139,141,147,0.15)", usage: "카드 삭제(X) 버튼 hover 배경", varName: "--color-delete-hover" },
+];
+
+// 프로필 수정 화면에서 추가된 색상 토큰
+const PROFILE_COLORS = [
+  {
+    name: "Light Teal Hover Strong",
+    hex: "#34A296",
+    usage: '"저장하기" 버튼 hover 배경 (공고 상세 CTA의 #2E9C8F와 다른 값)',
+    varName: "--color-light-teal-hover-strong",
+  },
+];
+
+// 서류 미리보기 화면에서 추가된 색상 토큰
+const DOCPREVIEW_COLORS = [
+  { name: "BG Doc Preview", hex: "#F7F7F8", usage: "서류 미리보기 본문·헤더 배경", varName: "--color-bg-doc-preview" },
+  { name: "Scrim Download", hex: "rgba(23,26,25,0.45)", usage: "다운로드 모달 오버레이 딤 (--color-scrim보다 진함)", varName: "--color-scrim-download" },
+];
+
+// 카카오톡 브랜드 전용 (UI 팔레트 아님)
+const KAKAO_COLORS = [
+  { name: "Kakao Yellow", hex: "#FEE500", varName: "--brand-kakao-yellow" },
+  { name: "Kakao Label", hex: "#391B1B", varName: "--brand-kakao-label" },
+];
+
 function WebStyleGuide() {
   return (
     <div className={styles.page}>
@@ -372,6 +403,124 @@ function WebStyleGuide() {
               <span className={styles.codeLabel}>하단 CTA · 높이 50px · --radius-cta · 토글 off/on + 홈 이동</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>08. 마이페이지</h2>
+        </div>
+
+        <p className={styles.subheading}>추가 색상 토큰</p>
+        <div className={styles.colorGrid}>
+          {MYPAGE_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.subheading}>
+          분석 리포트 제목색은 --color-teal-green, "채우기" 설명 텍스트는 --color-dday-text,
+          "다운로드 가능" 뱃지 텍스트는 --color-tab-active-icon, "지원함" 뱃지는
+          --color-teal-green + --color-teal-mist 재사용. 프로필 요약 카드 테두리는
+          --shadow-inset-card, 관심 지원사업 카드는 공통 컴포넌트 AnnouncementCard 재사용.
+        </p>
+
+        <p className={styles.subheading}>추가 radius / shadow 토큰</p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--radius-cta</span><span>13px (분석 리포트 · 채우기 이용내역 · 지원내역 카드)</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-report</span><span>inset 0 0 0 1.2px rgba(63,182,168,.35) (분석 리포트 카드)</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-report-hover</span><span>inset 0 0 0 1.2px #3FB6A8 (분석 리포트 카드 hover)</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-amber</span><span>inset 0 0 0 1.2px rgba(232,169,60,.45) (채우기 이용내역 카드)</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-neutral</span><span>inset 0 0 0 1.2px #E3E3E6 (나의 지원내역 카드)</span></div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>09. 프로필 수정</h2>
+        </div>
+
+        <p className={styles.subheading}>추가 색상 토큰</p>
+        <div className={styles.colorGrid}>
+          {PROFILE_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.subheading}>
+          인풋 배경은 --color-stone-mist, 아바타 배경은 --color-teal-mist, "사진 변경" 텍스트는
+          --color-teal-green, 구분선은 --color-border-nav, select 화살표·서브텍스트는
+          --color-stone-gray, 숫자·이메일 Inter 폰트는 --font-family-logo, "저장하기" 버튼 배경은
+          --color-light-teal 재사용.
+        </p>
+
+        <p className={styles.subheading}>추가 크기 / radius 토큰</p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--input-height-form</span><span>48px (인풋·select 공통 높이)</span></div>
+          <div className={styles.specRow}><span>--btn-height-save</span><span>52px ("저장하기" 버튼 높이)</span></div>
+          <div className={styles.specRow}><span>--radius-thumb</span><span>9px (사업자등록증 업로드 행 썸네일)</span></div>
+          <div className={styles.specRow}><span>--radius-input</span><span>12px (인풋·select) — 재사용</span></div>
+          <div className={styles.specRow}><span>--radius-cta</span><span>13px ("저장하기" 버튼) — 재사용</span></div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>10. 서류 미리보기</h2>
+        </div>
+
+        <p className={styles.subheading}>추가 색상 토큰</p>
+        <div className={styles.colorGrid}>
+          {DOCPREVIEW_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className={styles.subheading}>카카오톡 브랜드 전용 (UI 팔레트 아님 — 컴포넌트에 재사용 금지)</p>
+        <div className={styles.colorGrid}>
+          {KAKAO_COLORS.map((color) => (
+            <div className={styles.colorCardWarning} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorWarning}>재사용 금지</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className={styles.subheading}>
+          "나의 정보로 채우기" CTA·모달 "로컬 저장소에 저장하기" 버튼 배경은 --color-light-teal +
+          hover --color-light-teal-hover-strong, 아이콘 원 배경은 --color-white + --shadow-inset-card,
+          문서 아이콘 stroke·설명 텍스트는 --color-stone-gray, 제목은 --color-ink-charcoal 재사용.
+        </p>
+
+        <p className={styles.subheading}>추가 radius / shadow 토큰</p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--radius-modal</span><span>18px (다운로드 모달 카드)</span></div>
+          <div className={styles.specRow}><span>--shadow-modal</span><span>0 24px 50px -20px rgba(21,50,140,.4) (다운로드 모달 카드)</span></div>
+          <div className={styles.specRow}><span>--radius-cta</span><span>13px (CTA·모달 버튼) — 재사용</span></div>
+          <div className={styles.specRow}><span>--radius-input</span><span>12px (모달 하단 버튼) — 재사용</span></div>
+          <div className={styles.specRow}><span>--btn-height-save</span><span>52px (CTA 높이) — 재사용</span></div>
         </div>
       </section>
     </div>

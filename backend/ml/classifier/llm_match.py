@@ -28,7 +28,11 @@ import csv
 import json
 from difflib import get_close_matches, SequenceMatcher
 
+from dotenv import load_dotenv
+
 from backend.ml.classifier.explicit_match import _load_ksic_index, NAME_LEVEL_ORDER
+
+load_dotenv()
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 KSIC_CLEAN_CSV_PATH = os.path.join(PROJECT_ROOT, "data", "ksic_clean_v2.csv")

@@ -57,8 +57,8 @@ function MatchingDetail() {
     setApplied((prev) => !prev);
   };
 
-  const handleFill = () => {
-    // TODO: 16-1 서류 미리보기 화면으로 이동 (별도 작업 예정)
+  const handleFill = (fileName: string) => {
+    navigate(`/matching/${id}/doc-preview`, { state: { fileName } });
   };
 
   const handleGoHomepage = () => {
@@ -193,7 +193,11 @@ function MatchingDetail() {
           {detail.docs.map((doc) => (
             <div key={doc.fileName} className={styles.docRow}>
               <span className={styles.docName}>{doc.fileName}</span>
-              <button type="button" className={styles.fillButton} onClick={handleFill}>
+              <button
+                type="button"
+                className={styles.fillButton}
+                onClick={() => handleFill(doc.fileName)}
+              >
                 <span className={styles.fillButtonText}>채우기</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M9 6l6 6-6 6" />
