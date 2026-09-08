@@ -31,6 +31,16 @@ const MATCHING_COLORS = [
   { name: "Tab Active Label", hex: "#B5761A", usage: "하단 네비 활성 탭 라벨", varName: "--color-tab-active-label" },
 ];
 
+// 공고 상세(지원사업 상세) 화면에서 추가된 색상 토큰
+const DETAIL_COLORS = [
+  { name: "AI Comment BG", hex: "#EEF1FA", usage: "AI 코멘트 박스 배경", varName: "--color-ai-comment-bg" },
+  { name: "AI Comment Text", hex: "#2E3A6B", usage: "AI 코멘트 박스 라벨/본문", varName: "--color-ai-comment-text" },
+  { name: "Overview Icon", hex: "#C4841E", usage: "사업개요 카드 항목 아이콘 stroke", varName: "--color-overview-icon" },
+  { name: "Autofill Banner BG", hex: "#FAFAF9", usage: "서류 자동채움 안내 배너 배경", varName: "--color-autofill-banner-bg" },
+  { name: "Teal Mist Hover", hex: "#CDEDE6", usage: '"채우기" 필 버튼 hover 배경', varName: "--color-teal-mist-hover" },
+  { name: "Light Teal Hover", hex: "#2E9C8F", usage: '"원 공고 홈페이지로 이동" 버튼 hover 배경', varName: "--color-light-teal-hover" },
+];
+
 function WebStyleGuide() {
   return (
     <div className={styles.page}>
@@ -288,6 +298,80 @@ function WebStyleGuide() {
             <div className={styles.bottomNavTab}>◇<span>마이페이지</span></div>
           </div>
           <span className={styles.codeLabel}>높이 74px · 상단 border --color-border-nav · 활성: --color-tab-active-label</span>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>07. 공고 상세 (지원사업 상세)</h2>
+        </div>
+
+        <p className={styles.subheading}>추가 색상 토큰</p>
+        <div className={styles.colorGrid}>
+          {DETAIL_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.subheading}>
+          북마크 채움색은 --color-tab-active-icon, AI 코멘트 제목색은 --color-deep-navy,
+          카드 구분선은 --color-border-nav 재사용
+        </p>
+
+        <p className={styles.subheading}>추가 radius / shadow 토큰</p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--radius-card</span><span>14px (AI 코멘트·사업개요·공고내용·신청서류 카드)</span></div>
+          <div className={styles.specRow}><span>--radius-cta</span><span>13px (하단 CTA 버튼 2개)</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-ai-comment</span><span>inset 0 0 0 1.2px rgba(21,50,140,.25)</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-card</span><span>inset 0 0 0 1.2px rgba(139,141,147,.25)</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-teal</span><span>inset 0 0 0 1px #3FB6A8 (신청서류 카드)</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-gray-strong</span><span>inset 0 0 0 1.5px rgba(139,141,147,.3) ("지원 시 체크")</span></div>
+        </div>
+
+        <p className={styles.subheading}>AI 코멘트 박스 · 카드 · CTA</p>
+        <div className={styles.componentCard}>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.detailAiBox}>
+                <span className={styles.detailAiTitle}>AI 코멘트</span>
+                <p className={styles.detailAiBody}>
+                  지역가산(마포구), 청년가산(만 39세 이하) 조건이 회원님 상황에 적합해요.
+                </p>
+              </div>
+              <span className={styles.codeLabel}>AI 코멘트 박스 · --radius-card · --shadow-inset-ai-comment</span>
+            </div>
+            <div className={styles.componentItem}>
+              <div className={styles.detailCard}>
+                <span className={styles.detailCardTitle}>공고 내용</span>
+                <p className={styles.detailCardBody}>흰 배경 카드 · inset 테두리로 경계 표현</p>
+              </div>
+              <span className={styles.codeLabel}>사업개요/공고내용 카드 · --shadow-inset-card</span>
+            </div>
+          </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <span className={styles.detailFillButton}>
+                채우기 <span aria-hidden="true">›</span>
+              </span>
+              <span className={styles.codeLabel}>"채우기" 필 버튼 · --color-teal-mist / hover --color-teal-mist-hover</span>
+            </div>
+          </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.detailCtaRow}>
+                <span className={styles.detailApplyOff}>지원 시 체크</span>
+                <span className={styles.detailApplyOn}>✓ 지원함</span>
+                <span className={styles.detailHomeButton}>원 공고 홈페이지로 이동</span>
+              </div>
+              <span className={styles.codeLabel}>하단 CTA · 높이 50px · --radius-cta · 토글 off/on + 홈 이동</span>
+            </div>
+          </div>
         </div>
       </section>
     </div>

@@ -536,3 +536,123 @@
   font-weight: 700;
   color: var(--color-tab-active-label);
 }
+
+/* ===== 07. 공고 상세 (지원사업 상세) ===== */
+.detailAiBox {
+  width: 300px;
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--radius-card);
+  padding: 16px;
+  background: var(--color-ai-comment-bg);
+  box-shadow: var(--shadow-inset-ai-comment);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailAiTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-deep-navy);
+}
+
+.detailAiBody {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-ai-comment-text);
+  line-height: 1.7;
+}
+
+.detailCard {
+  width: 300px;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-inset-card);
+}
+
+.detailCardTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.detailCardBody {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-ink-charcoal);
+  line-height: 1.75;
+}
+
+.detailFillButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--color-teal-mist);
+  color: var(--color-teal-green);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.detailFillButton:hover {
+  background: var(--color-teal-mist-hover);
+}
+
+.detailCtaRow {
+  display: flex;
+  align-items: stretch;
+  gap: 9px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.detailApplyOff,
+.detailApplyOn {
+  box-sizing: border-box;
+  height: 50px;
+  padding: 0 14px;
+  border-radius: var(--radius-cta);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.detailApplyOff {
+  background: var(--color-white);
+  color: var(--color-ink-charcoal);
+  box-shadow: var(--shadow-inset-gray-strong);
+}
+
+.detailApplyOn {
+  background: var(--color-light-teal);
+  color: var(--color-white);
+}
+
+.detailHomeButton {
+  flex: 1;
+  box-sizing: border-box;
+  height: 50px;
+  border-radius: var(--radius-cta);
+  background: var(--color-light-teal);
+  color: var(--color-white);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detailHomeButton:hover {
+  background: var(--color-light-teal-hover);
+}
