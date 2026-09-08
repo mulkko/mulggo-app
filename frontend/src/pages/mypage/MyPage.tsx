@@ -143,7 +143,7 @@ function MyPage() {
   };
 
   const handleProfileClick = () => {
-    // TODO: 프로필 수정 화면으로 이동 (별도 화면, 아직 미작업)
+    navigate("/mypage/edit");
   };
 
   const handleNewAnalysisClick = () => {
@@ -209,7 +209,7 @@ function MyPage() {
       </header>
 
       <div className={styles.scrollArea}>
-        {/* 2. 프로필 요약 카드 — 클릭 시 프로필 수정 화면 이동은 TODO */}
+        {/* 2. 프로필 요약 카드 — 클릭 시 프로필 수정 화면(/mypage/edit)으로 이동 */}
         <button type="button" className={styles.profileCard} onClick={handleProfileClick}>
           <span className={styles.profileInfo}>
             <span className={styles.profileName}>김창업 님</span>

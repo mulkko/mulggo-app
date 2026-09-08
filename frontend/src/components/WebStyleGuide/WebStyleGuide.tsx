@@ -50,6 +50,16 @@ const MYPAGE_COLORS = [
   { name: "Delete Hover", hex: "rgba(139,141,147,0.15)", usage: "카드 삭제(X) 버튼 hover 배경", varName: "--color-delete-hover" },
 ];
 
+// 프로필 수정 화면에서 추가된 색상 토큰
+const PROFILE_COLORS = [
+  {
+    name: "Light Teal Hover Strong",
+    hex: "#34A296",
+    usage: '"저장하기" 버튼 hover 배경 (공고 상세 CTA의 #2E9C8F와 다른 값)',
+    varName: "--color-light-teal-hover-strong",
+  },
+];
+
 function WebStyleGuide() {
   return (
     <div className={styles.page}>
@@ -416,6 +426,41 @@ function WebStyleGuide() {
           <div className={styles.specRow}><span>--shadow-inset-report-hover</span><span>inset 0 0 0 1.2px #3FB6A8 (분석 리포트 카드 hover)</span></div>
           <div className={styles.specRow}><span>--shadow-inset-amber</span><span>inset 0 0 0 1.2px rgba(232,169,60,.45) (채우기 이용내역 카드)</span></div>
           <div className={styles.specRow}><span>--shadow-inset-neutral</span><span>inset 0 0 0 1.2px #E3E3E6 (나의 지원내역 카드)</span></div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>09. 프로필 수정</h2>
+        </div>
+
+        <p className={styles.subheading}>추가 색상 토큰</p>
+        <div className={styles.colorGrid}>
+          {PROFILE_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.subheading}>
+          인풋 배경은 --color-stone-mist, 아바타 배경은 --color-teal-mist, "사진 변경" 텍스트는
+          --color-teal-green, 구분선은 --color-border-nav, select 화살표·서브텍스트는
+          --color-stone-gray, 숫자·이메일 Inter 폰트는 --font-family-logo, "저장하기" 버튼 배경은
+          --color-light-teal 재사용.
+        </p>
+
+        <p className={styles.subheading}>추가 크기 / radius 토큰</p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--input-height-form</span><span>48px (인풋·select 공통 높이)</span></div>
+          <div className={styles.specRow}><span>--btn-height-save</span><span>52px ("저장하기" 버튼 높이)</span></div>
+          <div className={styles.specRow}><span>--radius-thumb</span><span>9px (사업자등록증 업로드 행 썸네일)</span></div>
+          <div className={styles.specRow}><span>--radius-input</span><span>12px (인풋·select) — 재사용</span></div>
+          <div className={styles.specRow}><span>--radius-cta</span><span>13px ("저장하기" 버튼) — 재사용</span></div>
         </div>
       </section>
     </div>

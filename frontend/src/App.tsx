@@ -11,6 +11,7 @@ import WebStyleGuide from "./components/WebStyleGuide/WebStyleGuide";
 import MatchingList from "./pages/matching/MatchingList";
 import MatchingDetail from "./pages/matching/MatchingDetail";
 import MyPage from "./pages/mypage/MyPage";
+import ProfileEdit from "./pages/mypage/ProfileEdit";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/matching" element={<MatchingList />} />
         <Route path="/matching/:id" element={<MatchingDetail />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/mypage/edit" element={<ProfileEdit />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />
