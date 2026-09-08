@@ -177,6 +177,22 @@ CREATE INDEX IF NOT EXISTS idx_announcements_raw_kstartup_id ON announcements (r
 CREATE UNIQUE INDEX IF NOT EXISTS uq_announcements_raw_bizinfo_id  ON announcements (raw_bizinfo_id)  WHERE source = 'bizinfo';
 CREATE UNIQUE INDEX IF NOT EXISTS uq_announcements_raw_kstartup_id ON announcements (raw_kstartup_id) WHERE source = 'kstartup';
 
+-- 공고 첨부파일 — 공고 상세페이지의 원본 신청서 양식·공고문 파일(정부가 게시한
+-- 원본이며 신청서 어시스턴트가 만든 결과물이 아님). 공고 1건 : 첨부 N개.
+-- 현재 크롤러/파이프라인이 아직 안 채움(빈 테이블). 채우는 로직은 별도 작업.
+CREATE TABLE IF NOT EXISTS announcement_attachments (
+    attachment_id    BIGSERIAL PRIMARY KEY,
+    announcement_id  BIGINT NOT NULL REFERENCES announcements(announcement_id),
+    file_name        TEXT NOT NULL,
+    file_type        VARCHAR(10),          -- 확장자 (pdf/hwp/hwpx/zip/xlsx 등)
+    attachment_role  VARCHAR(20),          -- 공고문/신청서양식/붙임 등 역할 구분
+    source_url       TEXT NOT NULL,        -- 원본 다운로드 URL
+    storage_path     TEXT,                 -- 자체 저장소에 받아둔 경우의 경로
+    collected_at     TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_announcement_attachments_announcement_id
+    ON announcement_attachments (announcement_id);
+
 -- ══════════════════════════════════════════════════════
 -- 아래부터는 실제 운영 DB(Supabase)에 있는 회원/사업자 관련 테이블을 그대로 반영한 것.
 -- users 테이블은 실제로는 Supabase Auth가 관리하는 컬럼(instance_id, encrypted_password,
@@ -243,12 +259,33 @@ CREATE TABLE IF NOT EXISTS biz_registration_docs (
     uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- KSIC(한국표준산업분류 11차) 코드 -> 이름/계층 조회용 사전.
+-- 시드: data/ksic_clean_v2.csv (분류기 backend/ml/classifier/explicit_match.py가
+-- 쓰는 바로 그 파일) <- backend/preprocessing/load_ksic_codes.py 로 UPSERT 적재 (1,202행).
+--   code = 세세분류(5자리, PK), name = 세세분류명, large/medium/small/detail = 대/중/소/세.
+-- 공고 매칭(announcements.ksic_codes_matched)이 뱉는 코드의 이름/계층을 풀거나,
+-- profile_business_types.ksic_code(FK) 무결성 근거로 쓴다.
+-- 참고: nts_industry_codes(국세청 업종코드) 테이블은 실제 DB엔 존재하나 현재 미사용
+-- (유저/공고 둘 다 텍스트->분류기->KSIC 로 비교, 국세청 연계 안 씀). 이 파일에 정의 없음.
+CREATE TABLE IF NOT EXISTS ksic_codes (
+    code VARCHAR(10) PRIMARY KEY,
+    name TEXT NOT NULL,
+    large_code VARCHAR(2),
+    large_name VARCHAR(50),
+    medium_code VARCHAR(4),
+    medium_name VARCHAR(50),
+    small_code VARCHAR(6),
+    small_name VARCHAR(50),
+    detail_code VARCHAR(8),
+    detail_name VARCHAR(50)
+);
+
 -- 사업자등록증의 "사업의 종류"(업태·종목) — 표 형태라 여러 행 가능 (profile_id 기준 1:N).
 -- backend/assistant/category_ocr.py(EasyOCR+Qwen 보정)가 채우고, backend/auth/signup.py의
 -- save_biz_cert_data()에서 biz_registration_docs 저장 직후 같이 저장한다.
 -- nts_industry_code/ksic_code는 업종 자동매핑(DA2, backend/ml/classifier) 담당 — 우리 OCR
 -- 파이프라인은 채우지 않고 NULL로 둔다.
--- 주의: nts_industry_codes, ksic_codes 테이블 정의는 이 파일에 아직 없음 (실제 DB엔 존재).
+-- 주의: nts_industry_codes 테이블 정의는 이 파일에 아직 없음 (실제 DB엔 존재, 현재 미사용).
 CREATE TABLE IF NOT EXISTS profile_business_types (
     business_type_id BIGSERIAL PRIMARY KEY,
     profile_id BIGINT NOT NULL REFERENCES business_profiles(profile_id),

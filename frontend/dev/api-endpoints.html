@@ -69,14 +69,29 @@
 
   <div class="endpoint">
     <h3><span class="method get">GET</span><code>/admin/bizinfo-count</code></h3>
-    <p>기업마당 총 공고 건수 조회 (1페이지만 요청, 가벼움).</p>
+    <p>기업마당 누적 수집 건수 (announcements_raw_bizinfo count).</p>
     <table><tr><th>response</th><td>{count}</td></tr></table>
   </div>
 
   <div class="endpoint">
-    <h3><span class="method post">POST</span><code>/admin/bizinfo-crawl</code></h3>
-    <p>기업마당 전체 수동 크롤링 + DB 저장. 실행 결과는 crawl_batch_logs에 기록됨.</p>
-    <table><tr><th>response</th><td>{success:true, data:{fetched, inserted}} 또는 {success:false, error:{message, code}}</td></tr></table>
+    <h3><span class="method get">GET</span><code>/admin/kstartup-count</code></h3>
+    <p>K-스타트업 누적 수집 건수 (announcements_raw_kstartup count).</p>
+    <table><tr><th>response</th><td>{count}</td></tr></table>
+  </div>
+
+  <div class="endpoint">
+    <h3><span class="method post">POST</span><code>/admin/crawl?source=bizinfo|kstartup</code></h3>
+    <p>지정 소스 수동 크롤링을 <b>백그라운드로 시작</b>하고 즉시 반환(202). 진행 상황은 <code>/admin/batch-logs</code>로 폴링. 같은 소스가 이미 실행 중이면 409. (기존 <code>/admin/bizinfo-crawl</code> 대체)</p>
+    <table>
+      <tr><th>response 202</th><td>{success:true, data:{source, status:"started"}}</td></tr>
+      <tr><th>response 400/409</th><td>{success:false, error:{message, code}} — code: UNKNOWN_SOURCE / ALREADY_RUNNING</td></tr>
+    </table>
+  </div>
+
+  <div class="endpoint">
+    <h3><span class="method get">GET</span><code>/admin/export?source=bizinfo|kstartup</code></h3>
+    <p>해당 raw 테이블(announcements_raw_bizinfo / _kstartup) 전체를 CSV로 다운로드. <code>source_raw</code>(원본 JSON) 컬럼은 제외. BOM 포함(엑셀 한글). <code>Content-Disposition: attachment</code>.</p>
+    <table><tr><th>response</th><td>text/csv (파일) 또는 400 {success:false, error:{code:"UNKNOWN_SOURCE"}}</td></tr></table>
   </div>
 
   <div class="endpoint">

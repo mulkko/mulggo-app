@@ -10,6 +10,8 @@ import userPhoto from "../../assets/admin/userPhoto.png";
 const MENU_ITEMS = [
   { to: "/admin", label: "공고 수집 현황", iconOn: menuIcon01On, iconOff: menuIcon01Off, end: true },
   { to: "/admin/members", label: "회원 관리", iconOn: menuIcon02On, iconOff: menuIcon02Off, end: false },
+  // [임시] raw -> announcements 통합 반영 실행/모니터. 정식 메뉴 확정되면 아이콘 포함해서 교체.
+  { to: "/admin/announcements-sync", label: "통합 반영 (임시)", iconOn: undefined, iconOff: undefined, end: false },
 ];
 
 function AdminLayout() {
@@ -36,7 +38,9 @@ function AdminLayout() {
               >
                 {({ isActive }) => (
                   <>
-                    <img src={isActive ? item.iconOn : item.iconOff} alt="" className={styles.menuIcon} />
+                    {item.iconOn && (
+                      <img src={isActive ? item.iconOn : item.iconOff} alt="" className={styles.menuIcon} />
+                    )}
                     {item.label}
                   </>
                 )}
