@@ -438,9 +438,26 @@ def validate_announcements(common_df: pd.DataFrame):
 # ==================================================================
 # 7. UPSERT (raw_kstartup_id 기준)
 # ==================================================================
+#
+# [2026-09-08] sync_bizinfo_announcements.py에서 발견된 NUL(0x00) 버그와
+# 동일한 패턴이라 같이 고쳤음. kstartup은 API 텍스트(pbanc_ctnt 등)라 지금까지
+# NUL이 안 걸렸을 뿐, 언젠가 걸릴 수 있어 예방 차원 — bizinfo 쪽 원인 상세는
+# 그 파일 upsert_announcements() 위 주석 참고.
+# 같은 이유로 배치 전체 commit()도 1건씩 commit()하도록 바꿨음(일관성 + 실패
+# 내성) — kstartup은 무거운 첨부 추출이 없어서 재실행 비용 문제는 원래 없었지만,
+# 한 행 실패가 나머지 전체를 롤백시키는 구조 자체는 동일했음.
 
 ARRAY_COLUMNS = {"regions", "target_age_groups", "ksic_codes_matched", "ksic_names_matched", "ksic_codes_excluded"}
 INSERT_COLUMNS = FINAL_COLUMNS
+
+
+def _strip_nul(v):
+    """PostgreSQL text 컬럼은 NUL(0x00)을 저장 못 함. 저장 직전에 제거."""
+    if isinstance(v, str):
+        return v.replace("\x00", "")
+    if isinstance(v, list):
+        return [x.replace("\x00", "") if isinstance(x, str) else x for x in v]
+    return v
 
 
 def upsert_announcements(final_df: pd.DataFrame) -> int:
@@ -459,15 +476,25 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
             DO UPDATE SET {update_sql}
         """
         n = 0
+        failed = []
         for _, r in final_df.iterrows():
-            values = [list(r[c]) if c in ARRAY_COLUMNS else r[c] for c in INSERT_COLUMNS]
-            cur.execute(sql, values)
-            n += 1
-        conn.commit()
+            values = [_strip_nul(list(r[c]) if c in ARRAY_COLUMNS else r[c]) for c in INSERT_COLUMNS]
+            try:
+                cur.execute(sql, values)
+                conn.commit()
+                n += 1
+            except Exception as e:
+                conn.rollback()
+                failed.append((r.get("raw_kstartup_id"), str(e)))
+
+        if failed:
+            print(f"upsert_announcements: {len(failed)}건 저장 실패(건너뜀, 다음 재실행 때 재시도됨):")
+            for raw_id, err in failed[:10]:
+                print(f"  raw_kstartup_id={raw_id}: {err}")
+            if len(failed) > 10:
+                print(f"  ... 외 {len(failed) - 10}건")
+
         return n
-    except Exception:
-        conn.rollback()
-        raise
     finally:
         conn.close()
 
