@@ -49,20 +49,79 @@
   color: var(--color-stone-gray);
 }
 
-/* ===== 인식 중 / 에러 ===== */
+/* ===== 인식 중 — 팝업 ===== */
+.loadingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 32px 24px;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
+  text-align: center;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border-web);
+  border-top-color: var(--color-navy-sphere);
+  border-radius: 50%;
+  animation: bizCertSpin 0.8s linear infinite;
+}
+
+@keyframes bizCertSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
+.loadingHint {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  color: var(--color-stone-gray);
+}
+
+/* ===== 에러 ===== */
 .errorText {
   margin: 0 0 8px;
   color: var(--color-error-text);
   font-size: var(--font-size-body);
 }
 
-/* ===== 확인/수정 단계 ===== */
+/* ===== 확인/수정 단계 — 팝업 ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-outer);
+  box-sizing: border-box;
+  background: var(--color-scrim);
+}
+
 .reviewBox {
+  width: 100%;
+  max-width: calc(var(--mobile-frame-width) - 2 * var(--spacing-outer));
+  max-height: 80vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   border: 1px solid var(--color-border-web);
   border-radius: var(--radius-input);
   padding: 16px;
-  margin-bottom: 12px;
   text-align: left;
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
 }
 
 .reviewDesc {
@@ -107,6 +166,7 @@
 
 .inputWarn {
   border-color: var(--color-error-text);
+  color: var(--color-error-text);
 }
 
 .viewRow {

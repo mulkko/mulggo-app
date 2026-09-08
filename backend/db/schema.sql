@@ -258,3 +258,19 @@ CREATE TABLE IF NOT EXISTS biz_registration_docs (
     business_category JSONB,
     uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- 사업자등록증의 "사업의 종류"(업태·종목) — 표 형태라 여러 행 가능 (profile_id 기준 1:N).
+-- backend/assistant/category_ocr.py(EasyOCR+Qwen 보정)가 채우고, backend/auth/signup.py의
+-- save_biz_cert_data()에서 biz_registration_docs 저장 직후 같이 저장한다.
+-- nts_industry_code/ksic_code는 업종 자동매핑(DA2, backend/ml/classifier) 담당 — 우리 OCR
+-- 파이프라인은 채우지 않고 NULL로 둔다.
+-- 주의: nts_industry_codes, ksic_codes 테이블 정의는 이 파일에 아직 없음 (실제 DB엔 존재).
+CREATE TABLE IF NOT EXISTS profile_business_types (
+    business_type_id BIGSERIAL PRIMARY KEY,
+    profile_id BIGINT NOT NULL REFERENCES business_profiles(profile_id),
+    business_category TEXT,                -- 업태
+    business_item TEXT,                    -- 종목
+    nts_industry_code VARCHAR(10) REFERENCES nts_industry_codes(code),
+    ksic_code VARCHAR(10) REFERENCES ksic_codes(code),
+    is_primary BOOLEAN NOT NULL DEFAULT false
+);

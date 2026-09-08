@@ -1,8 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import styles from "./bizCertUpload.module.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// OCR 하이브리드 구조: 팀원 각자 자기 PC에서 localhost로 프론트를 띄우지만,
+// OCR(무거운 모델)만은 GPU가 있는 고정 PC로 보낸다.
+//   1) 브라우저에 저장해둔 주소가 있으면 그걸 우선 사용
+//      (주소가 바뀌면 개발자 콘솔에서 localStorage.setItem("ocr_api_base_url", "http://새주소:8000") 로 갱신)
+//   2) 없으면 GPU PC 고정 주소 사용
+const OCR_SERVER_HOST = "192.168.0.160";
+
+function resolveOcrApiBaseUrl(): string {
+  const saved = localStorage.getItem("ocr_api_base_url");
+  if (saved) return saved;
+  return `http://${OCR_SERVER_HOST}:8000`;
+}
+
+const OCR_API_BASE_URL = resolveOcrApiBaseUrl();
 
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".pdf"];
 const MAX_FILE_SIZE_MB = 10;
@@ -16,6 +29,8 @@ const REVIEW_FIELDS: { key: string; label: string }[] = [
   { key: "open_date", label: "개업연월일" },
   { key: "birth_date", label: "생년월일" },
   { key: "business_address", label: "사업장 소재지" },
+  { key: "business_category", label: "업태" },
+  { key: "business_item", label: "종목" },
 ];
 
 // 법인/개인 구분에 따라 애초에 존재하지 않는 필드 (법인등록번호는 법인만, 생년월일은 개인만).
@@ -64,6 +79,15 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
   const [errorMessage, setErrorMessage] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
   const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState("");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (phase !== "uploading") return;
+    setElapsedSeconds(0);
+    const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [phase]);
 
   const reset = () => {
     setPhase("idle");
@@ -92,7 +116,7 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
     formData.append("file", selected);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/biz-cert-ocr`, {
+      const response = await fetch(`${OCR_API_BASE_URL}/api/auth/biz-cert-ocr`, {
         method: "POST",
         body: formData,
       });
@@ -126,10 +150,11 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
       return !fields[key];
     });
     if (missing.length > 0) {
-      alert("빨간색으로 표시된 항목을 채워주세요.");
+      setConfirmError("빨간색으로 표시된 항목을 채워주세요.");
       return;
     }
 
+    setConfirmError("");
     onConfirm(fields, file);
   };
 
@@ -151,8 +176,12 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
 
   if (phase === "uploading") {
     return (
-      <div className={styles.field}>
-        <p>인식 중입니다... (첫 요청은 시간이 걸릴 수 있어요)</p>
+      <div className={styles.overlay}>
+        <div className={styles.loadingBox} role="status" aria-live="polite">
+          <div className={styles.spinner} />
+          <p className={styles.loadingText}>인식 중입니다... ({elapsedSeconds}초 경과)</p>
+          <p className={styles.loadingHint}>첫 요청은 모델 로딩 때문에 시간이 걸릴 수 있어요</p>
+        </div>
       </div>
     );
   }
@@ -173,55 +202,59 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
 
   // phase === "review"
   return (
-    <div className={styles.reviewBox}>
-      <p className={styles.reviewDesc}>
-        자동으로 인식된 정보예요. 틀린 부분이 있으면 고치고 확인을 눌러주세요.
-      </p>
+    <div className={styles.overlay}>
+      <div className={styles.reviewBox} role="dialog" aria-modal="true" aria-label="사업자등록증 확인">
+        <p className={styles.reviewDesc}>
+          자동으로 인식된 정보예요. 틀린 부분이 있으면 고치고 확인을 눌러주세요.
+        </p>
 
-      {REVIEW_FIELDS.map(({ key, label }) => {
-        const value = fields[key] ?? "";
-        const notApplicable = NOT_APPLICABLE_WHEN[key] === fields.entity_type;
-        const needsCheck = !value && !notApplicable;
-        const isEditing = editingKey === key;
+        {REVIEW_FIELDS.map(({ key, label }) => {
+          const value = fields[key] ?? "";
+          const notApplicable = NOT_APPLICABLE_WHEN[key] === fields.entity_type;
+          const needsCheck = !value && !notApplicable;
+          const isEditing = editingKey === key;
 
-        return (
-          <div key={key} className={styles.fieldRow}>
-            <label>
-              {label}
-              {needsCheck && <span className={styles.badgeWarn}> 확인 필요</span>}
-              {notApplicable && <span className={styles.badgeMuted}> 해당 없음</span>}
-            </label>
+          return (
+            <div key={key} className={styles.fieldRow}>
+              <label>
+                {label}
+                {needsCheck && <span className={styles.badgeWarn}> 확인 필요</span>}
+                {notApplicable && <span className={styles.badgeMuted}> 해당 없음</span>}
+              </label>
 
-            {notApplicable ? (
-              <div className={styles.viewTextMuted}>-</div>
-            ) : needsCheck || isEditing ? (
-              <input
-                type="text"
-                value={value}
-                autoFocus={isEditing}
-                onChange={(e) => handleFieldChange(key, e.target.value)}
-                onBlur={() => setEditingKey(null)}
-                className={needsCheck ? styles.inputWarn : styles.input}
-              />
-            ) : (
-              <div className={styles.viewRow}>
-                <span className={styles.viewText}>{value}</span>
-                <button
-                  type="button"
-                  className={styles.editBtn}
-                  onClick={() => setEditingKey(key)}
-                >
-                  수정
-                </button>
-              </div>
-            )}
-          </div>
-        );
-      })}
+              {notApplicable ? (
+                <div className={styles.viewTextMuted}>-</div>
+              ) : needsCheck || isEditing ? (
+                <input
+                  type="text"
+                  value={value}
+                  autoFocus={isEditing}
+                  onChange={(e) => handleFieldChange(key, e.target.value)}
+                  onBlur={() => setEditingKey(null)}
+                  className={needsCheck ? styles.inputWarn : styles.input}
+                />
+              ) : (
+                <div className={styles.viewRow}>
+                  <span className={styles.viewText}>{value}</span>
+                  <button
+                    type="button"
+                    className={styles.editBtn}
+                    onClick={() => setEditingKey(key)}
+                  >
+                    수정
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
-      <button type="button" className={styles.confirmBtn} onClick={handleConfirm}>
-        확인
-      </button>
+        {confirmError && <p className={styles.errorText}>{confirmError}</p>}
+
+        <button type="button" className={styles.confirmBtn} onClick={handleConfirm}>
+          확인
+        </button>
+      </div>
     </div>
   );
 }
