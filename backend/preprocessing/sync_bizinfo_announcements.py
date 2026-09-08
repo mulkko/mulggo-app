@@ -421,36 +421,48 @@ def validate_announcements(common_df: pd.DataFrame):
 # ==================================================================
 #
 # ─────────────────────────────────────────────────────────────────
-# [알려진 버그 - 2026-09-08, 아직 안 고침]
+# [버그 수정 - 2026-09-08]
 #
 #   전체 실행(관리자 "통합 반영(임시)" 버튼 -> POST /admin/sync?source=bizinfo)이
 #   1,559건 전부 처리(검증 통과 1559건)한 뒤, 마지막 upsert_announcements()의
-#   cur.execute(sql, values) 에서 아래 에러로 죽음 (returncode=1):
+#   cur.execute(sql, values) 에서 아래 에러로 죽었음:
 #
 #     ValueError: A string literal cannot contain NUL (0x00) characters.
 #
 #   원인: 첨부파일 원문 추출(OCR / pdfplumber / pyhwp)에서 간혹 NUL(0x00)
 #   바이트가 섞여 content 필드에 들어오는데, PostgreSQL text 컬럼은 NUL을
-#   저장 못 함. 여기서 걸러내질 않음. 1건이라도 걸리면 배치 전체 롤백 ->
-#   announcements 에 bizinfo 행이 하나도 안 들어감.
+#   저장 못 함. 걸러내질 않아서 1건이라도 걸리면 배치 전체 롤백 ->
+#   announcements 에 bizinfo 행이 하나도 안 들어갔음.
 #
-#   수정 방향: 저장 직전에 str / list[str] 값에서 "\x00" 제거.
-#     def _strip_nul(v):
-#         if isinstance(v, str): return v.replace("\x00", "")
-#         if isinstance(v, list):
-#             return [x.replace("\x00", "") if isinstance(x, str) else x for x in v]
-#         return v
-#     values = [_strip_nul(list(r[c]) if c in ARRAY_COLUMNS else r[c]) for c in INSERT_COLUMNS]
+#   수정: 저장 직전에 str / list[str] 값에서 "\x00" 제거 (_strip_nul, 아래).
 #   sync_kstartup_announcements.py 의 upsert_announcements 도 같은 패턴이라
-#   같이 고쳐두는 게 안전 (kstartup은 API 텍스트라 아직 안 걸렸을 뿐).
+#   같이 고쳤음 (kstartup은 API 텍스트라 아직 안 걸렸을 뿐, 잠재적으로 동일 위험).
 #
-#   주의: 재실행하면 announcements 에 저장된 게 없어서(only_unprocessed=True
-#   여도) 1,559건 첨부 재다운로드 + 재OCR 로 몇 시간 다시 걸림 - 추출 텍스트
-#   캐싱이 없음. 캐싱부터 넣을지(get_notice_full_text 결과 저장) 검토 필요.
+#   [2026-09-08 추가 수정] 위 NUL 버그 때문에 그동안 재실행할 때마다
+#   announcements 에 저장된 게 하나도 없어서(only_unprocessed=True 여도)
+#   1,559건 첨부 재다운로드 + 재OCR 로 몇 시간씩 다시 걸렸음 — 원인은
+#   upsert_announcements()가 전체 배치를 한 번에 commit()해서, 1건이라도
+#   실패하면 이미 처리한 나머지도 전부 롤백됐기 때문. 별도 캐시 테이블/파일을
+#   새로 만드는 대신, 1건씩 바로 commit()하도록 바꿔서 해결 — 이러면 중간에
+#   실패해도 그 전까지 저장된 행은 남고, only_unprocessed=True인 재실행 시
+#   (load_raw_bizinfo_from_postgres의 LEFT JOIN ... WHERE a.raw_bizinfo_id
+#   IS NULL 필터가) 이미 저장된 행은 자동으로 건너뛴다 - 즉 announcements
+#   테이블 자체가 캐시 역할을 한다. 실패한 개별 행은 예외를 밖으로 던지지
+#   않고 모아서 마지막에 로그로만 남긴다(한 건 실패가 나머지를 막지 않게).
 # ─────────────────────────────────────────────────────────────────
 
 ARRAY_COLUMNS = {"regions", "ksic_codes_matched", "ksic_names_matched", "ksic_codes_excluded"}
 INSERT_COLUMNS = FINAL_COLUMNS  # 순서 동일하게 유지
+
+
+def _strip_nul(v):
+    """PostgreSQL text 컬럼은 NUL(0x00)을 저장 못 하는데, 첨부파일 원문
+    추출(OCR/pdfplumber/pyhwp) 결과에 간혹 섞여 들어온다. 저장 직전에 제거."""
+    if isinstance(v, str):
+        return v.replace("\x00", "")
+    if isinstance(v, list):
+        return [x.replace("\x00", "") if isinstance(x, str) else x for x in v]
+    return v
 
 
 def upsert_announcements(final_df: pd.DataFrame) -> int:
@@ -477,15 +489,25 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
         """
 
         n = 0
+        failed = []
         for _, r in final_df.iterrows():
-            values = [list(r[c]) if c in ARRAY_COLUMNS else r[c] for c in INSERT_COLUMNS]
-            cur.execute(sql, values)
-            n += 1
-        conn.commit()
+            values = [_strip_nul(list(r[c]) if c in ARRAY_COLUMNS else r[c]) for c in INSERT_COLUMNS]
+            try:
+                cur.execute(sql, values)
+                conn.commit()
+                n += 1
+            except Exception as e:
+                conn.rollback()
+                failed.append((r.get("raw_bizinfo_id"), str(e)))
+
+        if failed:
+            print(f"upsert_announcements: {len(failed)}건 저장 실패(건너뜀, 다음 재실행 때 재시도됨):")
+            for raw_id, err in failed[:10]:
+                print(f"  raw_bizinfo_id={raw_id}: {err}")
+            if len(failed) > 10:
+                print(f"  ... 외 {len(failed) - 10}건")
+
         return n
-    except Exception:
-        conn.rollback()
-        raise
     finally:
         conn.close()
 
