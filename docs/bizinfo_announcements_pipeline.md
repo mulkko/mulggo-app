@@ -1,4 +1,10 @@
-# 기업마당 원본 → 통합 공고 테이블 파이프라인 (2026-09-07)
+# 기업마당 원본 → 통합 공고 테이블 파이프라인 (2026-09-07, 09-08 갱신)
+
+> **[2026-09-08 최신 상태 요약]** 아래 "미해결 사항"에 09-08 항목 추가/수정됨.
+> - `announcements` 통합 테이블 **bizinfo 0행** — 전체 실행이 NULL(0x00) 버그로 마지막 UPSERT에서 죽음 (미해결 6번). K-Startup은 221행 반영 완료.
+> - `ksic_codes` 테이블 1,202행 적재됨 (`backend/preprocessing/load_ksic_codes.py`). 단, 분류기는 아직 이 테이블이 아니라 `data/ksic_clean_v2.csv` 파일을 읽음 (미해결 7번).
+> - 관리자 화면에 "통합 반영 (임시)" 메뉴 추가 (`POST /admin/sync`) — 이 파이프라인을 버튼으로 실행/모니터.
+> - 전체 열린 작업은 `docs/DA2_작업현황.md` 참고.
 
 `docs/announcement_csv_columns.md`(CSV 테스트용, 2026-09-05)의 다음 단계 —
 CSV가 아니라 실제 PostgreSQL `announcements_raw_bizinfo` → `announcements`로
@@ -67,14 +73,12 @@ python -m backend.preprocessing.sync_bizinfo_announcements
 
 ## TA가 알아야 할 미해결 사항 (이번 범위에서 의도적으로 안 고침)
 
-1. **`backend/db/schema.sql`에 `announcements_raw_bizinfo`/`announcements` 테이블
-   정의가 없습니다.** 더 단순한 `announcements_raw`/`announcements_parsed`만
-   있음. 근데 `backend/crawler/bizinfo_api.py::save_to_db()`는 이미
-   `announcements_raw_bizinfo`에 INSERT하는 코드가 있어서, 실제 Supabase엔
-   schema.sql 밖에서 이미 테이블이 만들어져 있을 가능성이 높다고 가정하고
-   짰습니다. **실행 전에 실제 DB에 두 테이블이 있는지 먼저 확인하세요.**
-   없으면 DDL부터 필요합니다(이번엔 스키마를 임의로 만들지 않기로
-   결정해서 안 만들었습니다).
+1. **[2026-09-08 갱신 — 해결됨]** `announcements_raw_bizinfo` / `announcements` /
+   `announcement_attachments` / `ksic_codes` 테이블 정의가 `schema.sql`에
+   반영됐습니다 (`a26cabf`, `e83b95c`, `974d0bb`). 실 DB에도 전부 존재
+   (`python -m backend.db.describe_table <테이블명>`으로 확인). schema.sql
+   상단의 `announcements_raw`/`announcements_parsed`는 안 쓰는 초기 설계안 —
+   코멘트로 구분돼 있음.
 2. **[2026-09-07 수정 완료] `refrnc_nm`(문의처) 크롤러 누락 - 고쳤습니다.**
    실제 raw CSV(`data/raw/bizinfo.csv`, 1589건)를 확인해보니 `refrncNm`
    컬럼에 1588건 담당기관/연락처 값이 이미 들어있었는데, `bizinfo_api.py`의
@@ -104,6 +108,26 @@ python -m backend.preprocessing.sync_bizinfo_announcements
    `get_notice_full_text()`를 캐시 없이 매번 호출 - 같은 공고를 재처리할
    때마다 다시 다운로드/OCR합니다. 처리 건수가 많아지면 `announcements`에
    이미 저장된 `content`를 캐시로 재사용하는 로직을 추가하는 게 좋습니다.
+   → 6번 버그로 재실행 시 이게 크게 문제 됨(전량 재OCR = 수 시간).
+
+6. **[2026-09-08 신규 — 미해결] `upsert_announcements()` NUL(0x00) 미제거 버그.**
+   전체 실행(`POST /admin/sync?source=bizinfo` 또는 직접 실행)이 1,559건
+   전부 처리(검증 통과 1,559건)한 뒤 마지막 `cur.execute(sql, values)`에서:
+   `ValueError: A string literal cannot contain NUL (0x00) characters.`
+   원인: 첨부 원문 추출(OCR/pdfplumber/pyhwp)에서 NUL이 섞여 `content`에
+   들어오는데 PostgreSQL text 컬럼은 NUL 저장 불가. 1건이라도 걸리면 배치
+   전체 롤백 → `announcements`에 bizinfo 행 0. 수정 코드 예시는
+   `sync_bizinfo_announcements.py` 9번 섹션 주석 참고 (`_strip_nul` 추가).
+   `sync_kstartup_announcements.py`도 같은 패턴이라 같이 고칠 것.
+
+7. **[2026-09-08 신규 — 미해결] 분류기가 DB가 아니라 파일을 읽음.**
+   `ksic_codes` 테이블(1,202행)은 적재됐지만, `explicit_match.py` /
+   `llm_match.py`는 여전히 `data/ksic_clean_v2.csv` 파일을 하드코딩 경로로
+   읽음. 그 파일이 `.gitignore` 예외로 git에 올라가 있는 상태(원래는 안
+   올리는 게 원칙). 분류기가 `ksic_codes` 테이블을 읽도록 바꾸면 이 파일을
+   git에서 뺄 수 있음. 두 파일의 컬럼은 테이블 컬럼과 1:1 매핑됨
+   (embedding_text만 미사용). ※ `llm_match.py`는 PR #29에서 수정됐으니
+   그 위에서 작업.
 
 K-Startup용은 별도 문서 `docs/kstartup_announcements_pipeline.md` 참고
 (코드도 `sync_kstartup_announcements.py`로 완전히 분리돼 있습니다).
