@@ -29,3 +29,6 @@ data/**/*.csv
 data/uploads/
 data/test_uploads/
 frontend/dev/*_test.*
+
+# 전처리 파이프라인 dry-run 결과물 (로컬 확인용)
+dryrun_sync_*.xlsx

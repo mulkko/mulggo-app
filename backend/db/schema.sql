@@ -177,6 +177,22 @@ CREATE INDEX IF NOT EXISTS idx_announcements_raw_kstartup_id ON announcements (r
 CREATE UNIQUE INDEX IF NOT EXISTS uq_announcements_raw_bizinfo_id  ON announcements (raw_bizinfo_id)  WHERE source = 'bizinfo';
 CREATE UNIQUE INDEX IF NOT EXISTS uq_announcements_raw_kstartup_id ON announcements (raw_kstartup_id) WHERE source = 'kstartup';
 
+-- 공고 첨부파일 — 공고 상세페이지의 원본 신청서 양식·공고문 파일(정부가 게시한
+-- 원본이며 신청서 어시스턴트가 만든 결과물이 아님). 공고 1건 : 첨부 N개.
+-- 현재 크롤러/파이프라인이 아직 안 채움(빈 테이블). 채우는 로직은 별도 작업.
+CREATE TABLE IF NOT EXISTS announcement_attachments (
+    attachment_id    BIGSERIAL PRIMARY KEY,
+    announcement_id  BIGINT NOT NULL REFERENCES announcements(announcement_id),
+    file_name        TEXT NOT NULL,
+    file_type        VARCHAR(10),          -- 확장자 (pdf/hwp/hwpx/zip/xlsx 등)
+    attachment_role  VARCHAR(20),          -- 공고문/신청서양식/붙임 등 역할 구분
+    source_url       TEXT NOT NULL,        -- 원본 다운로드 URL
+    storage_path     TEXT,                 -- 자체 저장소에 받아둔 경우의 경로
+    collected_at     TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_announcement_attachments_announcement_id
+    ON announcement_attachments (announcement_id);
+
 -- ══════════════════════════════════════════════════════
 -- 아래부터는 실제 운영 DB(Supabase)에 있는 회원/사업자 관련 테이블을 그대로 반영한 것.
 -- users 테이블은 실제로는 Supabase Auth가 관리하는 컬럼(instance_id, encrypted_password,
