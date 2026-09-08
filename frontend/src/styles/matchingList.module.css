@@ -1,0 +1,170 @@
+/* 지원사업 매칭 리스트(공고 리스트) 화면. 짝꿍 컴포넌트: pages/matching/MatchingList.tsx
+   값은 webTokens.css 토큰만 사용한다. 스펙 출처: 프로토타입 "공고 매칭 리스트" 화면.
+   레이아웃: 모바일 우선 + 데스크톱은 common.css .pageContainer(최대 640px 가운데 정렬). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  color: var(--color-ink-charcoal);
+}
+
+/* ===== 헤더 ===== */
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 20px 16px;
+  box-sizing: border-box;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.logoText {
+  font-family: var(--font-family-logo);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  color: var(--color-deep-navy);
+}
+
+.logoMark {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.analysisLink {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--color-teal-green);
+  cursor: pointer;
+}
+
+/* ===== 필터바 ===== */
+.filterBar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px 14px;
+  box-sizing: border-box;
+}
+
+.regionChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-white);
+  background: var(--color-light-teal);
+  padding: 7px 11px;
+  border-radius: var(--radius-pill);
+}
+
+.pinIcon {
+  width: 12px;
+  height: 12px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.dropdownChip {
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--color-ink-charcoal);
+  background: var(--color-white);
+  box-shadow: var(--shadow-inset-gray);
+  border: none;
+  padding: 7px 11px;
+  border-radius: var(--radius-pill);
+}
+
+.filterButton {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 11px;
+  background: var(--color-white);
+  box-shadow: var(--shadow-inset-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-ink-charcoal);
+}
+
+.filterButton svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+/* ===== 스크롤 영역 ===== */
+.scrollArea {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 20px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guide {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--color-stone-gray);
+  line-height: 1.6;
+}
+
+/* "총 매칭 사업 N건" 카운트 박스 */
+.countBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-white);
+  border-radius: var(--radius-input);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-inset-navy);
+}
+
+.countLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.countValue {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-deep-navy);
+}
+
+/* ===== 공고 카드 리스트 ===== */
+/* 카드 자체는 공통 컴포넌트 components/AnnouncementCard 로 분리됨 (스타일: announcementCard.module.css) */
+.cardList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

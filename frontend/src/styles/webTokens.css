@@ -69,4 +69,79 @@
 
   /* ===== 그림자 ===== */
   --shadow-app: 0 0 60px rgba(16, 74, 143, 0.35); /* Drop Shadow, 60px Blur, Navy Sphere 35% */
+
+  /* ===== 매칭 리스트(공고 리스트) 화면 전용 ===== */
+  /* 색상 */
+  --color-deep-navy: #15328c; /* 매칭 화면 로고 워드마크, 기관명, 카운트 숫자 (--color-navy-sphere보다 살짝 밝은 딥 네이비). adminTokens.css의 --color-brand-navy와 이름이 겹치지 않도록 web 전용 이름 사용 */
+  --color-dday-bg: #f6dfaf; /* D-day(모집중) 뱃지 배경 */
+  --color-dday-text: #8a6212; /* D-day(모집중) 뱃지 텍스트 */
+  --color-border-nav: #ededf0; /* 하단 네비게이션 상단 구분선 */
+  --color-tab-active-icon: #e8a93c; /* 하단 네비게이션 활성 탭 아이콘 stroke */
+  --color-tab-active-label: #b5761a; /* 하단 네비게이션 활성 탭 라벨 텍스트 */
+  /* 해시태그 칩은 --color-teal-mist(배경) + --color-teal-green(텍스트) 재사용 */
+  /* 지역 필터 칩은 --color-light-teal(배경) + --color-white(텍스트) 재사용 */
+
+  /* Radius */
+  --radius-pill: 99px; /* D-day 뱃지, 해시태그 칩, 필터 칩 */
+  /* 카드 radius(12px)는 --radius-input 재사용 */
+
+  /* 그림자 */
+  --shadow-card: 0 0 0 1.2px rgba(139, 141, 147, 0.28), 0 8px 22px -18px rgba(21, 50, 140, 0.35); /* 공고 카드 기본 */
+  --shadow-card-hover: 0 0 0 1.5px rgba(63, 182, 168, 0.7), 0 12px 26px -16px rgba(21, 50, 140, 0.4); /* 공고 카드 hover/active */
+  --shadow-inset-gray: inset 0 0 0 1.2px rgba(139, 141, 147, 0.3); /* 드롭다운 칩, 필터 아이콘 버튼 테두리 */
+  --shadow-inset-navy: inset 0 0 0 1.2px rgba(21, 50, 140, 0.3); /* "총 매칭 사업" 카운트 박스 테두리 */
+
+  /* ===== 공고 상세(지원사업 상세) 화면 전용 ===== */
+  /* 색상 */
+  --color-ai-comment-bg: #eef1fa; /* AI 코멘트 박스 배경 */
+  --color-ai-comment-text: #2e3a6b; /* AI 코멘트 박스 라벨/본문 텍스트 */
+  --color-overview-icon: #c4841e; /* 사업개요 카드 항목 아이콘 stroke */
+  --color-autofill-banner-bg: #fafaf9; /* 서류 자동채움 안내 배너 배경 */
+  --color-teal-mist-hover: #cdede6; /* "채우기" 필 버튼 hover 배경 (--color-teal-mist의 hover 상태) */
+  --color-light-teal-hover: #2e9c8f; /* "원 공고 홈페이지로 이동" 버튼 hover 배경 (--color-light-teal의 hover 상태) */
+  /* 북마크(저장) 아이콘 채움색은 --color-tab-active-icon(#e8a93c) 재사용 */
+  /* AI 코멘트 제목 색은 --color-deep-navy(#15328c) 재사용 */
+  /* 사업개요 카드 항목 구분선은 --color-border-nav(#ededf0) 재사용 */
+
+  /* Radius */
+  --radius-card: 14px; /* AI 코멘트 / 사업개요 / 공고내용 / 신청서류 카드 */
+  --radius-cta: 13px; /* 하단 CTA 버튼 2개(지원 여부 토글 / 원 공고 홈페이지 이동) */
+
+  /* 그림자 */
+  --shadow-inset-ai-comment: inset 0 0 0 1.2px rgba(21, 50, 140, 0.25); /* AI 코멘트 박스 테두리 */
+  --shadow-inset-card: inset 0 0 0 1.2px rgba(139, 141, 147, 0.25); /* 사업개요 / 공고내용 카드 테두리 */
+  --shadow-inset-teal: inset 0 0 0 1px #3fb6a8; /* 신청서류 카드 강조 테두리 */
+  --shadow-inset-gray-strong: inset 0 0 0 1.5px rgba(139, 141, 147, 0.3); /* "지원 시 체크"(미지원) 상태 버튼 테두리 */
+
+  /* ===== 마이페이지 화면 전용 ===== */
+  /* 색상 */
+  --color-report-bg: #eaf7f4; /* "나의 분석 리포트" 카드 배경 */
+  --color-fill-history-bg: #fdf6e7; /* "채우기 이용내역" 카드 배경 */
+  --color-badge-download-bg: #fff3d6; /* "다운로드 가능" 뱃지 배경 (뱃지 텍스트는 --color-tab-active-icon 재사용) */
+  --color-border-dashed: rgba(139, 141, 147, 0.3); /* "+ 새 분석 시작하기" 점선 버튼 테두리 (hover 시 --color-light-teal) */
+  --color-delete-hover: rgba(139, 141, 147, 0.15); /* 카드 우측 상단 삭제(X) 버튼 hover 배경 (아이콘 stroke는 --color-stone-gray 재사용) */
+  /* 프로필 요약 카드 배경/화살표는 --color-white / --color-stone-gray 재사용 */
+  /* 분석 리포트 제목은 --color-teal-green, "채우기" 설명 텍스트는 --color-dday-text 재사용 */
+  /* "지원함" 상태 뱃지는 --color-teal-green(텍스트) + --color-teal-mist(배경) 재사용 */
+
+  /* 그림자 (프로필 요약 카드 테두리는 --shadow-inset-card 재사용) */
+  --shadow-inset-report: inset 0 0 0 1.2px rgba(63, 182, 168, 0.35); /* 분석 리포트 카드 기본 테두리 */
+  --shadow-inset-report-hover: inset 0 0 0 1.2px #3fb6a8; /* 분석 리포트 카드 hover 테두리 */
+  --shadow-inset-amber: inset 0 0 0 1.2px rgba(232, 169, 60, 0.45); /* "채우기 이용내역" 카드 테두리 */
+  --shadow-inset-neutral: inset 0 0 0 1.2px #e3e3e6; /* "나의 지원내역" 카드 테두리 */
+  /* radius 13px는 --radius-cta, 14px는 --radius-card, 12px는 --radius-input 재사용 */
+
+  /* ===== 프로필 수정 화면 전용 ===== */
+  /* 색상 */
+  --color-light-teal-hover-strong: #34a296; /* "저장하기" 버튼 hover 배경 (--color-light-teal의 hover 상태 — 공고 상세 CTA의 --color-light-teal-hover(#2e9c8f)와는 다른 값) */
+  /* 인풋 배경은 --color-stone-mist, 아바타 배경은 --color-teal-mist, "사진 변경" 텍스트는 --color-teal-green,
+     구분선은 --color-border-nav, select 화살표/서브텍스트는 --color-stone-gray, Inter(숫자·이메일) 폰트는 --font-family-logo 재사용 */
+
+  /* 크기 */
+  --input-height-form: 48px; /* 프로필 수정 인풋·select 공통 높이 (로그인/회원가입의 46~50px 가변 스펙과 별개) */
+  --btn-height-save: 52px; /* "저장하기" 버튼 높이 (공고 상세 CTA 50px와 별개) */
+
+  /* Radius */
+  --radius-thumb: 9px; /* 사업자등록증 업로드 행 썸네일 (인풋 12px보다 살짝 작음) */
+  /* 인풋·select radius 12px는 --radius-input, "저장하기" 버튼 radius 13px는 --radius-cta 재사용 */
 }

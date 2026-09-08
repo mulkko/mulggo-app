@@ -150,7 +150,8 @@ def signup(
 # ══════════════════════════════════════════════════════
 def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fields: dict) -> None:
     """확정된 사업자등록증 정보(fields)를 DB에 저장.
-    fields: {company_name, ceo_name, biz_no, corp_no, open_date, birth_date, business_address, entity_type}
+    fields: {company_name, ceo_name, biz_no, corp_no, open_date, birth_date, business_address,
+    entity_type, business_category, business_item} (뒤 2개는 업태/종목 — 없어도 됨).
     (직접 OCR을 돌린 결과든, 사용자가 확인/수정 팝업에서 확정한 값이든 같은 형태).
     실패해도 회원가입 자체엔 영향 없음(로그만 남김) — 백그라운드에서 호출됨."""
     entity_type_code = "corporate" if fields.get("entity_type") == "법인" else "individual"
@@ -217,6 +218,21 @@ def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fie
                 fields.get("business_address") or None,
             ),
         )
+        # [테스트] 업태/종목 (profile_business_types) — 2026-09-07 연결, 09-08 확인 팝업으로 이동.
+        # 이제 이 함수는 재추출 안 하고, 호출부(팝업 확인 or process_biz_cert_ocr)가 이미
+        # 넣어준 fields.business_category/business_item을 그대로 저장만 한다.
+        business_category = fields.get("business_category") or None
+        business_item = fields.get("business_item") or None
+        if business_category or business_item:
+            cursor.execute(
+                """
+                INSERT INTO profile_business_types
+                    (profile_id, business_category, business_item, is_primary)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (profile_id, business_category, business_item, True),
+            )
+
         connection.commit()
         print(f"[biz_cert 저장 성공] user_id={user_id}, profile_id={profile_id}")
     except Exception as e:
@@ -247,4 +263,16 @@ def process_biz_cert_ocr(user_id: int, file_path: str, original_filename: str) -
         "business_address": biz_cert.get("address_basic", ""),
         "entity_type": entity_type,
     }
+
+    # 확인 팝업을 안 거치는 경로라 여기서 직접 업태/종목까지 뽑아서 넘긴다.
+    try:
+        from backend.assistant.category_ocr import extract_categories
+
+        groups = extract_categories(file_path, qwen=(model, processor))
+        if groups:
+            fields["business_category"] = groups[0].get("업태", "") or ""
+            fields["business_item"] = ", ".join(i for i in groups[0].get("종목", []) if i.strip())
+    except Exception as e:
+        print(f"[업태/종목 추출 실패] user_id={user_id}: {e}")
+
     save_biz_cert_data(user_id, file_path, original_filename, fields)

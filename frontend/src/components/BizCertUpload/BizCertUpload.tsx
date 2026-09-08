@@ -29,6 +29,8 @@ const REVIEW_FIELDS: { key: string; label: string }[] = [
   { key: "open_date", label: "개업연월일" },
   { key: "birth_date", label: "생년월일" },
   { key: "business_address", label: "사업장 소재지" },
+  { key: "business_category", label: "업태" },
+  { key: "business_item", label: "종목" },
 ];
 
 // 법인/개인 구분에 따라 애초에 존재하지 않는 필드 (법인등록번호는 법인만, 생년월일은 개인만).
@@ -76,7 +78,11 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
-  const [editingKey, setEditingKey] = useState<string | null>(null);
+  // 입력창으로 열려있는 필드들. 한 번 열리면(빈 값이라 처음부터 열렸든, "수정" 눌러서 열었든)
+  // 값이 채워져도 계속 입력창으로 유지 — 안 그러면 빈 값 필드에 타이핑해서 값이 생기는 순간
+  // "이제 안 비었네?" 하고 판단해서 스스로 입력창을 닫아버려, 한 글자 치면 튕기는 것처럼 보임.
+  const [openFields, setOpenFields] = useState<Set<string>>(new Set());
+  const [justOpenedKey, setJustOpenedKey] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -91,7 +97,8 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
     setPhase("idle");
     setFile(null);
     setErrorMessage("");
-    setEditingKey(null);
+    setOpenFields(new Set());
+    setJustOpenedKey(null);
   };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -127,6 +134,16 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
       }
 
       setFields(data.extracted);
+      // 처음부터 비어있는(=확인 필요) 필드는 처음부터 입력창으로 열어둠. 이후 값이 채워져도
+      // 계속 열려있음 (openFields 자체를 이 시점 이후로는 값 기준으로 다시 계산하지 않음).
+      const extracted = data.extracted;
+      const initialOpen = new Set(
+        REVIEW_FIELDS.filter(({ key }) => {
+          const notApplicable = NOT_APPLICABLE_WHEN[key] === extracted.entity_type;
+          return !notApplicable && !extracted[key];
+        }).map(({ key }) => key)
+      );
+      setOpenFields(initialOpen);
       setPhase("review");
     } catch {
       setErrorMessage("서버에 연결할 수 없습니다.");
@@ -209,27 +226,30 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
         {REVIEW_FIELDS.map(({ key, label }) => {
           const value = fields[key] ?? "";
           const notApplicable = NOT_APPLICABLE_WHEN[key] === fields.entity_type;
-          const needsCheck = !value && !notApplicable;
-          const isEditing = editingKey === key;
+          const isOpen = openFields.has(key);
+          const showWarnBadge = isOpen && !value; // 열려있는데 아직도 비어있으면 "확인 필요" 유지
 
           return (
             <div key={key} className={styles.fieldRow}>
               <label>
                 {label}
-                {needsCheck && <span className={styles.badgeWarn}> 확인 필요</span>}
+                {showWarnBadge && <span className={styles.badgeWarn}> 확인 필요</span>}
                 {notApplicable && <span className={styles.badgeMuted}> 해당 없음</span>}
               </label>
 
               {notApplicable ? (
                 <div className={styles.viewTextMuted}>-</div>
-              ) : needsCheck || isEditing ? (
+              ) : isOpen ? (
+                // 열림 여부(openFields)는 값이 바뀌어도 다시 계산 안 함 — 안 그러면 빈 필드에
+                // 타이핑해서 값이 생기는 순간 "이제 안 비었네?" 판단해서 스스로 닫혀버려
+                // 한 글자 치면 튕기는 것처럼 보이는 문제가 있었음. onBlur로 자동 종료도 안 함
+                // (한글 입력 중 브라우저가 순간적으로 blur를 발생시키는 경우가 있어서 동일 문제 재발 방지).
                 <input
                   type="text"
                   value={value}
-                  autoFocus={isEditing}
+                  autoFocus={justOpenedKey === key}
                   onChange={(e) => handleFieldChange(key, e.target.value)}
-                  onBlur={() => setEditingKey(null)}
-                  className={needsCheck ? styles.inputWarn : styles.input}
+                  className={showWarnBadge ? styles.inputWarn : styles.input}
                 />
               ) : (
                 <div className={styles.viewRow}>
@@ -237,7 +257,10 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
                   <button
                     type="button"
                     className={styles.editBtn}
-                    onClick={() => setEditingKey(key)}
+                    onClick={() => {
+                      setOpenFields((prev) => new Set(prev).add(key));
+                      setJustOpenedKey(key);
+                    }}
                   >
                     수정
                   </button>
