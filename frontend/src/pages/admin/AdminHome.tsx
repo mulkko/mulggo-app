@@ -27,13 +27,27 @@ function formatLogTime(isoString: string): string {
   return `${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+// 수동호출 대상 소스. 새 소스가 붙으면 여기 한 줄만 추가하면 된다
+// (백엔드 CRAWLERS dict의 키와 일치해야 함).
+const CRAWL_SOURCES: { value: string; label: string }[] = [
+  { value: "bizinfo", label: "기업마당" },
+  { value: "kstartup", label: "K-스타트업" },
+];
+
+// K-Startup은 오픈API 전체를 훑어 수 분~십수 분 걸린다. 그동안 완료 여부를
+// 배치 로그로 폴링한다.
+const CRAWL_POLL_INTERVAL_MS = 5000;
+const CRAWL_POLL_TIMEOUT_MS = 20 * 60 * 1000;
+
 function AdminHome() {
   const [bizinfoCount, setBizinfoCount] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [kstartupCount, setKstartupCount] = useState<number | null>(null);
   const [kstartupError, setKstartupError] = useState(false);
-  const [crawling, setCrawling] = useState(false);
   const [batchLogs, setBatchLogs] = useState<BatchLog[]>([]);
+  const [crawlSource, setCrawlSource] = useState(CRAWL_SOURCES[0].value);
+  // 현재 백그라운드로 수집 중인 소스(없으면 null). 진행 중엔 셀렉트·버튼 잠금.
+  const [crawlingSource, setCrawlingSource] = useState<string | null>(null);
 
   const fetchCount = () => {
     fetch(`${API_BASE_URL}/admin/bizinfo-count`)
@@ -62,27 +76,62 @@ function AdminHome() {
     fetchBatchLogs();
   }, []);
 
-  const handleManualCrawl = async () => {
-    setCrawling(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/admin/bizinfo-crawl`, { method: "POST" });
-      const data: {
-        success: boolean;
-        data?: { fetched: number; inserted: number };
-        error?: { message: string };
-      } = await res.json();
-      if (!data.success) {
-        alert(`공고 API 호출에 실패했습니다: ${data.error?.message ?? "알 수 없는 오류"}`);
-      } else {
-        alert(`수집 완료: 전체 ${data.data!.fetched}건 확인, 신규 ${data.data!.inserted}건 추가`);
+  // 수집이 끝날 때까지(= 해당 소스의 배치 로그가 새로 쌓일 때까지) 폴링.
+  // ran_at 문자열이 직전 최신값과 달라지면 완료로 본다(타임존/시계오차 영향 없음).
+  const pollCrawlDone = async (src: string, prevLatestRanAt: string | null) => {
+    const deadline = Date.now() + CRAWL_POLL_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, CRAWL_POLL_INTERVAL_MS));
+      const logs: BatchLog[] = await fetch(`${API_BASE_URL}/admin/batch-logs`)
+        .then((res) => res.json())
+        .then((data: { data: { logs: BatchLog[] } }) => data.data.logs)
+        .catch(() => []);
+      if (logs.length) setBatchLogs(logs);
+
+      const newest = logs.find((log) => log.source === src);
+      if (newest && newest.ran_at !== prevLatestRanAt) {
+        setCrawlingSource(null);
+        fetchCount();
+        fetchKstartupCount();
+        const label = newest.status === "success" ? "완료" : "실패";
+        alert(`${src} 수집 ${label}: 신규 ${newest.inserted_count}건`);
+        return;
       }
-      fetchCount();
-      fetchBatchLogs();
-    } catch {
-      alert("공고 API 호출에 실패했습니다.");
-    } finally {
-      setCrawling(false);
     }
+    // 타임아웃: 서버에선 계속 돌 수 있으나 UI 잠금만 해제한다.
+    setCrawlingSource(null);
+  };
+
+  const handleManualCrawl = async () => {
+    const src = crawlSource;
+    const prevLatestRanAt = batchLogs.find((log) => log.source === src)?.ran_at ?? null;
+    setCrawlingSource(src);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/crawl?source=${src}`, { method: "POST" });
+      const data: { success: boolean; error?: { message: string } } = await res.json();
+      if (!data.success) {
+        alert(`수집 시작 실패: ${data.error?.message ?? "알 수 없는 오류"}`);
+        setCrawlingSource(null);
+        return;
+      }
+      // 시작 알림은 전체 화면 스피너 오버레이가 대신한다.
+      fetchBatchLogs();
+      pollCrawlDone(src, prevLatestRanAt);
+    } catch {
+      alert("수집 시작 요청에 실패했습니다.");
+      setCrawlingSource(null);
+    }
+  };
+
+  // raw 테이블 전체를 CSV로 내려받는다. 서버가 attachment 헤더를 주므로
+  // 앵커 클릭만으로 다운로드되고 현재 페이지는 그대로 유지된다.
+  const downloadCsv = (source: string) => {
+    const a = document.createElement("a");
+    a.href = `${API_BASE_URL}/admin/export?source=${source}`;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   const countLabel = loadError ? "불러오기 실패" : bizinfoCount === null ? "확인 중..." : `${bizinfoCount.toLocaleString()}건`;
@@ -104,11 +153,58 @@ function AdminHome() {
 
   return (
     <>
+      {crawlingSource !== null && (
+        <div className={styles.crawlOverlay}>
+          <div className={styles.crawlOverlayInner}>
+            <div className={styles.crawlSpinner} />
+            <p className={styles.crawlOverlayText}>
+              {CRAWL_SOURCES.find((s) => s.value === crawlingSource)?.label} 수집 중...
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className={styles.header}>
         <h1 className={styles.pageTitle}>공고 수집 현황</h1>
-        <button type="button" className="btnSecondary" onClick={handleManualCrawl} disabled={crawling}>
-          {crawling ? "호출 중..." : "수동호출"}
-        </button>
+        <div className={styles.headerActions}>
+          {/* TODO: 스타일가이드에 셀렉트박스 정식 추가되면 .sourceSelect 교체(공용 클래스/컴포넌트로) */}
+          <select
+            className={styles.sourceSelect}
+            value={crawlSource}
+            onChange={(e) => setCrawlSource(e.target.value)}
+            disabled={crawlingSource !== null}
+            aria-label="수집할 공고 출처 선택"
+          >
+            {CRAWL_SOURCES.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className={`btnSecondary ${styles.crawlBtn}`}
+            onClick={handleManualCrawl}
+            disabled={crawlingSource !== null}
+          >
+            {crawlingSource !== null ? "수집 중..." : "수동호출"}
+          </button>
+          {/* 수동호출(.btnSecondary)과 크기·padding 동일, 배경색만 하늘색(--color-primary-blue) */}
+          <button
+            type="button"
+            className={`btnSecondary ${styles.csvBtn}`}
+            onClick={() => downloadCsv("bizinfo")}
+          >
+            기업마당 CSV
+          </button>
+          <button
+            type="button"
+            className={`btnSecondary ${styles.csvBtn}`}
+            onClick={() => downloadCsv("kstartup")}
+          >
+            창업진흥원 CSV
+          </button>
+        </div>
       </div>
 
       <div className={styles.summaryCard}>
@@ -158,24 +254,6 @@ function AdminHome() {
         </div>
 
         <div className={styles.gridCard}>
-          <p className={styles.gridCardTitle}>최근 배치 실행 로그</p>
-          <div className={styles.logsList}>
-            {batchLogs.map((log) => (
-              <div className={styles.logItem} key={log.ran_at}>
-                <p className={styles.logTime}>{formatLogTime(log.ran_at)}</p>
-                <span
-                  className={`${styles.statusBadge} ${
-                    log.status === "success" ? styles.statusBadgeSuccess : styles.statusBadgeError
-                  }`}
-                >
-                  {log.status === "success" ? "성공" : "실패"} · 신규 {log.inserted_count}건
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.gridCard}>
           <p className={styles.gridCardTitle}>기관별 누적 수집 건수</p>
           <div className={styles.chartRows}>
             {cumulativeChart.map((row) => (
@@ -188,6 +266,24 @@ function AdminHome() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className={styles.gridCard}>
+        <p className={styles.gridCardTitle}>최근 배치 실행 로그</p>
+        <div className={styles.logsList}>
+          {batchLogs.map((log) => (
+            <div className={styles.logItem} key={log.ran_at}>
+              <p className={styles.logTime}>{formatLogTime(log.ran_at)}</p>
+              <span
+                className={`${styles.statusBadge} ${
+                  log.status === "success" ? styles.statusBadgeSuccess : styles.statusBadgeError
+                }`}
+              >
+                {log.status === "success" ? "성공" : "실패"} · 신규 {log.inserted_count}건
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </>

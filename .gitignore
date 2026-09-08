@@ -24,6 +24,9 @@ __pycache__/
 # 대용량/원본 데이터 (data/ 폴더 원칙상 대용량은 DB에 저장, 로컬 파일로 안 남기기)
 data/raw/
 data/**/*.csv
+# 예외: KSIC 마스터(소규모 정적 참고자료). 분류기(explicit_match.py)가 이 경로를
+# 직접 읽고, load_ksic_codes.py가 ksic_codes 테이블 시드로도 씀.
+!data/ksic_clean_v2.csv
 data/**/*.xls
 data/**/*.xlsx
 
@@ -36,3 +39,9 @@ data/**/*.png
 data/uploads/
 data/test_uploads/
 frontend/dev/*_test.*
+
+# 관리자 "통합 반영" 실행 로그 (subprocess stdout)
+logs/
+
+# 전처리 파이프라인 dry-run 결과물 (로컬 확인용)
+dryrun_sync_*.xlsx

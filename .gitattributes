@@ -1,0 +1,2 @@
+# 시드 데이터 CSV — 줄바꿈/인코딩 변환 없이 그대로 보관 (BOM·LF 유지)
+data/ksic_clean_v2.csv -text
