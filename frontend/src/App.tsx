@@ -9,6 +9,7 @@ import AdminRoute from "./pages/admin/AdminRoute";
 import AdminStyleGuide from "./components/AdminStyleGuide/AdminStyleGuide";
 import WebStyleGuide from "./components/WebStyleGuide/WebStyleGuide";
 import MatchingList from "./pages/matching/MatchingList";
+import MatchingDetail from "./pages/matching/MatchingDetail";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/login" element={<LoginForm variant="user" />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/matching" element={<MatchingList />} />
+        <Route path="/matching/:id" element={<MatchingDetail />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />

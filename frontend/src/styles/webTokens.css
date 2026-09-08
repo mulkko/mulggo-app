@@ -90,4 +90,26 @@
   --shadow-card-hover: 0 0 0 1.5px rgba(63, 182, 168, 0.7), 0 12px 26px -16px rgba(21, 50, 140, 0.4); /* 공고 카드 hover/active */
   --shadow-inset-gray: inset 0 0 0 1.2px rgba(139, 141, 147, 0.3); /* 드롭다운 칩, 필터 아이콘 버튼 테두리 */
   --shadow-inset-navy: inset 0 0 0 1.2px rgba(21, 50, 140, 0.3); /* "총 매칭 사업" 카운트 박스 테두리 */
+
+  /* ===== 공고 상세(지원사업 상세) 화면 전용 ===== */
+  /* 색상 */
+  --color-ai-comment-bg: #eef1fa; /* AI 코멘트 박스 배경 */
+  --color-ai-comment-text: #2e3a6b; /* AI 코멘트 박스 라벨/본문 텍스트 */
+  --color-overview-icon: #c4841e; /* 사업개요 카드 항목 아이콘 stroke */
+  --color-autofill-banner-bg: #fafaf9; /* 서류 자동채움 안내 배너 배경 */
+  --color-teal-mist-hover: #cdede6; /* "채우기" 필 버튼 hover 배경 (--color-teal-mist의 hover 상태) */
+  --color-light-teal-hover: #2e9c8f; /* "원 공고 홈페이지로 이동" 버튼 hover 배경 (--color-light-teal의 hover 상태) */
+  /* 북마크(저장) 아이콘 채움색은 --color-tab-active-icon(#e8a93c) 재사용 */
+  /* AI 코멘트 제목 색은 --color-deep-navy(#15328c) 재사용 */
+  /* 사업개요 카드 항목 구분선은 --color-border-nav(#ededf0) 재사용 */
+
+  /* Radius */
+  --radius-card: 14px; /* AI 코멘트 / 사업개요 / 공고내용 / 신청서류 카드 */
+  --radius-cta: 13px; /* 하단 CTA 버튼 2개(지원 여부 토글 / 원 공고 홈페이지 이동) */
+
+  /* 그림자 */
+  --shadow-inset-ai-comment: inset 0 0 0 1.2px rgba(21, 50, 140, 0.25); /* AI 코멘트 박스 테두리 */
+  --shadow-inset-card: inset 0 0 0 1.2px rgba(139, 141, 147, 0.25); /* 사업개요 / 공고내용 카드 테두리 */
+  --shadow-inset-teal: inset 0 0 0 1px #3fb6a8; /* 신청서류 카드 강조 테두리 */
+  --shadow-inset-gray-strong: inset 0 0 0 1.5px rgba(139, 141, 147, 0.3); /* "지원 시 체크"(미지원) 상태 버튼 테두리 */
 }

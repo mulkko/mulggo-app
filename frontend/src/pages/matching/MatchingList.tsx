@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import styles from "../../styles/matchingList.module.css";
 import BottomNav from "../../components/BottomNav/BottomNav";
 
@@ -68,6 +69,8 @@ const DUMMY_ANNOUNCEMENTS: AnnouncementCard[] = [
 ];
 
 function MatchingList() {
+  const navigate = useNavigate();
+
   const handleAnalysisClick = () => {
     // TODO: "물꼬 분석"(분석 리포트) 화면으로 이동
   };
@@ -89,8 +92,9 @@ function MatchingList() {
   };
 
   const handleCardClick = (item: AnnouncementCard) => {
-    // TODO: 공고 상세 화면으로 이동 (예: navigate(`/matching/${item.id}`))
-    void item;
+    // 공고 상세 화면으로 이동. id를 넘기면 상세 화면이 matchingDetailData에서
+    // 해당 id의 더미데이터를 찾아 렌더한다.
+    navigate(`/matching/${item.id}`);
   };
 
   return (
