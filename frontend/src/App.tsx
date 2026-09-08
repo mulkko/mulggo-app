@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Splash from "./pages/splash/Splash";
 import Signup from "./pages/auth/Signup";
+import Onboarding from "./pages/onboarding/Onboarding";
 import LoginForm from "./components/LoginForm";
 import AdminHome from "./pages/admin/AdminHome";
 import AdminMembers from "./pages/admin/AdminMembers";
@@ -22,6 +23,7 @@ function App() {
         <Route path="/" element={<Splash />} />
         <Route path="/login" element={<LoginForm variant="user" />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/matching" element={<MatchingList />} />
         <Route path="/matching/filter" element={<FilterPage />} />
         <Route path="/matching/:id" element={<MatchingDetail />} />

@@ -72,6 +72,11 @@ const KAKAO_COLORS = [
   { name: "Kakao Label", hex: "#391B1B", varName: "--brand-kakao-label" },
 ];
 
+// 온보딩 화면에서 추가된 색상 토큰
+const ONBOARDING_COLORS = [
+  { name: "Dot Inactive", hex: "rgba(139,141,147,0.3)", usage: "페이지 인디케이터 비활성 점 배경", varName: "--color-dot-inactive" },
+];
+
 function WebStyleGuide() {
   return (
     <div className={styles.page}>
@@ -521,6 +526,75 @@ function WebStyleGuide() {
           <div className={styles.specRow}><span>--radius-cta</span><span>13px (CTA·모달 버튼) — 재사용</span></div>
           <div className={styles.specRow}><span>--radius-input</span><span>12px (모달 하단 버튼) — 재사용</span></div>
           <div className={styles.specRow}><span>--btn-height-save</span><span>52px (CTA 높이) — 재사용</span></div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>11. 온보딩</h2>
+        </div>
+
+        <p className={styles.subheading}>추가 색상 토큰</p>
+        <div className={styles.colorGrid}>
+          {ONBOARDING_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.subheading}>
+          마스코트 원 배경은 --color-teal-mist, 배지는 --color-teal-mist + --color-teal-green +
+          --radius-pill, 현재 페이지 인디케이터 점은 --color-deep-navy, "다음" CTA 버튼은
+          --color-light-teal / hover --color-light-teal-hover-strong, 제목·설명 텍스트는
+          --color-ink-charcoal / --color-stone-gray, 마스코트 안 자리표시 도형 radius는
+          --radius-input(12px) 재사용.
+        </p>
+
+        <p className={styles.subheading}>추가 radius / shadow 토큰</p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--radius-onboarding-card</span><span>16px (step 3 선택 카드)</span></div>
+          <div className={styles.specRow}><span>--shadow-onboarding-card</span><span>0 0 0 1.5px rgba(63,182,168,.4), 0 10px 26px -18px rgba(21,50,140,.35)</span></div>
+          <div className={styles.specRow}><span>--shadow-onboarding-card-hover</span><span>0 0 0 1.5px rgba(63,182,168,.7), 0 14px 30px -16px rgba(21,50,140,.4)</span></div>
+          <div className={styles.specRow}><span>--shadow-onboarding-cta</span><span>0 10px 20px -14px rgba(63,182,168,.7) ("다음" CTA 버튼)</span></div>
+        </div>
+
+        <p className={styles.subheading}>step 3 선택 카드</p>
+        <div className={styles.componentCard}>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <button type="button" className={styles.onboardingChoiceCard}>
+                <span className={styles.onboardingChoiceCardTitle}>사업 아이디어를 구상하고 싶어요</span>
+                <span className={styles.onboardingChoiceCardDesc}>
+                  짧은 질문 혹은 정밀 질문에 답하며 사업을 구체화해요
+                </span>
+              </button>
+              <span className={styles.codeLabel}>
+                Card · --radius-onboarding-card · --shadow-onboarding-card / -hover
+              </span>
+            </div>
+          </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.onboardingDots}>
+                <span className={`${styles.onboardingDot} ${styles.onboardingDotActive}`} />
+                <span className={styles.onboardingDot} />
+                <span className={styles.onboardingDot} />
+                <span className={styles.onboardingDot} />
+              </div>
+              <span className={styles.codeLabel}>
+                페이지 인디케이터 · 현재 22×6 --color-deep-navy / 나머지 6×6 --color-dot-inactive
+              </span>
+            </div>
+            <div className={styles.componentItem}>
+              <button type="button" className={styles.onboardingCta}>다음</button>
+              <span className={styles.codeLabel}>CTA · 높이 46px · --radius-input · --shadow-onboarding-cta</span>
+            </div>
+          </div>
         </div>
       </section>
     </div>

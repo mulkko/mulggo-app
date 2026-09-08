@@ -1,0 +1,212 @@
+/* 온보딩 화면. 짝꿍 컴포넌트: pages/onboarding/Onboarding.tsx
+   값(색상/radius/shadow)은 webTokens.css 토큰만 사용한다. 스펙 출처: 프로토타입 "is.onboard".
+   레이아웃: 모바일 우선 + 데스크톱은 common.css .pageContainer(최대 640px 가운데 정렬).
+   폭은 전부 %/flex/max-width 기반 — 고정 px 폭을 쓰지 않는다.
+   하단 네비게이션(BottomNav) 없음. step(0~3) 로컬 state로 본문/인디케이터 전환. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 0 26px 30px;
+  box-sizing: border-box;
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  color: var(--color-ink-charcoal);
+}
+
+/* ===== 상단바 ===== */
+.topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.backButton {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--color-ink-charcoal);
+  cursor: pointer;
+}
+
+.skipButton {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+  cursor: pointer;
+}
+
+/* ===== 중앙 콘텐츠 ===== */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  text-align: center;
+}
+
+/* 마스코트 원 (모든 step 공통) */
+.mascot {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: var(--color-teal-mist);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mascotInner {
+  width: 112px;
+  height: 112px;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+}
+
+/* 배지 (step 1~2) */
+.badge {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-teal-mist);
+  color: var(--color-teal-green);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* 제목 (step 0~2) */
+.title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.35;
+  color: var(--color-ink-charcoal);
+}
+
+/* step 1~2는 제목이 조금 더 큼 */
+.badge + .title {
+  font-size: 23px;
+}
+
+/* 설명 (step 1~2) */
+.desc {
+  margin: 0;
+  max-width: 280px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-stone-gray);
+}
+
+/* ===== step 3 (레이아웃 다름 — 하단 영역 없음) ===== */
+.startHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.startTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--color-ink-charcoal);
+}
+
+.startSubtitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-stone-gray);
+}
+
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.choiceCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 20px;
+  border: none;
+  border-radius: var(--radius-onboarding-card);
+  background: var(--color-white);
+  box-shadow: var(--shadow-onboarding-card);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.choiceCard:hover {
+  box-shadow: var(--shadow-onboarding-card-hover);
+}
+
+.choiceCardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.choiceCardDesc {
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+}
+
+/* ===== 하단 영역 (step 0~2) ===== */
+.bottom {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-dot-inactive);
+}
+
+.dotActive {
+  width: 22px;
+  height: 6px;
+  background: var(--color-deep-navy);
+}
+
+.cta {
+  height: 46px;
+  padding: 0 32px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-light-teal);
+  box-shadow: var(--shadow-onboarding-cta);
+  color: var(--color-white);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cta:hover {
+  background: var(--color-light-teal-hover-strong);
+}

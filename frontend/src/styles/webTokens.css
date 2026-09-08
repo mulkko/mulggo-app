@@ -163,4 +163,18 @@
 
   /* 그림자 */
   --shadow-modal: 0 24px 50px -20px rgba(21, 50, 140, 0.4); /* 다운로드 모달 카드 */
+
+  /* ===== 온보딩 화면 전용 ===== */
+  /* 색상 (마스코트 원 배경은 --color-teal-mist, 배지는 --color-teal-mist + --color-teal-green,
+     현재 페이지 인디케이터 점은 --color-deep-navy, CTA 버튼은 --color-light-teal +
+     hover --color-light-teal-hover-strong, 제목/설명 텍스트는 --color-ink-charcoal / --color-stone-gray 재사용) */
+  --color-dot-inactive: rgba(139, 141, 147, 0.3); /* 페이지 인디케이터 비활성 점 배경 (지금까지 이 값은 shadow/border로만 쓰였고 배경색 토큰은 없었음) */
+
+  /* Radius (배지는 --radius-pill, 마스코트 안 자리표시 도형은 --radius-input(12px) 재사용) */
+  --radius-onboarding-card: 16px; /* step 3 선택 카드 */
+
+  /* 그림자 */
+  --shadow-onboarding-card: 0 0 0 1.5px rgba(63, 182, 168, 0.4), 0 10px 26px -18px rgba(21, 50, 140, 0.35); /* step 3 선택 카드 기본 (--shadow-card와 비슷하지만 다른 값 — 재사용 금지) */
+  --shadow-onboarding-card-hover: 0 0 0 1.5px rgba(63, 182, 168, 0.7), 0 14px 30px -16px rgba(21, 50, 140, 0.4); /* step 3 선택 카드 hover */
+  --shadow-onboarding-cta: 0 10px 20px -14px rgba(63, 182, 168, 0.7); /* "다음" CTA 버튼 */
 }
