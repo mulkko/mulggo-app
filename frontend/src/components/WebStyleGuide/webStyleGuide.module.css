@@ -656,3 +656,68 @@
 .detailHomeButton:hover {
   background: var(--color-light-teal-hover);
 }
+
+/* ===== 11. 온보딩 ===== */
+.onboardingChoiceCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 20px;
+  border: none;
+  border-radius: var(--radius-onboarding-card);
+  background: var(--color-white);
+  box-shadow: var(--shadow-onboarding-card);
+  text-align: left;
+  cursor: pointer;
+}
+
+.onboardingChoiceCard:hover {
+  box-shadow: var(--shadow-onboarding-card-hover);
+}
+
+.onboardingChoiceCardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.onboardingChoiceCardDesc {
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+}
+
+.onboardingDots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.onboardingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-dot-inactive);
+}
+
+.onboardingDotActive {
+  width: 22px;
+  background: var(--color-deep-navy);
+}
+
+.onboardingCta {
+  height: 46px;
+  padding: 0 32px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-light-teal);
+  box-shadow: var(--shadow-onboarding-cta);
+  color: var(--color-white);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.onboardingCta:hover {
+  background: var(--color-light-teal-hover-strong);
+}
