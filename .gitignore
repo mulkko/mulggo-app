@@ -24,6 +24,8 @@ __pycache__/
 # 대용량/원본 데이터 (data/ 폴더 원칙상 대용량은 DB에 저장, 로컬 파일로 안 남기기)
 data/raw/
 data/**/*.csv
+data/**/*.xls
+data/**/*.xlsx
 
 # 회원가입/OCR 테스트 시 업로드된 실제 파일 (개인정보 포함 가능 — 사업자등록증 등)
 data/uploads/
