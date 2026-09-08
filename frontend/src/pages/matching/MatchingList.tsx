@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/matchingList.module.css";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import AnnouncementCard, {
+  type AnnouncementCardData,
+} from "../../components/AnnouncementCard/AnnouncementCard";
 
 /**
  * 지원사업 매칭 리스트(공고 리스트) 화면.
@@ -12,25 +15,14 @@ import BottomNav from "../../components/BottomNav/BottomNav";
  * 하단 탭 이동 등 실제 로직은 전부 TODO 주석으로만 표시.
  */
 
-interface AnnouncementCard {
-  id: string;
-  /** 주관 기관명 */
-  agency: string;
-  /** 마감 임박도 뱃지 문구 (예: "모집중 D-6") */
-  dday: string;
-  /** 공고 제목 */
-  title: string;
-  /** 해시태그 2개 */
-  tags: [string, string];
-}
-
 /**
  * 더미데이터.
  * 백엔드 매칭 API(자격/우대조건 순 정렬 결과)가 연결되면 이 배열을 응답 데이터로 교체한다.
  * 구조: id / agency(기관명) / dday(D-day 뱃지) / title(공고 제목) / tags(해시태그 2개).
  * 값 출처: 프로토타입 "공고 매칭 리스트" 화면의 예시 카드 5개.
+ * 카드 렌더는 공통 컴포넌트 AnnouncementCard 재사용.
  */
-const DUMMY_ANNOUNCEMENTS: AnnouncementCard[] = [
+const DUMMY_ANNOUNCEMENTS: AnnouncementCardData[] = [
   {
     id: "a1",
     agency: "중소벤처기업부",
@@ -91,7 +83,7 @@ function MatchingList() {
     // TODO: 상세 필터 패널(기업유형·업력 등)로 이동
   };
 
-  const handleCardClick = (item: AnnouncementCard) => {
+  const handleCardClick = (item: AnnouncementCardData) => {
     // 공고 상세 화면으로 이동. id를 넘기면 상세 화면이 matchingDetailData에서
     // 해당 id의 더미데이터를 찾아 렌더한다.
     navigate(`/matching/${item.id}`);
@@ -178,24 +170,7 @@ function MatchingList() {
         <ul className={styles.cardList}>
           {DUMMY_ANNOUNCEMENTS.map((item) => (
             <li key={item.id}>
-              <button
-                type="button"
-                className={styles.card}
-                onClick={() => handleCardClick(item)}
-              >
-                <div className={styles.cardTop}>
-                  <span className={styles.agency}>{item.agency}</span>
-                  <span className={styles.ddayBadge}>{item.dday}</span>
-                </div>
-                <span className={styles.cardTitle}>{item.title}</span>
-                <div className={styles.tagRow}>
-                  {item.tags.map((tag) => (
-                    <span key={tag} className={styles.tag}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </button>
+              <AnnouncementCard item={item} onClick={handleCardClick} />
             </li>
           ))}
         </ul>
