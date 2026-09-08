@@ -12,17 +12,33 @@
 | `announcements_raw_kstartup` | 242 | 크롤 완료 |
 | `announcements` (통합) | **221 (kstartup만)** | bizinfo는 아래 1번 버그로 0행 |
 | `ksic_codes` | 1,202 | `load_ksic_codes.py`로 적재. `data/ksic_clean_v2.csv` 기준 |
-| `nts_industry_codes` / `nts_ksic_mapping` | 0 | **적재 안 함** (아래 "결정된 것" 참고) |
+| `nts_industry_codes` / `nts_ksic_mapping` | 0 | 미적재. **단, 분류기 최신화(8번) 시 `nts_to_ksic` 데이터 필요** — 아래 "정정" 참고 |
 
 ## 결정된 것
 
-- **업종 매칭 = path (a)**: 유저(사업자등록증 업태/종목 텍스트)도 공고도 둘 다
-  `decide_industry` → KSIC 코드로 뽑아서 KSIC끼리 비교. **국세청(NTS) 업종코드는
-  안 씀** (홈택스 연동 안 함 — 사용자 확인). 그래서 `nts_industry_codes` /
-  `nts_ksic_mapping` 테이블은 적재 안 함. 국세청↔KSIC 연계표
-  (`final_project/data/raw/업종코드-표준산업분류_연계표.csv`) 정규화 작업은 보류.
+- **유저 쪽 업종 매칭 = path (a)**: 사업자등록증 업태/종목 **텍스트**를
+  `decide_industry` → KSIC 코드로 뽑아서, 공고의 KSIC와 비교. 사업자등록증엔
+  숫자 업종코드가 안 찍혀 나오므로 유저 쪽은 국세청 코드 불필요. 홈택스 연동
+  안 함(사용자 확인).
 - **K-Startup 공고는 업종 분류 안 함** — `ksic_status='업종무관(기본값)'` 고정
   (2026-09-04 팀 결정, 분류기가 K-Startup 텍스트에 헛다리 많음).
+
+## ⚠️ 정정 (2026-09-08, 세션 후반)
+
+이전에 "path (a)면 `nts_*` 테이블 전부 불필요"라고 정리했는데 **틀렸음.**
+그건 **유저 쪽만** 맞고, **공고 쪽**은 다름:
+
+- **공고문에 국세청 업종코드를 직접 명시하는 경우가 있음** (예: 크리에이터미디어
+  콤플렉스 입주공고 "국세청 업종코드 940306(1인 미디어 콘텐츠 창작자) 또는 921505").
+- `final_project/ksic_core`의 **최신 분류기**는 이걸 `match_ksic_by_nts_code()` +
+  `nts_to_ksic.csv`(국세청코드↔KSIC 크로스워크)로 처리함.
+- **현재 mulkko의 분류기는 이게 없는 구버전** (8번 참고).
+- → mulkko가 최신 분류기를 도입하면 `nts_to_ksic` 데이터(= `nts_ksic_mapping`
+  테이블 또는 `nts_to_ksic.csv` 파일)가 **필요함.** `nts_industry_codes`(국세청
+  계층 사전)는 분류기가 안 쓰므로 여전히 불필요(단 `nts_ksic_mapping` FK 때문에
+  넣어야 할 수는 있음).
+- 국세청↔KSIC 연계표 원본: `final_project/data/raw/업종코드-표준산업분류_연계표.csv`.
+  이미 가공된 크로스워크: `final_project/data/processed/nts_to_ksic.csv` (1,783행).
 
 ## 이어서 할 것 (우선순위 순)
 
@@ -53,7 +69,8 @@
   `large/medium/small/detail_code|name`. `embedding_text`는 두 분류기 다 미사용
 - 그 후: `.gitignore`에서 `!data/ksic_clean_v2.csv` 삭제, `.gitattributes` 정리,
   `git rm --cached data/ksic_clean_v2.csv`. `load_ksic_codes.py`는 시드 전용으로 유지
-- ※ `llm_match.py`는 PR #29(`623ebcf`)에서 수정됐으니 그 위에서
+- ※ 8번(분류기 최신화)과 겹침 — 같이 하는 게 나음. 최신 분류기도 `ksic_clean_v2.csv`
+  같은 컬럼을 쓰므로 `ksic_codes` 테이블 전환은 그대로 유효
 
 ### 5. [기능] 매칭 본체 (아직 시작 전)
 - 유저 쪽: `signup.py`가 업태/종목을 `profile_business_types`에 **텍스트로만** 저장.
@@ -72,6 +89,23 @@
 ### 7. [정리] "통합 반영 (임시)" 메뉴 정식화
 - 지금은 별도 페이지 + 임시 사이드바 메뉴 (`AdminLayout.tsx`의 MENU_ITEMS 3번째,
   아이콘 없음). 나중에 "공고 수집 현황" 페이지에 "수집 → 가공" 두 단계로 통합
+
+### 8. [큰 작업] 분류기 최신화 (구버전 → `final_project/ksic_core`)
+현재 `backend/ml/classifier/`는 **구버전**이다. 최신판 = `final_project/ksic_core/`.
+
+| 파일 | mulkko(구) | ksic_core(신) | 차이 |
+|---|---|---|---|
+| `decide_industry.py` | 53줄 | 257줄 | 구: 이름매칭 + LLM 2전략 / 신: 이름 + **국세청코드 역변환** + LLM |
+| `explicit_match.py` | 548줄 | 639줄 | 신: `match_ksic_by_nts_code()`, 국세청 1:N은 LOW 처리 |
+| `llm_match.py` | 526줄 | 521줄 | 거의 동일 (`623ebcf`에서 일부 동기화됨) |
+| `rule_detectors.py` | **없음** | **721줄** | 국세청 코드 직접명시 탐지 / 제외·제한 키워드 / 별표 인용 처리 |
+
+- 최신판 도입 시 필요: `rule_detectors.py` 신규, `decide_industry`/`explicit_match`
+  교체, **`nts_to_ksic.csv`(또는 `nts_ksic_mapping` 테이블)** 추가 (위 "정정" 참고)
+- `bizinfo_announcements_pipeline.md` #3도 "decide_industry 구버전, 최신화 별도 작업"
+  이라고 이미 언급함
+- 파이프라인(`sync_bizinfo_announcements.py::map_ksic`)은 `decide_industry()`만 부르므로
+  분류기 내부만 바꾸면 됨 (파이프라인 코드 변경 최소)
 
 ## 관련 파일
 
