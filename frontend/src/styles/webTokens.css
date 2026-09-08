@@ -20,6 +20,10 @@
   --logo-navy: #2a3286;
   --logo-mint: #abe0d6;
 
+  /* ===== 카카오톡 브랜드 전용 (UI 팔레트 아님 — 컴포넌트에 재사용 금지) ===== */
+  --brand-kakao-yellow: #fee500; /* 카카오 공식 브랜드 색상(고정값) — "카카오톡 공유하기" 버튼 배경 */
+  --brand-kakao-label: #391b1b; /* 카카오 공식 브랜드 색상(고정값) — 카카오 버튼 아이콘 fill·텍스트 */
+
   /* ===== 타이포그래피 ===== */
   --font-family-base: 'Noto Sans KR', sans-serif;
   --font-family-logo: 'Inter', sans-serif;
@@ -144,4 +148,19 @@
   /* Radius */
   --radius-thumb: 9px; /* 사업자등록증 업로드 행 썸네일 (인풋 12px보다 살짝 작음) */
   /* 인풋·select radius 12px는 --radius-input, "저장하기" 버튼 radius 13px는 --radius-cta 재사용 */
+
+  /* ===== 서류 미리보기 화면 전용 ===== */
+  /* 색상 */
+  --color-bg-doc-preview: #f7f7f8; /* 서류 미리보기 본문·헤더 배경 */
+  --color-scrim-download: rgba(23, 26, 25, 0.45); /* 다운로드 모달 오버레이 딤 (--color-scrim(0,0,0,.3)보다 진하고 그린블랙 톤 — 다른 값) */
+  /* "나의 정보로 채우기" CTA·모달 "로컬 저장소에 저장하기" 버튼 배경은 --color-light-teal + hover --color-light-teal-hover-strong 재사용,
+     아이콘 원 배경은 --color-white + --shadow-inset-card, 문서 아이콘 stroke·설명 텍스트는 --color-stone-gray, 제목은 --color-ink-charcoal 재사용,
+     카카오 버튼은 --brand-kakao-yellow / --brand-kakao-label 사용 */
+
+  /* Radius */
+  --radius-modal: 18px; /* 다운로드 모달 카드 */
+  /* CTA·모달 버튼 radius 13px는 --radius-cta, 모달 하단 버튼 12px는 --radius-input, CTA 높이 52px는 --btn-height-save 재사용 */
+
+  /* 그림자 */
+  --shadow-modal: 0 24px 50px -20px rgba(21, 50, 140, 0.4); /* 다운로드 모달 카드 */
 }
