@@ -21,6 +21,16 @@ const LOGO_COLORS = [
   { name: "Logo Mint", hex: "#ABE0D6", varName: "--logo-mint" },
 ];
 
+// 매칭 리스트(공고 리스트) 화면에서 추가된 색상 토큰
+const MATCHING_COLORS = [
+  { name: "Deep Navy", hex: "#15328C", usage: "매칭 화면 로고·기관명·카운트 숫자", varName: "--color-deep-navy" },
+  { name: "D-day BG", hex: "#F6DFAF", usage: "D-day(모집중) 뱃지 배경", varName: "--color-dday-bg" },
+  { name: "D-day Text", hex: "#8A6212", usage: "D-day(모집중) 뱃지 텍스트", varName: "--color-dday-text" },
+  { name: "Border Nav", hex: "#EDEDF0", usage: "하단 네비게이션 상단 구분선", varName: "--color-border-nav" },
+  { name: "Tab Active Icon", hex: "#E8A93C", usage: "하단 네비 활성 탭 아이콘 stroke", varName: "--color-tab-active-icon" },
+  { name: "Tab Active Label", hex: "#B5761A", usage: "하단 네비 활성 탭 라벨", varName: "--color-tab-active-label" },
+];
+
 function WebStyleGuide() {
   return (
     <div className={styles.page}>
@@ -210,6 +220,74 @@ function WebStyleGuide() {
           <div className={styles.specRow}><span>모바일 표준 가로폭</span><span>420px (최대 제한)</span></div>
           <div className={styles.specRow}><span>안전 영역 코너 반경</span><span>28px</span></div>
           <div className={styles.specRow}><span>앱 섀도우</span><span>Drop Shadow · 60px Blur · Navy Sphere 35%</span></div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>06. 매칭 리스트 (공고 리스트)</h2>
+        </div>
+
+        <p className={styles.subheading}>추가 색상 토큰</p>
+        <div className={styles.colorGrid}>
+          {MATCHING_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className={styles.subheading}>공고 카드 · 뱃지 · 칩</p>
+        <div className={styles.componentCard}>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.matchCard}>
+                <div className={styles.matchCardTop}>
+                  <span className={styles.matchAgency}>중소벤처기업부</span>
+                  <span className={styles.matchDday}>모집중 D-6</span>
+                </div>
+                <span className={styles.matchTitle}>2026년 청년 소상공인 창업 자금 지원</span>
+                <div className={styles.matchTagRow}>
+                  <span className={styles.matchTag}>#청년창업</span>
+                  <span className={styles.matchTag}>#소상공인</span>
+                </div>
+              </div>
+              <span className={styles.codeLabel}>Card · radius 12px · --shadow-card / --shadow-card-hover</span>
+            </div>
+          </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <span className={styles.matchRegionChip}>마포구 기준</span>
+              <span className={styles.codeLabel}>지역 필터 칩 · --color-light-teal · --radius-pill</span>
+            </div>
+            <div className={styles.componentItem}>
+              <span className={styles.matchDropdownChip}>업종 전체 ▾</span>
+              <span className={styles.codeLabel}>드롭다운 칩 · --shadow-inset-gray</span>
+            </div>
+            <div className={styles.componentItem}>
+              <div className={styles.matchCountBox}>
+                <span className={styles.matchCountLabel}>총 매칭 사업</span>
+                <span className={styles.matchCountValue}>5건</span>
+              </div>
+              <span className={styles.codeLabel}>카운트 박스 · --shadow-inset-navy</span>
+            </div>
+          </div>
+        </div>
+
+        <p className={styles.subheading}>하단 네비게이션 (BottomNav)</p>
+        <div className={styles.componentCard}>
+          <div className={styles.bottomNavPreview}>
+            <div className={`${styles.bottomNavTab} ${styles.bottomNavTabActive}`}>◆<span>매칭</span></div>
+            <div className={styles.bottomNavTab}>◇<span>홈</span></div>
+            <div className={styles.bottomNavTab}>◇<span>아이디어</span></div>
+            <div className={styles.bottomNavTab}>◇<span>마이페이지</span></div>
+          </div>
+          <span className={styles.codeLabel}>높이 74px · 상단 border --color-border-nav · 활성: --color-tab-active-label</span>
         </div>
       </section>
     </div>
