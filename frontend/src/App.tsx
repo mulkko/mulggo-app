@@ -10,6 +10,7 @@ import AdminStyleGuide from "./components/AdminStyleGuide/AdminStyleGuide";
 import WebStyleGuide from "./components/WebStyleGuide/WebStyleGuide";
 import MatchingList from "./pages/matching/MatchingList";
 import MatchingDetail from "./pages/matching/MatchingDetail";
+import FilterPage from "./pages/matching/FilterPage";
 import MyPage from "./pages/mypage/MyPage";
 import ProfileEdit from "./pages/mypage/ProfileEdit";
 
@@ -21,6 +22,7 @@ function App() {
         <Route path="/login" element={<LoginForm variant="user" />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/matching" element={<MatchingList />} />
+        <Route path="/matching/filter" element={<FilterPage />} />
         <Route path="/matching/:id" element={<MatchingDetail />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/edit" element={<ProfileEdit />} />

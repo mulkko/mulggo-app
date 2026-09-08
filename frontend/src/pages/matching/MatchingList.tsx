@@ -80,7 +80,7 @@ function MatchingList() {
   };
 
   const handleFilterClick = () => {
-    // TODO: 상세 필터 패널(기업유형·업력 등)로 이동
+    navigate("/matching/filter");
   };
 
   const handleCardClick = (item: AnnouncementCardData) => {

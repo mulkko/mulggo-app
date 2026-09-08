@@ -1,0 +1,155 @@
+/* 전체 필터 화면. 짝꿍 컴포넌트: pages/matching/FilterPage.tsx
+   값(색상/radius/shadow)은 webTokens.css 토큰만 사용한다. 스펙 출처: 프로토타입 "전체 필터"(is.filter).
+   레이아웃: 모바일 우선 + 데스크톱은 common.css .pageContainer(최대 640px 가운데 정렬).
+   폭은 전부 %/flex/max-width 기반 — 고정 px 폭을 쓰지 않는다.
+   하단 네비게이션(BottomNav) 없음 — 뒤로가기 헤더만 있는 구조. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  color: var(--color-ink-charcoal);
+}
+
+/* ===== 헤더 (높이 52px) ===== */
+.header {
+  flex-shrink: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.backButton {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-ink-charcoal);
+  line-height: 0;
+}
+
+.backButton svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.headerTitle {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--color-ink-charcoal);
+  white-space: nowrap;
+}
+
+.resetButton {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 4px;
+  font-family: var(--font-family-base);
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+  cursor: pointer;
+}
+
+/* ===== 본문 ===== */
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 4px 20px 20px;
+  box-sizing: border-box;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.groupNote {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-stone-gray);
+}
+
+/* ===== 칩 ===== */
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: none;
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-family-base);
+  font-size: 11.5px;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.chipOn {
+  background: var(--color-teal-mist);
+  color: var(--color-teal-green);
+  font-weight: 700;
+}
+
+.chipOff {
+  background: var(--color-white);
+  color: var(--color-ink-charcoal);
+  font-weight: 400;
+  box-shadow: var(--shadow-inset-gray);
+}
+
+/* ===== 하단 CTA ===== */
+.cta {
+  flex-shrink: 0;
+  padding: 12px 20px 26px;
+  background: var(--color-white);
+  box-sizing: border-box;
+}
+
+.applyButton {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: var(--radius-cta);
+  background: var(--color-light-teal);
+  color: var(--color-white);
+  font-family: var(--font-family-base);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.applyButton:hover {
+  background: var(--color-light-teal-hover-strong);
+}
