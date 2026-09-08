@@ -260,24 +260,56 @@ CREATE TABLE IF NOT EXISTS biz_registration_docs (
 );
 
 -- KSIC(한국표준산업분류 11차) 코드 -> 이름/계층 조회용 사전.
--- 시드: data/ksic_clean_v2.csv (분류기 backend/ml/classifier/explicit_match.py가
--- 쓰는 바로 그 파일) <- backend/preprocessing/load_ksic_codes.py 로 UPSERT 적재 (1,202행).
+-- 시드: data/ksic_clean_v2.csv <- backend/preprocessing/load_ksic_codes.py 로 UPSERT 적재 (1,202행).
 --   code = 세세분류(5자리, PK), name = 세세분류명, large/medium/small/detail = 대/중/소/세.
+-- [2026-09-08] backend/ml/classifier/{explicit_match,llm_match}.py가 원래 CSV 파일을
+-- 직접 읽었는데, 이 테이블과 내용이 100% 동일함을 전수 대조(1202건, 불일치 0건)로
+-- 확인하고 이제 이 테이블을 직접 읽도록 전환함 — DA2의 "이어서 할 것" 4번 항목과 동일한
+-- 작업. CSV는 load_ksic_codes.py의 시드 입력으로만 유지.
 -- 공고 매칭(announcements.ksic_codes_matched)이 뱉는 코드의 이름/계층을 풀거나,
--- profile_business_types.ksic_code(FK) 무결성 근거로 쓴다.
--- 참고: nts_industry_codes(국세청 업종코드) 테이블은 실제 DB엔 존재하나 현재 미사용
--- (유저/공고 둘 다 텍스트->분류기->KSIC 로 비교, 국세청 연계 안 씀). 이 파일에 정의 없음.
+-- profile_business_types.ksic_code(FK) 무결성 근거로도 쓴다.
 CREATE TABLE IF NOT EXISTS ksic_codes (
-    code VARCHAR(10) PRIMARY KEY,
-    name TEXT NOT NULL,
-    large_code VARCHAR(2),
-    large_name VARCHAR(50),
+    code        VARCHAR(10) PRIMARY KEY,
+    name        TEXT NOT NULL,
+    large_code  VARCHAR(2),
+    large_name  VARCHAR(50),
     medium_code VARCHAR(4),
     medium_name VARCHAR(50),
-    small_code VARCHAR(6),
-    small_name VARCHAR(50),
+    small_code  VARCHAR(6),
+    small_name  VARCHAR(50),
     detail_code VARCHAR(8),
     detail_name VARCHAR(50)
+);
+
+-- 국세청 업종코드 마스터. 원본: "업종코드-표준산업분류 연계표.csv"(국세청 배포본).
+-- 2026-09-08 backend/db/load_nts_ksic_mapping.py로 적재 (1611건).
+CREATE TABLE IF NOT EXISTS nts_industry_codes (
+    code        VARCHAR(10) PRIMARY KEY,
+    name        TEXT NOT NULL,
+    large_code  VARCHAR(10),
+    large_name  VARCHAR(50),
+    medium_code VARCHAR(10),
+    medium_name VARCHAR(50),
+    small_code  VARCHAR(10),
+    small_name  VARCHAR(50),
+    detail_code VARCHAR(10),
+    detail_name VARCHAR(50)
+);
+
+-- 국세청 업종코드 -> KSIC 코드 대응 (1:N 가능 — 업종코드 하나가 KSIC 여러 개와 연결되는 경우 있음).
+-- 2026-09-08 backend/db/load_nts_ksic_mapping.py로 적재 (1772건). 원본에서 KSIC 코드 끝에
+-- '+'가 붙은 항목(인적용역/직업 기준 표시, 97건)은 '+'를 떼고 mapping_note에 근거를 남겼다.
+-- '+'를 떼어도 ksic_codes에 없는 코드 3개(90131, 90132, 85502 — 참고표 자체의 누락으로 보임,
+-- DA2 확인 필요)에 연결된 12건은 아직 미적재 — ksic_codes에 추가되면 재실행해서 채울 것.
+-- [2026-09-08 정정, docs/DA2_작업현황.md 참고] 유저 업종 분류(path a)엔 이 매핑이 불필요
+-- 하지만, 공고문이 국세청 업종코드를 직접 명시하는 경우가 있어(예: "국세청 업종코드
+-- 940306 또는 921505") 분류기 최신화(rule_detectors.py 등, ksic_core 이식) 시 이 테이블이
+-- 다시 필요해짐 — 지금 당장 쓰는 코드는 없지만 삭제하지 말고 유지할 것.
+CREATE TABLE IF NOT EXISTS nts_ksic_mapping (
+    mapping_id   BIGSERIAL PRIMARY KEY,
+    nts_code     VARCHAR(10) NOT NULL REFERENCES nts_industry_codes(code),
+    ksic_code    VARCHAR(10) NOT NULL REFERENCES ksic_codes(code),
+    mapping_note TEXT
 );
 
 -- 사업자등록증의 "사업의 종류"(업태·종목) — 표 형태라 여러 행 가능 (profile_id 기준 1:N).
@@ -285,7 +317,6 @@ CREATE TABLE IF NOT EXISTS ksic_codes (
 -- save_biz_cert_data()에서 biz_registration_docs 저장 직후 같이 저장한다.
 -- nts_industry_code/ksic_code는 업종 자동매핑(DA2, backend/ml/classifier) 담당 — 우리 OCR
 -- 파이프라인은 채우지 않고 NULL로 둔다.
--- 주의: nts_industry_codes 테이블 정의는 이 파일에 아직 없음 (실제 DB엔 존재, 현재 미사용).
 CREATE TABLE IF NOT EXISTS profile_business_types (
     business_type_id BIGSERIAL PRIMARY KEY,
     profile_id BIGINT NOT NULL REFERENCES business_profiles(profile_id),

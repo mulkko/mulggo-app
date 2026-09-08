@@ -3,8 +3,8 @@
 #
 # match_ksic_by_name() — 오늘 세션의 핵심 결론:
 # ------------------------------------------------------------
-# 벡터 유사도(Chroma)로 KSIC를 "추측"하는 대신, ksic_clean.csv에
-# 있는 실제 업종 명칭이 원문에 문자 그대로(또는 근접하게) 나오는지
+# 벡터 유사도(Chroma)로 KSIC를 "추측"하는 대신, KSIC 참고표에 있는
+# 실제 업종 명칭이 원문에 문자 그대로(또는 근접하게) 나오는지
 # "사전 찾기(deterministic lookup)"로 먼저 확인한다.
 #
 # bottom-up 원칙은 그대로 유지:
@@ -16,15 +16,23 @@
 #   "애니메이션" 등 명확한 업종명이 원문에 그대로 있는데도 Chroma
 #   방식은 38/100건을 오판(특정불가 또는 엉뚱한 코드)했음.
 #   문자열 매칭이면 이 케이스들이 전부 해결됨.
+#
+# [2026-09-08] KSIC 참고표 데이터 출처 변경 (CSV 파일 -> DB):
+#   원래는 data/ksic_clean_v2.csv 파일을 직접 열어서 썼는데, 이 파일을
+#   실행할 PC마다 일일이 복사해서 옮겨야 하는 문제가 있었다. 이 CSV의
+#   내용이 DB의 ksic_codes 테이블과 100% 동일함을 확인(1202건 전수
+#   대조, 불일치 0건)하고, _fetch_ksic_rows_from_db()로 DB 조회로
+#   교체했다 — 매칭 알고리즘(콜로퀴얼 동의어 치환, 오탐 방지 블록리스트,
+#   "제외" 문맥 판별 등 이 파일 전체에 걸친 로직)은 전부 그대로다.
+#   그 결과 이 모듈은 이제 로컬 파일이 아니라 DB 접속(.env의 DB_HOST 등)이
+#   있어야 동작한다 — 예전처럼 CSV 파일만 있으면 오프라인으로 돌아가던
+#   방식이 아니게 됐다는 뜻이니, 이 코드를 새 환경에서 돌릴 땐 .env의
+#   DB 접속 정보부터 확인할 것.
 # ============================================================
 
-import csv
 import re
-import os
 
-
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-KSIC_CLEAN_CSV_PATH = os.path.join(PROJECT_ROOT, "data", "ksic_clean_v2.csv")
+from backend.db.connection import get_connection
 
 # bottom-up 순서 그대로 - 세세분류부터 대분류까지
 NAME_LEVEL_ORDER = ["세세분류", "세분류", "소분류", "중분류", "대분류"]
@@ -78,6 +86,7 @@ BOILERPLATE_SIGNATURE_THRESHOLD = 2
 MAX_REASONABLE_MULTI_MATCH = 6
 
 _ksic_index = None  # {"세세분류": {name: code, ...}, ...} 형태로 캐싱
+_ksic_rows_cache = None  # ksic_codes 테이블 조회 결과 캐싱 (CSV DictReader와 동일한 키 구조)
 
 # 실측 확인(2026-08-29, 원문 100건 기준): 공고 원문은 KSIC 공식 명칭이 아니라
 # 구어체 표현을 쓰는 경우가 흔함. 지어낸 매핑이 아니라, 오늘 실제로 확인된
@@ -214,9 +223,56 @@ def _has_real_exclusion_header(window):
     return False
 
 
+def _fetch_ksic_rows_from_db():
+    """
+    ksic_codes 테이블을 최초 1회만 읽어서, ksic_clean_v2.csv를 csv.DictReader로
+    읽었을 때와 동일한 키(KSIC_대분류코드 등)를 가진 딕셔너리 리스트로 변환한다.
+
+    [2026-09-08] 원래 data/ksic_clean_v2.csv 파일을 직접 열어서 썼는데, 이 파일의
+    내용이 ksic_codes 테이블과 100% 동일함을 확인(1202건 전수 대조, 불일치 0건)하고
+    DB 조회로 교체함 — 팀원마다 CSV 파일을 따로 복사해서 옮겨야 하는 문제를 없애기
+    위함. 아래 매칭 로직(콜로퀴얼 동의어, 오탐 방지 블록리스트 등)은 전부 이 함수가
+    반환하는 딕셔너리의 키만 보고 동작하므로 그대로 유지된다.
+    """
+    global _ksic_rows_cache
+
+    if _ksic_rows_cache is not None:
+        return _ksic_rows_cache
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT code, name, large_code, large_name, medium_code, medium_name,
+               small_code, small_name, detail_code, detail_name
+        FROM ksic_codes
+        """
+    )
+    db_rows = cur.fetchall()
+    conn.close()
+
+    _ksic_rows_cache = [
+        {
+            "KSIC_코드": code,
+            "KSIC_세세분류명": name,
+            "KSIC_대분류코드": large_code,
+            "KSIC_대분류명": large_name,
+            "KSIC_중분류코드": medium_code,
+            "KSIC_중분류명": medium_name,
+            "KSIC_소분류코드": small_code,
+            "KSIC_소분류명": small_name,
+            "KSIC_세분류코드": detail_code,
+            "KSIC_세분류명": detail_name,
+        }
+        for code, name, large_code, large_name, medium_code, medium_name,
+        small_code, small_name, detail_code, detail_name in db_rows
+    ]
+    return _ksic_rows_cache
+
+
 def _load_ksic_index():
     """
-    ksic_clean.csv를 최초 1회만 읽어서 레벨별 {업종명: 코드} 인덱스를 만든다.
+    ksic_codes 테이블을 최초 1회만 읽어서 레벨별 {업종명: 코드} 인덱스를 만든다.
     이름 하나가 여러 코드에 걸치는 경우는 없음을 확인했음(2026-08-29 검증).
     """
     global _ksic_index
@@ -226,8 +282,7 @@ def _load_ksic_index():
 
     index = {level: {} for level in NAME_LEVEL_ORDER}
 
-    with open(KSIC_CLEAN_CSV_PATH, encoding="utf-8-sig") as f:
-        rows = list(csv.DictReader(f))
+    rows = _fetch_ksic_rows_from_db()
 
     for level, (name_col, code_col) in LEVEL_TO_COLUMNS.items():
         for row in rows:

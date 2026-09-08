@@ -24,18 +24,18 @@
 # ============================================================
 
 import os
-import csv
 import json
 from difflib import get_close_matches, SequenceMatcher
 
 from dotenv import load_dotenv
 
-from backend.ml.classifier.explicit_match import _load_ksic_index, NAME_LEVEL_ORDER
+from backend.ml.classifier.explicit_match import (
+    _load_ksic_index,
+    _fetch_ksic_rows_from_db,
+    NAME_LEVEL_ORDER,
+)
 
 load_dotenv()
-
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-KSIC_CLEAN_CSV_PATH = os.path.join(PROJECT_ROOT, "data", "ksic_clean_v2.csv")
 
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai")  # 'openai' | 'gemini'
 LLM_MODEL = os.environ.get(
@@ -173,14 +173,19 @@ FREEFORM_PROMPT_TEMPLATE = """너는 한국표준산업분류(KSIC) 전문가다
 
 
 def _load_hierarchy():
-    """ksic_clean.csv에서 대분류 목록 + 레벨별 부모->자식 목록(안전망 캐스케이드용)을 만든다."""
+    """ksic_codes 테이블에서 대분류 목록 + 레벨별 부모->자식 목록(안전망 캐스케이드용)을 만든다.
+
+    [2026-09-08] 예전엔 이 함수도 data/ksic_clean_v2.csv를 직접 열었는데, 이제
+    explicit_match.py의 _fetch_ksic_rows_from_db()(DB의 ksic_codes 테이블 조회,
+    CSV DictReader와 동일한 키 구조로 변환)를 그대로 재사용한다. 데이터 출처를
+    바꾼 이유/검증 내역은 그 함수 docstring 참고.
+    """
     global _daebunlyu_list, _children_by_level
 
     if _daebunlyu_list is not None:
         return
 
-    with open(KSIC_CLEAN_CSV_PATH, encoding="utf-8-sig") as f:
-        rows = list(csv.DictReader(f))
+    rows = _fetch_ksic_rows_from_db()
 
     dae_seen = {}
     children_by_level = {lv: {} for lv in LEVEL_CHAIN[1:]}
