@@ -55,7 +55,8 @@ TARGET_REFERENCE_PATTERNS = [
 # 0. RAW 조회
 # ==================================================================
 
-def load_raw_kstartup_from_postgres(only_unprocessed: bool = False) -> pd.DataFrame:
+def load_raw_kstartup_from_postgres(only_unprocessed: bool = False, limit: int | None = None) -> pd.DataFrame:
+    """limit: 소량만 먼저 확인하거나 여러 번에 나눠 돌릴 때 씀 (sync_bizinfo_announcements.py와 동일 이유)."""
     conn = get_connection()
     try:
         if only_unprocessed:
@@ -64,9 +65,12 @@ def load_raw_kstartup_from_postgres(only_unprocessed: bool = False) -> pd.DataFr
                 LEFT JOIN announcements a
                   ON a.source = 'kstartup' AND a.raw_kstartup_id = r.raw_kstartup_id
                 WHERE a.raw_kstartup_id IS NULL
+                ORDER BY r.raw_kstartup_id
             """
         else:
-            query = "SELECT * FROM announcements_raw_kstartup"
+            query = "SELECT * FROM announcements_raw_kstartup ORDER BY raw_kstartup_id"
+        if limit:
+            query += f" LIMIT {int(limit)}"
         return pd.read_sql(query, conn)
     finally:
         conn.close()
@@ -503,8 +507,8 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
 # 실행
 # ==================================================================
 
-def run(only_unprocessed: bool = True):
-    raw_df = load_raw_kstartup_from_postgres(only_unprocessed=only_unprocessed)
+def run(only_unprocessed: bool = True, limit: int | None = None):
+    raw_df = load_raw_kstartup_from_postgres(only_unprocessed=only_unprocessed, limit=limit)
     print(f"RAW 조회: {len(raw_df)}건")
     if raw_df.empty:
         return
@@ -527,4 +531,9 @@ def run(only_unprocessed: bool = True):
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=None, help="테스트/분할 실행용: 이번 실행에서 처리할 최대 건수")
+    args = parser.parse_args()
+    run(limit=args.limit)

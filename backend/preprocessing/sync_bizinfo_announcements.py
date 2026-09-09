@@ -70,9 +70,12 @@ RAW_COLUMNS = [
 ]
 
 
-def load_raw_bizinfo_from_postgres(only_unprocessed: bool = False) -> pd.DataFrame:
+def load_raw_bizinfo_from_postgres(only_unprocessed: bool = False, limit: int | None = None) -> pd.DataFrame:
     """announcements_raw_bizinfo 전체(또는 아직 announcements에 없는 것만)를
-    DataFrame으로 읽어온다. pandas.read_sql이 psycopg2 커넥션을 그대로 받는다."""
+    DataFrame으로 읽어온다. pandas.read_sql이 psycopg2 커넥션을 그대로 받는다.
+    limit: 1,500여 건 전체를 매번 다 돌리면 테스트 한 번에 너무 오래 걸려서
+    (첨부 다운로드+OCR 포함) 소량만 먼저 확인하거나 여러 번에 나눠 돌릴 때 씀.
+    ORDER BY로 순서를 고정해야 limit 호출을 반복할 때 매번 같은/다음 구간이 잡힌다."""
     conn = get_connection()
     try:
         if only_unprocessed:
@@ -81,9 +84,12 @@ def load_raw_bizinfo_from_postgres(only_unprocessed: bool = False) -> pd.DataFra
                 LEFT JOIN announcements a
                   ON a.source = 'bizinfo' AND a.raw_bizinfo_id = r.raw_bizinfo_id
                 WHERE a.raw_bizinfo_id IS NULL
+                ORDER BY r.raw_bizinfo_id
             """
         else:
-            query = "SELECT * FROM announcements_raw_bizinfo"
+            query = "SELECT * FROM announcements_raw_bizinfo ORDER BY raw_bizinfo_id"
+        if limit:
+            query += f" LIMIT {int(limit)}"
         return pd.read_sql(query, conn)
     finally:
         conn.close()
@@ -516,8 +522,8 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
 # 실행
 # ==================================================================
 
-def run(only_unprocessed: bool = True, use_llm_fallback: bool = False):
-    raw_df = load_raw_bizinfo_from_postgres(only_unprocessed=only_unprocessed)
+def run(only_unprocessed: bool = True, use_llm_fallback: bool = False, limit: int | None = None):
+    raw_df = load_raw_bizinfo_from_postgres(only_unprocessed=only_unprocessed, limit=limit)
     print(f"RAW 조회: {len(raw_df)}건")
     if raw_df.empty:
         return
@@ -539,4 +545,9 @@ def run(only_unprocessed: bool = True, use_llm_fallback: bool = False):
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=None, help="테스트/분할 실행용: 이번 실행에서 처리할 최대 건수")
+    args = parser.parse_args()
+    run(limit=args.limit)

@@ -26,6 +26,7 @@ function AnnouncementsSync() {
   const [source, setSource] = useState(SOURCES[0].value);
   const [status, setStatus] = useState<SyncStatus | null>(null);
   const [starting, setStarting] = useState(false);
+  const [limit, setLimit] = useState(""); // 빈 값 = 전체(1500여 건 다) 처리
 
   const fetchStatus = useCallback(async (src: string) => {
     try {
@@ -47,7 +48,8 @@ function AnnouncementsSync() {
   const handleRun = async () => {
     setStarting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/sync?source=${source}`, { method: "POST" });
+      const limitParam = limit.trim() ? `&limit=${limit.trim()}` : "";
+      const res = await fetch(`${API_BASE_URL}/admin/sync?source=${source}${limitParam}`, { method: "POST" });
       const data: { success: boolean; error?: { message: string } } = await res.json();
       if (!data.success) {
         alert(`실행 실패: ${data.error?.message ?? "알 수 없는 오류"}`);
@@ -84,6 +86,16 @@ function AnnouncementsSync() {
               </option>
             ))}
           </select>
+          <input
+            type="number"
+            min={1}
+            className={styles.select}
+            placeholder="건수(비우면 전체)"
+            value={limit}
+            onChange={(e) => setLimit(e.target.value)}
+            disabled={running || starting}
+            aria-label="이번 실행에서 처리할 건수 (비우면 전체)"
+          />
           <button
             type="button"
             className="btnPrimary"
@@ -104,6 +116,11 @@ function AnnouncementsSync() {
         <ul>
           <li>기업마당: 첨부파일 다운로드 + OCR 포함이라 수 시간 걸릴 수 있습니다.</li>
           <li>창업진흥원: 업종 분류 없이 "업종무관"으로 반영 (팀 결정), 몇 분이면 끝납니다.</li>
+          <li>
+            건수를 입력하면 이번 실행은 그만큼만 처리합니다(테스트로 10~100건 먼저 확인하거나,
+            200건씩 나눠 돌리는 용도). 이미 반영된 공고는 자동으로 건너뛰므로, 같은 값으로
+            "실행"을 반복하면 다음 구간이 이어서 처리됩니다.
+          </li>
           <li>
             실행 중 서버가 재시작되면 중단되고 로그가 끊깁니다. 그 경우 "실행"을 다시
             누르면 안 끝난 공고만 이어서 처리합니다.
