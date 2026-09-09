@@ -5,9 +5,14 @@
 # (match_ksic_by_name을 직접 호출하던 기존 코드는 이걸로 교체).
 #
 #   decide_industry(원문)
+#     ├─ 0단계: match_ksic_by_nts_code()  국세청 업종코드를 숫자로 직접
+#     │         명시한 공고문만 잡는 특수 케이스 (2026-09-09 추가)
 #     ├─ 1단계: match_ksic_by_name()   무료, API 키 불필요, 81% 해결
 #     └─ 1단계 실패한 것만 ↓
 #          2단계: match_ksic_by_llm()  무료 티어/기존 키 재사용, 나머지 보완
+#
+# 0단계가 우선인 이유: 국세청 코드가 숫자로 박혀있으면 이름 매칭보다 더
+# 명시적이고 확실한 신호라서, 문자열 매칭(1단계)이 시도하기 전에 먼저 본다.
 #
 # 2단계는 선택사항이다 — use_llm_fallback=False면 1단계까지만 쓰고 멈춘다.
 # (API 키 세팅 전이거나, 비용/속도를 더 아끼고 싶을 때)
@@ -15,6 +20,7 @@
 
 from backend.ml.classifier.explicit_match import match_ksic_by_name
 from backend.ml.classifier.llm_match import match_ksic_by_llm
+from backend.ml.classifier.nts_code_match import match_ksic_by_nts_code
 
 
 def needs_human_review(result: dict | None) -> bool:
@@ -42,6 +48,10 @@ def decide_industry(text: str, use_llm_fallback: bool = True):
       {"확정단계", "확정코드", "확정업종명", "제외업종", "근거", "ksic_confidence"}
     매칭 실패(1·2단계 모두 실패, 또는 2단계 자체를 안 씀)면 None.
     """
+    result = match_ksic_by_nts_code(text)
+    if result is not None:
+        return result
+
     result = match_ksic_by_name(text)
     if result is not None:
         result.setdefault("ksic_confidence", "HIGH")  # 1단계는 결정적 매칭이라 신뢰도 최상
