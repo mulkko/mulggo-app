@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../../styles/announcementsSync.module.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -11,6 +11,72 @@ const SOURCES: { value: string; label: string }[] = [
 const POLL_INTERVAL_MS = 4000;
 
 type SyncStatus = { source: string; running: boolean; log: string };
+
+type ItemResult = {
+  index: number;
+  total: number;
+  rawId: string;
+  extractOk: boolean;
+  extractStatus: string;
+  // null = 이 줄엔 업종분류 정보가 없음(예전 형식으로 찍힌 실행 로그)
+  ksicOk: boolean | null;
+  ksicStatus: string | null;
+};
+
+// backend/preprocessing/sync_bizinfo_announcements.py::map_ksic()가 찍는 건별 요약 줄을
+// 파싱한다. 두 형식을 다 지원: 새 형식("| 업종분류 ..." 포함)과, 그 전에 이미 시작된
+// 실행이 남긴 예전 형식(업종분류 없이 본문추출만). K-Startup은 이 단계 자체가 없어서
+// (업종무관 고정) 파싱 결과가 항상 빈 배열 - 그 경우 원본 로그 요약만 보여준다.
+const ITEM_LINE_RE_WITH_KSIC =
+  /^\[(\d+)\/(\d+)\] raw_bizinfo_id=(\S+) \| 본문추출 (성공|실패)\(([^)]*)\) \| 업종분류 (성공|실패)\(([^)]*)\)/;
+const ITEM_LINE_RE_LEGACY = /^\[(\d+)\/(\d+)\] raw_bizinfo_id=(\S+) 본문 추출 (성공|실패)\(([^)]*)\)/;
+
+function parseItems(log: string): ItemResult[] {
+  const items: ItemResult[] = [];
+  for (const line of log.split("\n")) {
+    const trimmed = line.trim();
+    const full = ITEM_LINE_RE_WITH_KSIC.exec(trimmed);
+    if (full) {
+      items.push({
+        index: Number(full[1]),
+        total: Number(full[2]),
+        rawId: full[3],
+        extractOk: full[4] === "성공",
+        extractStatus: full[5],
+        ksicOk: full[6] === "성공",
+        ksicStatus: full[7],
+      });
+      continue;
+    }
+    const legacy = ITEM_LINE_RE_LEGACY.exec(trimmed);
+    if (legacy) {
+      items.push({
+        index: Number(legacy[1]),
+        total: Number(legacy[2]),
+        rawId: legacy[3],
+        extractOk: legacy[4] === "성공",
+        extractStatus: legacy[5],
+        ksicOk: null,
+        ksicStatus: null,
+      });
+    }
+  }
+  return items;
+}
+
+function parseFinishMarker(log: string): { kind: "success" | "fail"; at: string } | null {
+  const lines = log.split("\n");
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const m = /^=== (성공|실패): (\S+)/.exec(lines[i].trim());
+    if (m) return { kind: m[1] === "성공" ? "success" : "fail", at: m[2] };
+  }
+  return null;
+}
+
+function parseUpsertCount(log: string): number | null {
+  const m = /UPSERT 완료: (\d+)건/.exec(log);
+  return m ? Number(m[1]) : null;
+}
 
 /**
  * [임시] raw(announcements_raw_*) -> announcements 통합 반영 실행/모니터 화면.
@@ -27,12 +93,33 @@ function AnnouncementsSync() {
   const [status, setStatus] = useState<SyncStatus | null>(null);
   const [starting, setStarting] = useState(false);
   const [limit, setLimit] = useState(""); // 빈 값 = 전체(1500여 건 다) 처리
+  const [showRawLog, setShowRawLog] = useState(false);
+  const [doneNotice, setDoneNotice] = useState<string | null>(null);
+
+  // 폴링 중 running: true -> false로 바뀌는 "완료 순간"만 잡아서 알림을 띄우기
+  // 위한 이전 값 기억. source를 바꾸면 그 소스 기준으로 다시 추적한다.
+  const prevRunningRef = useRef<boolean | null>(null);
 
   const fetchStatus = useCallback(async (src: string) => {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/sync-status?source=${src}`);
       const data: { success: boolean; data?: SyncStatus } = await res.json();
-      if (data.success && data.data) setStatus(data.data);
+      if (!data.success || !data.data) return;
+
+      if (prevRunningRef.current === true && data.data.running === false) {
+        const finish = parseFinishMarker(data.data.log);
+        const upsertCount = parseUpsertCount(data.data.log);
+        const label = SOURCES.find((s) => s.value === src)?.label ?? src;
+        if (finish?.kind === "success") {
+          setDoneNotice(`${label} 저장 완료 — ${upsertCount ?? 0}건 반영됨`);
+        } else if (finish?.kind === "fail") {
+          setDoneNotice(`${label} 실행이 실패로 끝났습니다. 로그를 확인해주세요.`);
+        } else {
+          setDoneNotice(`${label} 실행이 중단됐습니다 (중간에 멈춤 — 아직 저장 안 됐을 수 있음).`);
+        }
+      }
+      prevRunningRef.current = data.data.running;
+      setStatus(data.data);
     } catch {
       /* 폴링 실패는 조용히 무시 (다음 주기에 재시도) */
     }
@@ -40,6 +127,8 @@ function AnnouncementsSync() {
 
   // source 바뀌면 즉시 한 번 조회 + 폴링 재시작
   useEffect(() => {
+    prevRunningRef.current = null;
+    setDoneNotice(null);
     fetchStatus(source);
     const id = window.setInterval(() => fetchStatus(source), POLL_INTERVAL_MS);
     return () => window.clearInterval(id);
@@ -47,6 +136,7 @@ function AnnouncementsSync() {
 
   const handleRun = async () => {
     setStarting(true);
+    setDoneNotice(null);
     try {
       const limitParam = limit.trim() ? `&limit=${limit.trim()}` : "";
       const res = await fetch(`${API_BASE_URL}/admin/sync?source=${source}${limitParam}`, { method: "POST" });
@@ -64,6 +154,18 @@ function AnnouncementsSync() {
 
   const running = status?.running ?? false;
   const sourceLabel = SOURCES.find((s) => s.value === source)?.label ?? source;
+  const log = status?.log ?? "";
+  const items = parseItems(log);
+  // 업종분류 "특정불가"는 실제 실패가 아니라 정상 케이스(공고 성격상 업종을
+  // 하나로 못 정하는 경우) - 본문추출 실패와 구분해서 보여준다.
+  const getItemStatus = (it: ItemResult): "success" | "unclassified" | "fail" => {
+    if (!it.extractOk) return "fail";
+    if (it.ksicOk === false) return "unclassified";
+    return "success";
+  };
+  const successCount = items.filter((it) => getItemStatus(it) === "success").length;
+  const unclassifiedCount = items.filter((it) => getItemStatus(it) === "unclassified").length;
+  const failCount = items.filter((it) => getItemStatus(it) === "fail").length;
 
   return (
     <>
@@ -128,16 +230,70 @@ function AnnouncementsSync() {
         </ul>
       </div>
 
+      {doneNotice && (
+        <div className={styles.doneNotice}>
+          <span>{doneNotice}</span>
+          <button type="button" className={styles.doneNoticeClose} onClick={() => setDoneNotice(null)}>
+            닫기
+          </button>
+        </div>
+      )}
+
       <div className={styles.logCard}>
         <div className={styles.logHead}>
-          <span className={styles.logTitle}>실행 로그 — {sourceLabel}</span>
+          <span className={styles.logTitle}>
+            실행 결과 — {sourceLabel}
+            {items.length > 0 && (
+              <span className={styles.countSummary}>
+                {" "}
+                (성공 {successCount} / 업종 미확정 {unclassifiedCount} / 실패 {failCount} / 총{" "}
+                {items[items.length - 1]?.total ?? items.length})
+              </span>
+            )}
+          </span>
           <span className={running ? styles.badgeRunning : styles.badgeIdle}>
             {running ? "진행 중" : "대기"}
           </span>
         </div>
-        <pre className={styles.logBody}>
-          {status?.log?.trim() ? status.log : "아직 실행 기록이 없습니다."}
-        </pre>
+
+        {items.length > 0 ? (
+          <ul className={styles.resultList}>
+            {[...items].reverse().map((it) => {
+              const itemStatus = getItemStatus(it);
+              const badgeClass =
+                itemStatus === "success"
+                  ? styles.badgeSuccess
+                  : itemStatus === "unclassified"
+                    ? styles.badgeUnclassified
+                    : styles.badgeFail;
+              const badgeLabel =
+                itemStatus === "success" ? "성공" : itemStatus === "unclassified" ? "업종 미확정" : "실패";
+              return (
+                <li key={it.index} className={styles.resultItem}>
+                  <span className={styles.resultIndex}>
+                    {it.index}/{it.total}
+                  </span>
+                  <span className={badgeClass}>{badgeLabel}</span>
+                  <span className={styles.resultDetail}>
+                    raw_bizinfo_id={it.rawId} · 본문추출 {it.extractOk ? "성공" : `실패(${it.extractStatus})`}
+                    {it.ksicOk !== null && (
+                      <> · 업종분류 {it.ksicOk ? "성공" : `특정불가(정상)`}</>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className={styles.noResultYet}>
+            {log.trim() ? "건별 결과가 아직 없습니다 (K-Startup은 이 단계가 없습니다)." : "아직 실행 기록이 없습니다."}
+          </p>
+        )}
+
+        <button type="button" className={styles.rawLogToggle} onClick={() => setShowRawLog((v) => !v)}>
+          {showRawLog ? "원본 로그 숨기기" : "원본 로그 보기 (문제 확인용)"}
+        </button>
+        {showRawLog && <pre className={styles.logBody}>{log.trim() ? log : "아직 실행 기록이 없습니다."}</pre>}
       </div>
     </>
   );

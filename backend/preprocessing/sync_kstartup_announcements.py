@@ -456,7 +456,14 @@ INSERT_COLUMNS = FINAL_COLUMNS
 
 
 def _strip_nul(v):
-    """PostgreSQL text 컬럼은 NUL(0x00)을 저장 못 함. 저장 직전에 제거."""
+    """PostgreSQL text 컬럼은 NUL(0x00)을 저장 못 함. 저장 직전에 제거.
+
+    sync_bizinfo_announcements.py와 같은 이유로 None -> NaN 방지도 같이 함:
+    final_df.iterrows()로 행을 순회하면 None이 섞인 값이 float('nan')으로
+    바뀌어 나와서(row Series로 합쳐질 때 생김) apply_start_date 같은 date
+    컬럼에 NaN이 들어가 저장이 실패한다. v != v로 NaN만 골라 None으로 되돌림."""
+    if isinstance(v, float) and v != v:
+        return None
     if isinstance(v, str):
         return v.replace("\x00", "")
     if isinstance(v, list):

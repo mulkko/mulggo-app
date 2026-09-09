@@ -125,3 +125,118 @@
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+.countSummary {
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.doneNotice {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.doneNoticeClose {
+  border: none;
+  background: none;
+  color: inherit;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  flex-shrink: 0;
+}
+
+.resultList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.resultItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+}
+
+.resultItem:last-child {
+  border-bottom: none;
+}
+
+.resultIndex {
+  font-family: var(--font-family-mono, monospace);
+  color: var(--color-text-muted);
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.resultDetail {
+  color: var(--color-text-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badgeSuccess,
+.badgeUnclassified,
+.badgeFail {
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.badgeSuccess {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+/* 업종분류 특정불가: 진짜 실패가 아니라 정상 케이스라 success/fail과
+   다른 색(경고 계열)으로 구분한다. --color-warning엔 -bg 짝이 없어서
+   색상 값 하드코딩 없이 color-mix로 옅은 배경만 도출한다. */
+.badgeUnclassified {
+  background: color-mix(in srgb, var(--color-warning) 22%, white);
+  color: color-mix(in srgb, var(--color-warning) 65%, black);
+}
+
+.badgeFail {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.noResultYet {
+  margin: 0;
+  padding: 20px 16px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.rawLogToggle {
+  display: block;
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-page);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px;
+  cursor: pointer;
+}

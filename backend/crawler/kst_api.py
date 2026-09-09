@@ -41,7 +41,6 @@ MAX_RETRIES = 6              # 페이지당 상위 재시도 횟수(가시적 �
 # API 응답 키 -> DB 컬럼명. 이름이 다른 것만 매핑에 신경 쓰면 되고,
 # 나머지는 API 키와 DB 컬럼명이 동일하다.
 #   - API "id"는 다운로드 순번(1,2,3...)이라 저장하지 않는다. pbanc_sn이 실제 공고번호.
-#   - API "aply_mthd_etc_istc" 만 DB에서 "aply_mthd_etc" 로 짧다.
 TEXT_COLUMNS = [
     "biz_pbanc_nm",
     "intg_pbanc_biz_nm",
@@ -72,7 +71,7 @@ TEXT_COLUMNS = [
 INSERT_COLUMNS = [
     "pbanc_sn",
     *TEXT_COLUMNS,
-    "aply_mthd_etc",       # API: aply_mthd_etc_istc
+    "aply_mthd_etc_istc",
     "intg_pbanc_yn",       # "Y"/"N" -> boolean
     "rcrt_prgs_yn",        # "Y"/"N" 원문 그대로 (character(1))
     "pbanc_rcpt_bgng_dt",  # "YYYYMMDD" -> date

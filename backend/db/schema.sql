@@ -103,6 +103,20 @@ CREATE TABLE IF NOT EXISTS announcements_raw_bizinfo (
     refrnc_nm                        TEXT                    -- 문의처(담당부서+연락처). 2026-09-07 추가 (contact 매핑 소스)
 );
 
+-- [2026-09-09] sync_bizinfo_announcements.py::map_ksic() 가 첨부파일(신청서
+-- 양식/공고문) 다운로드+OCR로 뽑아낸 원문을 임시로 담아두는 캐시. 목적은 재실행
+-- 시 이미 뽑아본 첨부를 또 다운로드+OCR 하지 않는 것뿐 - announcements에 그
+-- 행이 성공적으로 들어가는 순간(같은 텍스트가 announcements.content 에도
+-- 남으므로) 이 캐시 행은 바로 지운다(upsert_announcements). 그래서 정상 상황
+-- 에선 이 테이블은 거의 항상 비어있거나 "지금 처리 중/재시도 대기 중"인 것만
+-- 소수 남아있다 - 계속 쌓이는 테이블이 아님.
+CREATE TABLE IF NOT EXISTS bizinfo_attachment_text_cache (
+    raw_bizinfo_id  BIGINT PRIMARY KEY REFERENCES announcements_raw_bizinfo(raw_bizinfo_id),
+    full_text       TEXT,
+    extract_status  TEXT,
+    cached_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- 창업진흥원(K-Startup) 오픈API 원본. 마감 공고는 애초에 저장 안 함(진행 중인 것만).
 CREATE TABLE IF NOT EXISTS announcements_raw_kstartup (
     raw_kstartup_id          BIGSERIAL PRIMARY KEY,

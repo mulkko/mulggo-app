@@ -99,7 +99,7 @@ function Signup() {
 
       if (data.success) {
         setShowToast(true);
-        setTimeout(() => navigate("/login"), 1400);
+        setTimeout(() => navigate("/onboarding"), 1400);
       } else {
         setErrorMessage(data.error?.message ?? "회원가입에 실패했습니다.");
       }
