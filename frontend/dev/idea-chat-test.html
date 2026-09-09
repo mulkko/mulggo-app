@@ -159,6 +159,28 @@
       chatLog.appendChild(btn);
     }
 
+    function showTechStartupButton(code) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = `업종코드 ${code}로 기술창업 분석 보기`;
+      btn.style.margin = "8px 0";
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        const bubble = appendBubble("", true);
+        bubble.innerHTML = '<span class="spinner"></span>기술창업 분석 조회 중...';
+        try {
+          const res = await fetch(`${API_BASE_URL}/analysis/tech-startup?ksic_code=${encodeURIComponent(code)}`);
+          const analysisData = await res.json();
+          bubble.textContent = JSON.stringify(analysisData, null, 2);
+        } catch (err) {
+          bubble.textContent = "기술창업 분석 요청 실패: " + err;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+      chatLog.appendChild(btn);
+    }
+
     async function submitIdeaCards(spinnerBubble) {
       try {
         const response = await fetch(`${API_BASE_URL}/api/test/idea-cards`, {
@@ -173,6 +195,15 @@
         // 카드가 몇 개 나왔든 상관없이, 빠진 슬롯이 있으면 항상 알려준다.
         if (data.weak_slots && data.weak_slots.length > 0) {
           appendBubble(`⚠ 답변이 10글자 미만이라 근거로 안 쓰인 항목: ${data.weak_slots.join(", ")}`, true);
+        }
+
+        // ksic: 4개 슬롯 답변을 합친 텍스트로 decide_industry() 돌린 결과 (idea_card_test.py가 계산).
+        // 코드가 나오면 바로 다음 단계(기술창업 분석)로 이어볼 수 있는 버튼을 붙여준다.
+        if (data.ksic && data.ksic.codes && data.ksic.codes.length > 0) {
+          appendBubble(`🏷 판정된 업종코드: ${data.ksic.codes.join(", ")} (${data.ksic.names.join(", ")})`, true);
+          showTechStartupButton(data.ksic.codes[0]);
+        } else if (data.ksic) {
+          appendBubble("🏷 업종코드를 판정하지 못했어요 (특정불가).", true);
         }
 
         if (!data.success) {
