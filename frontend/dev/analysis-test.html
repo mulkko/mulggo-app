@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>[테스트] 분석 리포트 (상권 / 기술창업)</title>
+</head>
+<body>
+  <h1>분석 리포트 테스트</h1>
+  <p>
+    정식 화면 연동 전 단독 검증용 페이지입니다.<br>
+    backend/api/analysis.py 의 <code>/analysis/market</code>, <code>/analysis/tech-startup</code> 를 직접 호출합니다.
+  </p>
+
+  <!-- [테스트] ocr-test.html과 동일한 패턴: 백엔드 주소를 브라우저에 저장해두고 재사용 -->
+  <p>
+    백엔드 서버 주소:
+    <input type="text" id="apiBaseInput" style="width:240px;">
+    <button id="apiBaseSaveBtn" type="button">저장</button>
+  </p>
+
+  <hr>
+
+  <h2>① 상권 분석 (GET /analysis/market)</h2>
+  <p>
+    시도 <input type="text" id="marketSido" value="서울특별시" style="width:120px;">
+    시군구 <input type="text" id="marketSigungu" value="서초구" style="width:100px;">
+    동 <input type="text" id="marketDong" value="방배1동" style="width:100px;">
+    업종코드(선택) <input type="text" id="marketKsic" value="56221" style="width:80px;" placeholder="예: 56221(커피전문점)">
+  </p>
+  <button id="marketBtn" type="button">조회</button>
+  <div id="marketSummary" style="margin:12px 0; padding:12px; background:#eef6ff; display:none;"></div>
+  <div id="marketGrid" style="margin:12px 0;"></div>
+  <pre id="marketResult" style="background:#f4f4f4; padding:12px; white-space:pre-wrap;">(아직 조회 안 함)</pre>
+
+  <hr>
+
+  <h2>② 기술창업 분석 (GET /analysis/tech-startup)</h2>
+  <p>
+    업종코드 <input type="text" id="techKsic" value="58221" style="width:80px;" placeholder="예: 58221(소프트웨어)">
+  </p>
+  <button id="techBtn" type="button">조회</button>
+  <div id="techSummary" style="margin:12px 0; padding:12px; background:#eef6ff; display:none;"></div>
+  <div id="techGrid" style="margin:12px 0;"></div>
+  <pre id="techResult" style="background:#f4f4f4; padding:12px; white-space:pre-wrap;">(아직 조회 안 함)</pre>
+
+  <hr>
+
+  <h2>③ 특허 시계열 예측 (GET /analysis/patent-startup)</h2>
+  <p style="color:#c0392b;">
+    ⚠ 호출할 때마다 OpenAI 1회 + KIPRIS를 연도 수만큼(12번) 실제로 호출합니다.
+    KIPRIS는 하루 호출 제한이 있으니 필요할 때만 눌러주세요.
+  </p>
+  <p>
+    관심분야 <input type="text" id="patentSeed" value="농업" style="width:120px;"><br>
+    해결하려는 문제 <input type="text" id="patentProblem" value="방울토마토 재배 시 온습도 관리가 어려움" style="width:320px;"><br>
+    해결 방식 <input type="text" id="patentSolution" value="스마트팜 자동 제어 시스템" style="width:220px;">
+  </p>
+  <button id="patentBtn" type="button">조회 (실제 API 호출 주의)</button>
+  <div id="patentSummary" style="margin:12px 0; padding:12px; background:#eef6ff; display:none;"></div>
+  <div id="patentTable" style="margin:12px 0;"></div>
+  <pre id="patentResult" style="background:#f4f4f4; padding:12px; white-space:pre-wrap;">(아직 조회 안 함)</pre>
+
+  <script>
+    // [테스트] ocr-test.html과 동일한 API 주소 결정 로직 재사용.
+    function resolveApiBaseUrl() {
+      const saved = localStorage.getItem("analysis_api_base_url");
+      if (saved) return saved;
+
+      const host = window.location.hostname;
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        return `http://${host}:8000`;
+      }
+      return "http://127.0.0.1:8000";
+    }
+
+    let API_BASE_URL = resolveApiBaseUrl();
+
+    const apiBaseInput = document.getElementById("apiBaseInput");
+    apiBaseInput.value = API_BASE_URL;
+    document.getElementById("apiBaseSaveBtn").addEventListener("click", () => {
+      const val = apiBaseInput.value.trim().replace(/\/$/, "");
+      if (!val) return;
+      localStorage.setItem("analysis_api_base_url", val);
+      API_BASE_URL = val;
+      alert("저장했어요. 이제부터 이 주소로 요청을 보냅니다: " + val);
+    });
+
+    async function callApi(path, params, resultEl, summaryEl, gridEl, renderSummary, getGridSpec) {
+      const url = new URL(API_BASE_URL + path);
+      Object.entries(params).forEach(([k, v]) => {
+        if (v) url.searchParams.set(k, v);
+      });
+
+      resultEl.textContent = "조회 중...";
+      summaryEl.style.display = "none";
+      gridEl.innerHTML = "";
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        resultEl.textContent = `HTTP ${res.status}\n\n` + JSON.stringify(data, null, 2);
+
+        if (data.success) {
+          summaryEl.innerHTML = renderSummary(data.data);
+          summaryEl.style.display = "block";
+
+          const gridSpec = getGridSpec(data.data);
+          if (gridSpec) {
+            renderDensityGrid(gridEl, gridSpec);
+          }
+        } else {
+          summaryEl.innerHTML = `<b style="color:#c0392b">에러: ${data.error?.message ?? "알 수 없음"}</b> (code: ${data.error?.code ?? "-"})`;
+          summaryEl.style.display = "block";
+        }
+      } catch (err) {
+        resultEl.textContent = "요청 실패: " + err;
+      }
+    }
+
+    // [테스트] 밀집도 격자(density.py::compute_density_grid / venture.py::compute_venture_density_grid)
+    // 응답을 색 진하기로 표현하는 간단한 히트맵. 정식 화면에서 쓸 시각화가 아니라
+    // "데이터가 맞게 나오는지" 눈으로 바로 확인하기 위한 용도라 라이브러리 없이 CSS grid로만 그린다.
+    function renderDensityGrid(container, { cols, rows, cells, centerCell, labelFn, cellWidth = 60, cellHeight = 60 }) {
+      const maxCount = Math.max(1, ...cells.map((c) => c.count));
+
+      container.innerHTML = "";
+      const grid = document.createElement("div");
+      grid.style.display = "grid";
+      grid.style.gridTemplateColumns = `repeat(${cols}, ${cellWidth}px)`;
+      grid.style.gridTemplateRows = `repeat(${rows}, ${cellHeight}px)`;
+      grid.style.gap = "2px";
+
+      const cellByPos = {};
+      cells.forEach((c) => { cellByPos[`${c.x},${c.y}`] = c; });
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const c = cellByPos[`${x},${y}`];
+          const count = c ? c.count : 0;
+          const ratio = count / maxCount;
+          // 흰색(0) -> 주황(최댓값) 사이 보간. dataviz 라이브러리 없이 단순 선형보간만 사용.
+          const bg = count === 0 ? "#f4f4f4" : `rgba(230, 126, 34, ${0.15 + ratio * 0.85})`;
+
+          const cellEl = document.createElement("div");
+          cellEl.style.background = bg;
+          cellEl.style.border = "1px solid #ddd";
+          cellEl.style.display = "flex";
+          cellEl.style.flexDirection = "column";
+          cellEl.style.alignItems = "center";
+          cellEl.style.justifyContent = "center";
+          cellEl.style.fontSize = "11px";
+          cellEl.style.color = ratio > 0.5 ? "#fff" : "#333";
+          cellEl.style.position = "relative";
+          cellEl.style.overflow = "hidden";
+          cellEl.title = c && labelFn ? labelFn(c) : "";
+
+          if (count > 0) {
+            const countEl = document.createElement("div");
+            countEl.style.fontWeight = "bold";
+            countEl.textContent = count;
+            cellEl.appendChild(countEl);
+          }
+          if (c && labelFn) {
+            const labelEl = document.createElement("div");
+            labelEl.style.fontSize = "9px";
+            labelEl.style.padding = "0 2px";
+            labelEl.style.textAlign = "center";
+            labelEl.textContent = labelFn(c);
+            cellEl.appendChild(labelEl);
+          }
+          if (centerCell && centerCell[0] === x && centerCell[1] === y) {
+            cellEl.style.outline = "2px solid #2c3e50";
+            cellEl.title = (cellEl.title ? cellEl.title + " / " : "") + "내 위치";
+          }
+
+          grid.appendChild(cellEl);
+        }
+      }
+      container.appendChild(grid);
+
+      // [테스트] 격자가 작아서 색/숫자가 잘 안 보일 수 있어, 값이 있는 칸만 표로도 같이 보여준다.
+      const table = document.createElement("table");
+      table.style.marginTop = "10px";
+      table.style.borderCollapse = "collapse";
+      table.style.fontSize = "13px";
+
+      const headerRow = document.createElement("tr");
+      ["위치(x,y)", labelFn ? "지역" : "", "개수"].forEach((h) => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        th.style.border = "1px solid #ccc";
+        th.style.padding = "4px 10px";
+        th.style.background = "#f0f0f0";
+        headerRow.appendChild(th);
+      });
+      table.appendChild(headerRow);
+
+      cells
+        .filter((c) => c.count > 0)
+        .sort((a, b) => b.count - a.count)
+        .forEach((c) => {
+          const row = document.createElement("tr");
+          [`(${c.x}, ${c.y})`, labelFn ? labelFn(c) : "", c.count].forEach((v) => {
+            const td = document.createElement("td");
+            td.textContent = v;
+            td.style.border = "1px solid #ccc";
+            td.style.padding = "4px 10px";
+            row.appendChild(td);
+          });
+          table.appendChild(row);
+        });
+
+      container.appendChild(table);
+    }
+
+    document.getElementById("marketBtn").addEventListener("click", () => {
+      callApi(
+        "/analysis/market",
+        {
+          sido: document.getElementById("marketSido").value,
+          sigungu: document.getElementById("marketSigungu").value,
+          dong: document.getElementById("marketDong").value,
+          ksic_code: document.getElementById("marketKsic").value,
+        },
+        document.getElementById("marketResult"),
+        document.getElementById("marketSummary"),
+        document.getElementById("marketGrid"),
+        (d) => `
+          <b>${d.region.sido} ${d.region.sigungu} ${d.region.dong}</b><br>
+          상주인구: ${d.resident_population?.resident_population ?? "-"}명<br>
+          ${d.footfall?.basis ?? "생활/유동인구 정보 없음"}<br>
+          <b>반경 500m 이내 전체 업체 수: ${d.total_nearby_count ?? "-"}곳</b><br>
+          인근 업종 top4: ${(d.industry_mix ?? []).map((x) => `${x["업종명"]}(${x["업체수"]})`).join(", ") || "-"}<br>
+          ${d.density ? `동일업종(반경 500m) ${d.density.same_industry_count}곳 — 아래 격자에서 진할수록 밀집` : "(업종코드 미입력 — 밀집도 생략)"}
+        `,
+        (d) => d.density
+          ? {
+              cols: d.density.grid.grid_size,
+              rows: d.density.grid.grid_size,
+              cells: d.density.grid.cells,
+              centerCell: d.density.grid.center_cell,
+              labelFn: null,
+            }
+          : null
+      );
+    });
+
+    document.getElementById("techBtn").addEventListener("click", () => {
+      callApi(
+        "/analysis/tech-startup",
+        { ksic_code: document.getElementById("techKsic").value },
+        document.getElementById("techResult"),
+        document.getElementById("techSummary"),
+        document.getElementById("techGrid"),
+        (d) => `
+          유사 벤처기업 ${d.similar_count}개 / 최근 1년 벤처투자 인증 ${d.recent_investment_count}건<br>
+          인증유형 구성: ${(d.type_distribution ?? []).map((x) => `${x["인증유형"]} ${x["비율(%)"]}%`).join(", ") || "-"}<br>
+          ${d.density_grid ? `시군구별 분포(상위 ${d.density_grid.shown_sigungu_count}/${d.density_grid.total_sigungu_count}개 지역) — 아래 격자 참고` : ""}
+        `,
+        (d) => d.density_grid
+          ? {
+              cols: d.density_grid.grid_cols,
+              rows: d.density_grid.grid_rows,
+              cells: d.density_grid.cells,
+              centerCell: null,
+              labelFn: (c) => c.sigungu,
+              cellWidth: 100,
+              cellHeight: 70,
+            }
+          : null
+      );
+    });
+
+    // [테스트] 특허 예측은 그래프 격자가 아니라 "연도: 건수" 표 형태라 renderDensityGrid를
+    // 재사용하지 않고 별도로 간단한 표 2개(실측치, 백테스트)를 그린다.
+    function makeHeaderCell(row, text) {
+      const th = document.createElement("th");
+      th.textContent = text;
+      th.style.cssText = "border:1px solid #ccc; padding:4px 8px; background:#f0f0f0;";
+      row.appendChild(th);
+    }
+
+    function renderPatentTables(container, data) {
+      container.innerHTML = "";
+
+      const years = Object.keys(data.actual);
+      const actualTable = document.createElement("table");
+      actualTable.style.borderCollapse = "collapse";
+      actualTable.style.fontSize = "13px";
+
+      const yearRow = document.createElement("tr");
+      const countRow = document.createElement("tr");
+      makeHeaderCell(yearRow, "연도");
+      makeHeaderCell(countRow, "건수");
+
+      years.forEach((year) => {
+        const th = document.createElement("th");
+        th.textContent = year;
+        th.style.cssText = "border:1px solid #ccc; padding:4px 8px; background:#f0f0f0;";
+        yearRow.appendChild(th);
+
+        const td = document.createElement("td");
+        td.textContent = data.actual[year];
+        td.style.cssText = "border:1px solid #ccc; padding:4px 8px;";
+        if (!data.reliable_years.includes(Number(year))) {
+          td.style.background = "#fdecea";
+          td.title = "공개 지연으로 예측 학습에서 제외된 연도";
+        }
+        countRow.appendChild(td);
+      });
+
+      actualTable.appendChild(yearRow);
+      actualTable.appendChild(countRow);
+
+      const label1 = document.createElement("p");
+      label1.innerHTML = "<b>연도별 실측 특허 출원건수</b> (분홍색 = 공개지연으로 예측 학습 제외)";
+      container.appendChild(label1);
+      container.appendChild(actualTable);
+
+      if (data.backtest_results && data.backtest_results.length) {
+        const label2 = document.createElement("p");
+        label2.innerHTML = `<b>백테스트</b> (과거 시점마다 "그때까지 데이터로 다음해 예측" 반복, 평균오차 MAE=${data.mae})`;
+        container.appendChild(label2);
+
+        const btTable = document.createElement("table");
+        btTable.style.borderCollapse = "collapse";
+        btTable.style.fontSize = "13px";
+        btTable.style.marginTop = "6px";
+        const header = document.createElement("tr");
+        ["예측시점", "실제값", "예측값", "오차"].forEach((h) => {
+          const th = document.createElement("th");
+          th.textContent = h;
+          th.style.border = "1px solid #ccc";
+          th.style.padding = "4px 8px";
+          th.style.background = "#f0f0f0";
+          header.appendChild(th);
+        });
+        btTable.appendChild(header);
+        data.backtest_results.forEach((r) => {
+          const row = document.createElement("tr");
+          [r["예측시점"], r["실제값"], r["예측값"], r["오차"]].forEach((v) => {
+            const td = document.createElement("td");
+            td.textContent = v;
+            td.style.border = "1px solid #ccc";
+            td.style.padding = "4px 8px";
+            row.appendChild(td);
+          });
+          btTable.appendChild(row);
+        });
+        container.appendChild(btTable);
+      }
+    }
+
+    document.getElementById("patentBtn").addEventListener("click", async () => {
+      const resultEl = document.getElementById("patentResult");
+      const summaryEl = document.getElementById("patentSummary");
+      const tableEl = document.getElementById("patentTable");
+
+      const url = new URL(API_BASE_URL + "/analysis/patent-startup");
+      url.searchParams.set("seed_interest", document.getElementById("patentSeed").value);
+      url.searchParams.set("problem_to_solve", document.getElementById("patentProblem").value);
+      url.searchParams.set("solution_approach", document.getElementById("patentSolution").value);
+
+      resultEl.textContent = "조회 중... (KIPRIS를 연도별로 순차 호출해서 몇 초 걸릴 수 있음)";
+      summaryEl.style.display = "none";
+      tableEl.innerHTML = "";
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        resultEl.textContent = `HTTP ${res.status}\n\n` + JSON.stringify(data, null, 2);
+
+        if (data.success) {
+          const d = data.data;
+          const forecastYear = Object.keys(d.forecast)[0];
+          const forecastVal = d.forecast[forecastYear];
+          summaryEl.innerHTML = `
+            검색 키워드(GPT 자동생성): <b>${d.keyword}</b><br>
+            ${forecastYear}년 예측 출원건수: <b>${forecastVal}건</b><br>
+            백테스트 평균오차(MAE): ${d.mae}
+            ${d.keyword_debug ? `
+              <details style="margin-top:8px;">
+                <summary style="cursor:pointer;">키워드 생성 과정 보기 (GPT 프롬프트/응답 — 호출마다 결과가 달라질 수 있음)</summary>
+                <div style="margin-top:6px; padding:8px; background:#fff; border:1px solid #ddd;">
+                  <b>프롬프트:</b>
+                  <pre style="white-space:pre-wrap; font-size:12px;">${d.keyword_debug.prompt}</pre>
+                  <b>GPT 원본 응답:</b>
+                  <pre style="white-space:pre-wrap; font-size:12px;">${d.keyword_debug.raw_response}</pre>
+                </div>
+              </details>
+            ` : ""}
+          `;
+          summaryEl.style.display = "block";
+          renderPatentTables(tableEl, d);
+        } else {
+          summaryEl.innerHTML = `<b style="color:#c0392b">에러: ${data.error?.message ?? "알 수 없음"}</b> (code: ${data.error?.code ?? "-"})`;
+          summaryEl.style.display = "block";
+        }
+      } catch (err) {
+        resultEl.textContent = "요청 실패: " + err;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -17,15 +17,27 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import pandas as pd
 
-from backend.db.connection import get_connection
+from backend.db.connection import get_connection, get_analysis_connection
 from backend.analysis_report.market import population, industry_mix, density
-from backend.analysis_report.tech_startup import venture
+from backend.analysis_report.tech_startup import venture, patent_forecast
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 
 def _query_df(sql: str, params: dict | None = None) -> pd.DataFrame:
     connection = get_connection()
+    try:
+        return pd.read_sql(sql, connection, params=params)
+    finally:
+        connection.close()
+
+
+def _query_analysis_df(sql: str, params: dict | None = None) -> pd.DataFrame:
+    """[2026-09-09] commercial_districts(272만 행, ~700MB)가 메인 DB 무료 플랜
+    저장 용량을 초과시켜 별도 분석용 DB로 이관됨 - 그 DB 전용 조회 헬퍼.
+    administrative_dong/resident_population/living_population/venture_companies는
+    작아서 메인 DB에 그대로 있음(_query_df 계속 사용)."""
+    connection = get_analysis_connection()
     try:
         return pd.read_sql(sql, connection, params=params)
     finally:
@@ -60,7 +72,7 @@ def _load_living_population() -> pd.DataFrame:
 
 def _load_commercial_districts(sido: str, sigungu: str) -> pd.DataFrame:
     """272만 행 전체가 아니라 요청받은 시도/시군구만 좁혀서 가져온다."""
-    return _query_df(
+    return _query_analysis_df(
         'SELECT latitude AS "위도", longitude AS "경도", '
         '       sido_name AS "시도명", sigungu_name AS "시군구명", dong_name AS "행정동명", '
         '       ksic_code AS "표준산업분류코드", '
@@ -92,6 +104,7 @@ def get_market_report(sido: str, sigungu: str, dong: str, ksic_code: str | None 
     except ValueError as e:
         return _error(400, str(e), "REGION_NOT_FOUND")
 
+    total_nearby_count = len(nearby)
     industry_dist = industry_mix.get_industry_distribution(nearby, level="상권업종소분류명", top_n=4)
 
     density_grid = None
@@ -109,6 +122,7 @@ def get_market_report(sido: str, sigungu: str, dong: str, ksic_code: str | None 
             "region": {"sido": sido, "sigungu": sigungu, "dong": dong},
             "resident_population": resident,
             "footfall": footfall,
+            "total_nearby_count": total_nearby_count,
             "industry_mix": industry_dist.to_dict(orient="records"),
             "density": density_grid,
         },
@@ -156,3 +170,25 @@ def get_tech_startup_report(ksic_code: str) -> JSONResponse:
             "density_grid": density_grid,
         },
     })
+
+
+# ── 특허 시계열 예측 ────────────────────────────────────────
+# [주의] OPENAI_API_KEY(키워드 생성) + KIPRIS_API_KEY(특허 조회) 둘 다 필요.
+# 요청 1건당 KIPRIS를 연도 수만큼(기본 12번) 순차 호출한다 — 일일 호출 제한이
+# 있으니(원본 노트북 주석 참고) 테스트를 남발하지 않는다. past_years는 노트북
+# 검증 때와 동일하게 2015~2026(12개년)으로 고정 — exclude_recent=2(기본값)가
+# 공개지연 때문에 최근 2개년을 신뢰구간에서 제외하고 그 다음 해(2025년)를 예측한다.
+
+PATENT_FORECAST_YEARS = list(range(2015, 2027))
+
+
+@router.get("/patent-startup")
+def get_patent_forecast_report(seed_interest: str, problem_to_solve: str, solution_approach: str) -> JSONResponse:
+    try:
+        result = patent_forecast.get_patent_trend_with_forecast(
+            seed_interest, problem_to_solve, solution_approach, past_years=PATENT_FORECAST_YEARS,
+        )
+    except Exception as e:  # noqa: BLE001 - OpenAI/KIPRIS 쪽 예외 종류가 다양해 폭넓게 잡고 메시지로 알림
+        return _error(500, f"특허 예측 처리 중 오류: {e}", "PATENT_FORECAST_ERROR")
+
+    return JSONResponse(content={"success": True, "data": result})

@@ -221,17 +221,20 @@ def _sync_log_path(source: str) -> Path:
     return SYNC_LOG_DIR / f"sync_{source}.log"
 
 
-def _run_sync(source: str) -> None:
+def _run_sync(source: str, limit: int | None = None) -> None:
     SYNC_LOG_DIR.mkdir(exist_ok=True)
     log_path = _sync_log_path(source)
     started = datetime.now().isoformat(timespec="seconds")
     returncode = None
     try:
         with open(log_path, "w", encoding="utf-8") as log_file:
-            log_file.write(f"=== 시작: {started} · source={source} ===\n")
+            log_file.write(f"=== 시작: {started} · source={source}" + (f" · limit={limit} ===\n" if limit else " ===\n"))
             log_file.flush()
+            cmd = [sys.executable, "-m", SYNC_MODULES[source]]
+            if limit:
+                cmd += ["--limit", str(limit)]
             completed = subprocess.run(  # noqa: S603 - 고정된 내부 모듈만 실행
-                [sys.executable, "-m", SYNC_MODULES[source]],
+                cmd,
                 stdout=log_file,
                 stderr=subprocess.STDOUT,
                 cwd=str(PROJECT_ROOT),
@@ -263,8 +266,10 @@ def _run_sync(source: str) -> None:
 
 
 @router.post("/sync")
-def run_sync(source: str, background_tasks: BackgroundTasks) -> JSONResponse:
-    """raw -> announcements 통합 반영을 백그라운드로 시작하고 즉시 반환한다."""
+def run_sync(source: str, background_tasks: BackgroundTasks, limit: int | None = None) -> JSONResponse:
+    """raw -> announcements 통합 반영을 백그라운드로 시작하고 즉시 반환한다.
+    limit: 지정하면 이번 실행에서 그 건수만 처리(테스트/분할 실행용). only_unprocessed=True라
+    이미 반영된 건은 자동으로 빠지므로, 같은 limit으로 반복 호출하면 다음 구간이 이어서 처리된다."""
     if source not in SYNC_MODULES:
         return JSONResponse(
             status_code=400,
@@ -291,10 +296,10 @@ def run_sync(source: str, background_tasks: BackgroundTasks) -> JSONResponse:
             )
         _running_syncs.add(source)
 
-    background_tasks.add_task(_run_sync, source)
+    background_tasks.add_task(_run_sync, source, limit)
     return JSONResponse(
         status_code=202,
-        content={"success": True, "data": {"source": source, "status": "started"}},
+        content={"success": True, "data": {"source": source, "status": "started", "limit": limit}},
     )
 
 
