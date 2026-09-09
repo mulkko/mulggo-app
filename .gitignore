@@ -29,6 +29,9 @@ data/**/*.csv
 !data/ksic_clean_v2.csv
 data/**/*.xls
 data/**/*.xlsx
+# 예외: 신청서 자동채우기(backend/assistant) 필드매핑표(소규모 정적 참고자료).
+# 원래 팀원 개인 PC(Downloads)에만 있던 파일이라 저장소로 옮김(2026-09-09).
+!data/field_mapping.xlsx
 
 # data/ 폴더에 들어오는 이미지 (테스트용 사업자등록증 사진 등 개인정보 포함 가능 — DB/로컬에만 두고 git에는 안 올림)
 data/**/*.jpg
