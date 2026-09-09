@@ -39,7 +39,10 @@
   <div id="inputArea" style="max-width:480px; margin-top:12px;">
     <p id="questionText" style="font-weight:bold;"></p>
     <textarea id="answerInput" rows="2" style="width:100%; box-sizing:border-box;"></textarea>
-    <button id="answerBtn" type="button" style="margin-top:8px;">답변</button>
+    <p id="lengthWarning" style="color:#c0392b; font-size:13px; display:none;">
+      10글자 이상 입력해주세요 (이보다 짧으면 이 항목은 카드에 반영되지 않아요).
+    </p>
+    <button id="answerBtn" type="button" style="margin-top:8px;" disabled>답변</button>
   </div>
 
   <script>
@@ -73,6 +76,8 @@
       { key: "core_skill", label: "보유하고 계신 역량이나 경험이 있다면요?" },
     ];
 
+    const MIN_ANSWER_LENGTH = 10; // idea_card_generator.py::MIN_SLOT_LENGTH와 동일 - 서버 안 거치고 미리 걸러줌
+
     const answers = {};
     let step = 0;
 
@@ -80,6 +85,15 @@
     const questionText = document.getElementById("questionText");
     const answerInput = document.getElementById("answerInput");
     const inputArea = document.getElementById("inputArea");
+    const lengthWarning = document.getElementById("lengthWarning");
+    const answerBtn = document.getElementById("answerBtn");
+
+    // 타이핑할 때마다 실시간으로 글자 수 체크 - 10자 미만이면 경고 + 다음 버튼 비활성화.
+    answerInput.addEventListener("input", () => {
+      const tooShort = answerInput.value.trim().length < MIN_ANSWER_LENGTH;
+      lengthWarning.style.display = tooShort ? "block" : "none";
+      answerBtn.disabled = tooShort;
+    });
 
     function appendBubble(text, isQuestion) {
       const div = document.createElement("div");
@@ -110,12 +124,14 @@
       appendBubble(q.label, true);
       questionText.textContent = q.label;
       answerInput.value = "";
+      lengthWarning.style.display = "none";
+      answerBtn.disabled = true;
       answerInput.focus();
     }
 
-    document.getElementById("answerBtn").addEventListener("click", () => {
+    answerBtn.addEventListener("click", () => {
       const val = answerInput.value.trim();
-      if (!val) return;
+      if (val.length < MIN_ANSWER_LENGTH) return; // 버튼이 비활성화돼있어야 정상이지만 방어적으로 한 번 더 체크
 
       const q = QUESTIONS[step];
       answers[q.key] = val;
@@ -123,6 +139,25 @@
       step += 1;
       showQuestion();
     });
+
+    const MAX_CARDS = 3; // idea_card_generator.py가 만드는 고정 축 수 (타깃/수익모델/보유역량 관점)
+
+    function showRestartButton() {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "처음부터 다시 답하기";
+      btn.style.marginTop = "8px";
+      btn.addEventListener("click", () => {
+        // 어느 슬롯 때문인지 지금 정보로는 특정할 수 없어서(LLM이 판단한 경우는 이유를
+        // 안 알려줌 - 위 대화 참고), 전부 초기화하고 처음부터 다시 받는 게 지금은 유일한 방법.
+        Object.keys(answers).forEach((k) => delete answers[k]);
+        step = 0;
+        chatLog.innerHTML = "";
+        inputArea.style.display = "block";
+        showQuestion();
+      });
+      chatLog.appendChild(btn);
+    }
 
     async function submitIdeaCards(spinnerBubble) {
       try {
@@ -142,18 +177,30 @@
 
         if (!data.success) {
           appendBubble("생성 실패: " + data.error, true);
+          showRestartButton();
           return;
         }
         if (!data.cards || data.cards.length === 0) {
           appendBubble("카드가 생성되지 않았어요.", true);
+          showRestartButton();
           return;
         }
         data.cards.forEach((card) => {
           appendBubble(`[${card.axis}] ${card.title}\n${card.description}`, true);
         });
+        // 카드가 3개 미만이면(weak_slots로 못 잡은 것 포함) LLM이 일부 축을 스스로
+        // 부실하다고 판단해서 건너뛴 것 - 어느 것 때문인지는 알 수 없으니 다시 시작만 안내.
+        if (data.cards.length < MAX_CARDS) {
+          appendBubble(
+            `카드가 ${data.cards.length}/${MAX_CARDS}개만 나왔어요 - 일부 답변이 근거로 쓰기엔 부실하다고 AI가 판단한 것 같아요. 어느 항목인지는 지금 알 수 없어서, 다시 답해보시는 걸 추천해요.`,
+            true
+          );
+          showRestartButton();
+        }
       } catch (err) {
         spinnerBubble.remove();
         appendBubble("요청 실패: " + err, true);
+        showRestartButton();
       }
     }
 
