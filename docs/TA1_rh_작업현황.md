@@ -23,6 +23,14 @@
   조용히 안 뜨던 것, `start`의 `/D` 옵션으로 수정
 - **`requirements.txt` 머지 충돌 마커 정리** (main) — 한때 `<<<<<<< HEAD` 등
   충돌 마커가 그대로 커밋돼 `pip install` 자체가 깨졌던 것, 이후 정리 확인됨
+- **[2026-09-09 후반] 사업 구체화 → 업종코드 매핑 파이프라인 (테스트 레벨)** —
+  기획 방향이 "빠른진단(4문항)+정밀진단(14문항) 2트랙"에서 "업종매칭+아이디어
+  구체화"로 바뀌었음(정밀진단 트랙은 없어짐, 사용자 확인). `backend/chatbot/
+  idea_card_generator.py`(슬롯 4개→아이디어 카드) + `decide_industry()` 재사용
+  (카드 내용→KSIC 코드) + `/analysis/tech-startup` 연결까지 테스트 페이지
+  (`frontend/dev/idea-card-test.html`, `idea-chat-test.html`)로 동작 확인 완료.
+  **정식 화면(질문 던지는 UI)과 정식 API는 아직 없음** — 아래 "아직 안 된 것" 참고.
+  낡은 계획의 흔적이던 `backend/chatbot/chain.py`(TODO 스텁)는 삭제함.
 
 ## ⚠️ 부분적으로만 해결된 것
 
@@ -42,8 +50,10 @@
    정렬 로직 자체가 없음. 유저 쪽도 업태/종목을 텍스트로만 저장하고
    `decide_industry`로 KSIC 코드화해서 저장하는 단계가 안 됨
    (`profile_business_types.ksic_code` 등). 프론트도 더미 데이터로 되어있음
-2. **사업 구체화 챗봇** (`backend/chatbot/chain.py`) — TODO 주석 한 줄뿐,
-   고객·문제해결·수익모델·차별점·지역규모 5가지 질문 흐름 미구현
+2. **사업 구체화 정식 화면 + API** — 질문을 실제로 던지는 화면(4문항, `Onboarding.
+   tsx`의 "사업 아이디어를 구상하고 싶어요" 버튼이 지금 TODO라 갈 곳 없음) 및
+   정식 `/api/idea-cards` 류 엔드포인트(지금은 테스트 전용만 있음) 미착수.
+   백엔드 로직 자체는 위 "완료된 것" 참고 - 이미 됨
 3. **AI 신청서 PSST 초안 생성** (`backend/assistant/psst_generator.py`) —
    TODO 주석뿐. (참고: 같은 폴더의 사업자등록증 OCR → HWPX 자동입력 파이프라인
    `biz_cert_ocr.py`/`hwpx_fill.py` 등은 별개로 상당히 진행돼 있음 — PSST
@@ -71,6 +81,6 @@
 | 관리자 API | `backend/api/admin.py` (`/admin/sync?source=...&limit=...`) |
 | 관리자 화면 | `frontend/src/pages/admin/AnnouncementsSync.tsx` |
 | 매칭(미착수) | `backend/ml/ranker/` |
-| 챗봇(미착수) | `backend/chatbot/chain.py` |
+| 사업구체화(백엔드 완료/화면 미착수) | `backend/chatbot/idea_card_generator.py`, `frontend/dev/idea-chat-test.html` |
 | 신청서 어시스턴트 | `backend/assistant/{psst_generator.py(미착수), biz_cert_ocr.py, hwpx_fill.py, category_ocr.py}` |
 | RAG(미착수) | `backend/rag/` |
