@@ -363,7 +363,11 @@ def map_ksic(common_df: pd.DataFrame, use_llm_fallback: bool = False) -> pd.Data
                 extract_status = "success(cache)"
             else:
                 full_text, extract_status = get_notice_full_text(r.get("_print_flpth_nm") or "")
-                full_text = full_text or ""
+                # 첨부원문(OCR/pdfplumber/pyhwp)에 간혹 NUL(0x00)이 섞여 들어오는데,
+                # PostgreSQL text 컬럼은 NUL을 저장 못 해서 캐시 INSERT 자체가
+                # 죽는다(upsert_announcements()가 이미 _strip_nul로 겪은 것과 동일
+                # 원인) - 캐시에 넣기 전에도 똑같이 제거해야 한다.
+                full_text = _strip_nul(full_text) or ""
                 if extract_status.startswith("success") and raw_id is not None:
                     cache_cur.execute(
                         """
@@ -506,7 +510,15 @@ INSERT_COLUMNS = FINAL_COLUMNS  # 순서 동일하게 유지
 
 def _strip_nul(v):
     """PostgreSQL text 컬럼은 NUL(0x00)을 저장 못 하는데, 첨부파일 원문
-    추출(OCR/pdfplumber/pyhwp) 결과에 간혹 섞여 들어온다. 저장 직전에 제거."""
+    추출(OCR/pdfplumber/pyhwp) 결과에 간혹 섞여 들어온다. 저장 직전에 제거.
+
+    그리고 값이 None인 컬럼이 섞인 행을 final_df.iterrows()로 순회하면
+    pandas가 그 None을 float('nan')으로 바꿔서 내보낸다(컬럼 dtype이
+    문자열이어도 row Series로 합쳐지는 순간 생김) - apply_start_date처럼
+    date 컬럼에 이게 들어가면 "'NaN'::float" 캐스팅 에러로 저장이 실패함.
+    NaN은 자기 자신과도 같지 않다(v != v)는 성질로 판별해 None으로 되돌린다."""
+    if isinstance(v, float) and v != v:
+        return None
     if isinstance(v, str):
         return v.replace("\x00", "")
     if isinstance(v, list):
@@ -540,6 +552,7 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
         n = 0
         failed = []
         for _, r in final_df.iterrows():
+            # NaN -> None 처리는 _strip_nul()이 한다 (아래 함수 docstring 참고).
             values = [_strip_nul(list(r[c]) if c in ARRAY_COLUMNS else r[c]) for c in INSERT_COLUMNS]
             try:
                 cur.execute(sql, values)

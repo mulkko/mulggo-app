@@ -1,5 +1,8 @@
-# Supabase(PostgreSQL) 연결 모듈
+# 메인 DB(PostgreSQL) 연결 모듈
 # .env의 DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD로 접속한다.
+# [2026-09-09] 메인 DB를 Supabase에서 Neon으로 이관 - Neon은 SSL 연결을
+# 강제해서(sslmode 안 주면 "connection is insecure (try using sslmode=require)"
+# 에러) sslmode="require"를 명시한다.
 
 import os
 
@@ -37,6 +40,7 @@ def get_connection():
         dbname=DB_NAME,
         user=DB_USER,
         password=DB_PASSWORD,
+        sslmode="require",
     )
 
 
