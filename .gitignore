@@ -48,3 +48,6 @@ dryrun_sync_*.xlsx
 
 # 로컬에서 backend/frontend를 백그라운드로 띄울 때 생기는 임시 stdout/stderr 로그
 /_*.log
+
+# 작업 중 임시로 남겨둔 백업 파일 (예: 프론트 붙이기 전 원본 보관용, 다 되면 삭제 예정)
+*.bak
