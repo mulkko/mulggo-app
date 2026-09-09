@@ -19,8 +19,8 @@ interface AnnouncementCardData {
   dday: string;
   /** 공고 제목 */
   title: string;
-  /** 해시태그 2개 */
-  tags: [string, string];
+  /** 해시태그 (보통 2개 - 로직 확정 전까지는 개수 유동적) */
+  tags: string[];
 }
 
 interface AnnouncementCardProps {

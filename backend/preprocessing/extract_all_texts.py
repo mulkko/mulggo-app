@@ -117,7 +117,17 @@ def _get_ocr_reader():
         # (GitHub 이슈: use_gpu 관련 TypeError, set_optimization_level 누락 등).
         # 옵션을 아예 안 주면 라이브러리가 자동으로 GPU 있으면 GPU, 없으면 CPU를
         # 씀(공식 문서 기준) — 이게 지금 버전들과 제일 안전하게 맞는 방식.
-        _ocr_reader = PaddleOCR(lang="korean")
+        #
+        # [2026-09-09 버그 수정] CPU(oneDNN)로 돌 때 스캔본 OCR이 거의 매번
+        # "NotImplementedError: ConvertPirAttribute2RuntimeAttribute not
+        # support [pir::ArrayAttribute<pir::DoubleAttribute>]"로 죽는 문제를
+        # 실측 확인함 - paddlepaddle 3.3.1의 새 PIR 실행엔진이 oneDNN 커널
+        # 일부를 아직 완전히 지원 안 해서 생기는 라이브러리 자체 버그
+        # (모델 종류·이미지를 바꿔도 동일하게 재현됨). enable_mkldnn=False로
+        # oneDNN 가속만 꺼서 우회 - 그 경로를 안 타므로 크래시가 사라진다
+        # (직접 재현 확인, 같은 파일로 텍스트 추출 성공함). GPU 있으면
+        # 이 옵션은 어차피 안 쓰이므로 영향 없음.
+        _ocr_reader = PaddleOCR(lang="korean", enable_mkldnn=False)
         _debug_print("  [OCR] 로딩 완료(GPU 있으면 자동으로 사용)")
     return _ocr_reader
 

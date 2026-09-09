@@ -11,6 +11,7 @@ from backend.api.admin import router as admin_router
 from backend.api.test_ocr import router as test_ocr_router
 from backend.api.analysis import router as analysis_router
 from backend.api.idea_card_test import router as idea_card_test_router
+from backend.api.matching import router as matching_router
 
 app = FastAPI(title="mulkko API")
 
@@ -35,6 +36,7 @@ app.include_router(admin_router)
 app.include_router(test_ocr_router)
 app.include_router(analysis_router)
 app.include_router(idea_card_test_router)
+app.include_router(matching_router)
 
 
 def main():

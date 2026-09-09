@@ -7,23 +7,28 @@ import { getAnnouncementDetail } from "./matchingDetailData";
  * 서류 미리보기 화면 (16-1).
  *
  * 공고 상세(MatchingDetail.tsx)의 신청서류 카드에서 "채우기"를 누르면
- * `/matching/:id/doc-preview`로 들어온다. 파일명은 navigate state(`fileName`)로 넘어오고,
- * state 없이 URL로 직접 접근한 경우 id로 더미데이터의 첫 번째 서류명을 fallback으로 쓴다.
+ * `/matching/:id/doc-preview`로 들어온다. 파일명/attachmentId는 navigate
+ * state로 넘어오고, state 없이 URL로 직접 접근한 경우 더미데이터로 fallback한다.
  *
  * 하단 네비게이션(BottomNav) 없음 — 뒤로가기 헤더만 있는 구조(뒤로가기 → /matching/:id).
  *
- * 실제 동작으로 만든 것: 뒤로가기, "나의 정보로 채우기" → 다운로드 모달 열기/닫기(로컬 state).
- * TODO로만 남긴 것: 실제 문서 생성, 로컬 저장(다운로드), 카카오톡 공유.
+ * 실제 동작으로 만든 것: 뒤로가기, "나의 정보로 채우기"
+ *   → GET /api/matching/attachments/:id/fill 호출해서 실제로 채운 hwpx를 새 탭으로 다운로드.
+ *   [2026-09-09, 임시] 로그인 세션이 없어서 백엔드가 DB에 등록된 사업자등록증 1건(임시)으로
+ *   채운다 - 로그인 붙으면 그 사용자 정보로 자동 전환됨(백엔드 쪽 작업).
+ * TODO로만 남긴 것: 카카오톡 공유.
  */
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function DocPreview() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
 
-  const stateFileName = (location.state as { fileName?: string } | null)?.fileName;
-  const fileName =
-    stateFileName ?? getAnnouncementDetail(id)?.docs[0]?.fileName ?? "신청 서류";
+  const state = location.state as { fileName?: string; attachmentId?: number } | null;
+  const fileName = state?.fileName ?? getAnnouncementDetail(id)?.docs[0]?.fileName ?? "신청 서류";
+  const attachmentId = state?.attachmentId;
 
   // 다운로드 모달 open 여부 — 이 화면 안에서만 쓰는 로컬 UI 상태
   const [downloadOpen, setDownloadOpen] = useState(false);
@@ -33,6 +38,11 @@ function DocPreview() {
   };
 
   const handleFill = () => {
+    if (attachmentId) {
+      window.open(`${API_BASE_URL}/api/matching/attachments/${attachmentId}/fill`, "_blank");
+      return;
+    }
+    // attachmentId 없이 들어온 경우(더미데이터 fallback) - 실제 실행할 대상이 없어 모달만 보여준다.
     setDownloadOpen(true);
   };
 

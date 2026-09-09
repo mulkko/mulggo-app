@@ -48,6 +48,7 @@
 #      실행 시 에러가 난다 - 이것도 스키마 쪽 문제라 여기서 해결 안 함.
 
 import json
+import os
 
 import pandas as pd
 
@@ -526,15 +527,62 @@ def _strip_nul(v):
     return v
 
 
-def upsert_announcements(final_df: pd.DataFrame) -> int:
+# [2026-09-09] 신청서류 첨부(announcement_attachments) 채우기.
+# file_nm/flpth_nm은 같은 순서로 "@" 이어붙인 목록(여러 첨부) - raw 테이블에 이미
+# 있는 값이라 별도 API 호출 없이 그대로 쪼개서 넣는다. zip 안에 뭐가 들었는지는
+# 못 열어보므로 zip 자체를 그냥 파일 하나로 취급한다(사용자 확인, 2026-09-09).
+_APPLICATION_FORM_HINTS = ("신청서", "양식")
+
+
+def _file_type_of(file_name: str) -> str | None:
+    ext = os.path.splitext(file_name)[1].lstrip(".").lower()
+    return ext or None
+
+
+def _attachment_role_of(file_name: str) -> str:
+    return "신청서양식" if any(h in file_name for h in _APPLICATION_FORM_HINTS) else "붙임"
+
+
+def _replace_attachments(cur, announcement_id: int, file_nm: str | None, flpth_nm: str | None) -> None:
+    """announcement_attachments를 이 공고 기준으로 통째로 갈아끼운다(재실행 시
+    중복 누적 방지) - DELETE 후 INSERT."""
+    cur.execute("DELETE FROM announcement_attachments WHERE announcement_id = %s", (announcement_id,))
+    # pd.isna(): file_nm/flpth_nm이 raw_df(pd.read_sql 결과)에서 온 값이라
+    # None 대신 NaN(float)으로 올 수 있다 - 이번 세션에서 겪은 것과 동일한 함정.
+    if pd.isna(file_nm) or pd.isna(flpth_nm):
+        return
+
+    names = [n for n in file_nm.split("@") if n]
+    urls = [u for u in flpth_nm.split("@") if u]
+    if len(names) != len(urls):
+        # 개수가 안 맞으면(원본 데이터 이상) 매칭을 신뢰할 수 없으므로 건너뛴다.
+        return
+
+    for name, url in zip(names, urls):
+        cur.execute(
+            """
+            INSERT INTO announcement_attachments
+                (announcement_id, file_name, file_type, attachment_role, source_url, collected_at)
+            VALUES (%s, %s, %s, %s, %s, now())
+            """,
+            (announcement_id, name, _file_type_of(name), _attachment_role_of(name), url),
+        )
+
+
+def upsert_announcements(final_df: pd.DataFrame, attachments_by_raw_id: dict | None = None) -> int:
     """source='bizinfo'인 행은 raw_bizinfo_id로 UPSERT한다(ERD 설계상
     announcements.raw_bizinfo_id가 announcements_raw_bizinfo의 PK를 참조하는
     FK이자 자연 유니크 키 - 같은 원본 공고를 재수집해도 행이 늘지 않음).
     지역/업종 매핑까지 끝난 완성된 행만 이 함수로 들어온다는 전제 -
-    불완전한 상태로 먼저 INSERT하고 나중에 UPDATE하는 방식은 안 씀."""
+    불완전한 상태로 먼저 INSERT하고 나중에 UPDATE하는 방식은 안 씀.
+
+    attachments_by_raw_id: {raw_bizinfo_id: (file_nm, flpth_nm)} - 넘기면 UPSERT
+    직후(announcement_id를 알아야 FK를 채울 수 있어서 이 시점에만 가능) 신청서류
+    첨부까지 announcement_attachments에 같이 채운다."""
     if final_df.empty:
         return 0
 
+    attachments_by_raw_id = attachments_by_raw_id or {}
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -547,6 +595,7 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
             VALUES ({placeholders})
             ON CONFLICT (raw_bizinfo_id) WHERE source = 'bizinfo'
             DO UPDATE SET {update_sql}
+            RETURNING announcement_id
         """
 
         n = 0
@@ -554,21 +603,28 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
         for _, r in final_df.iterrows():
             # NaN -> None 처리는 _strip_nul()이 한다 (아래 함수 docstring 참고).
             values = [_strip_nul(list(r[c]) if c in ARRAY_COLUMNS else r[c]) for c in INSERT_COLUMNS]
+            raw_id = r.get("raw_bizinfo_id")
             try:
                 cur.execute(sql, values)
+                announcement_id = cur.fetchone()[0]
+
+                if raw_id in attachments_by_raw_id:
+                    file_nm, flpth_nm = attachments_by_raw_id[raw_id]
+                    _replace_attachments(cur, announcement_id, file_nm, flpth_nm)
+
                 conn.commit()
                 n += 1
                 # [2026-09-09] announcements에 성공적으로 들어갔으니(같은 텍스트가
                 # announcements.content에도 남음) 첨부 원문 캐시는 더 필요 없다.
-                if r.get("raw_bizinfo_id") is not None:
+                if raw_id is not None:
                     cur.execute(
                         "DELETE FROM bizinfo_attachment_text_cache WHERE raw_bizinfo_id = %s",
-                        (r.get("raw_bizinfo_id"),),
+                        (raw_id,),
                     )
                     conn.commit()
             except Exception as e:
                 conn.rollback()
-                failed.append((r.get("raw_bizinfo_id"), str(e)))
+                failed.append((raw_id, str(e)))
 
         if failed:
             print(f"upsert_announcements: {len(failed)}건 저장 실패(건너뜀, 다음 재실행 때 재시도됨):")
@@ -604,7 +660,8 @@ def run(only_unprocessed: bool = True, use_llm_fallback: bool = False, limit: in
     if not review_df.empty:
         print(review_df.to_string())
 
-    n = upsert_announcements(final_df)
+    attachments_by_raw_id = dict(zip(raw_df["raw_bizinfo_id"], zip(raw_df["file_nm"], raw_df["flpth_nm"])))
+    n = upsert_announcements(final_df, attachments_by_raw_id)
     print(f"UPSERT 완료: {n}건")
 
 
