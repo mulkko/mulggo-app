@@ -18,8 +18,14 @@ export interface OverviewItem {
 }
 
 export interface RequiredDoc {
+  /** announcement_attachments.attachment_id - 채우기 실행 API 호출에 씀 */
+  attachmentId: number;
   /** 파일명 (확장자 포함, 길면 화면에서 말줄임 처리) */
   fileName: string;
+  /** 실제로 자동채우기가 되는 서류인지 (백엔드가 hwpx + 필드매핑 기준으로 미리 확인해둔 값) */
+  fillable: boolean;
+  /** 원본 그대로 받아서 직접 작성할 수 있는 다운로드 URL (채우기 가능 여부와 무관) */
+  downloadUrl: string;
 }
 
 export interface AnnouncementDetail {
@@ -50,8 +56,8 @@ export interface AnnouncementDetail {
 
 /** a1 기준 신청서류 (여러 공고에서 재사용) */
 const SAMPLE_DOCS: RequiredDoc[] = [
-  { fileName: "2026년 청년 소상공인 창업자금 공고문.pdf" },
-  { fileName: "신청서 양식.hwp" },
+  { attachmentId: 0, fileName: "2026년 청년 소상공인 창업자금 공고문.pdf", fillable: false, downloadUrl: "" },
+  { attachmentId: 0, fileName: "신청서 양식.hwp", fillable: false, downloadUrl: "" },
 ];
 
 export const DUMMY_ANNOUNCEMENT_DETAILS: Record<string, AnnouncementDetail> = {
@@ -91,8 +97,8 @@ export const DUMMY_ANNOUNCEMENT_DETAILS: Record<string, AnnouncementDetail> = {
     content:
       "혁신적인 아이디어를 가진 여성 창업가를 발굴하고 사업화를 지원하기 위한 경진대회입니다. 본선 진출 팀에는 시제품 제작비와 전문 멘토링이 제공되며, 최종 수상 팀은 후속 창업지원사업 연계 시 가점을 받습니다.",
     docs: [
-      { fileName: "여성 창업 아이디어 경진대회 모집공고.pdf" },
-      { fileName: "참가 신청서 및 사업계획서 양식.hwp" },
+      { attachmentId: 0, fileName: "여성 창업 아이디어 경진대회 모집공고.pdf", fillable: false, downloadUrl: "" },
+      { attachmentId: 0, fileName: "참가 신청서 및 사업계획서 양식.hwp", fillable: false, downloadUrl: "" },
     ],
     homepageUrl: null,
   },
@@ -113,8 +119,8 @@ export const DUMMY_ANNOUNCEMENT_DETAILS: Record<string, AnnouncementDetail> = {
     content:
       "지역 골목상권의 활력을 높이고 특색 있는 점포를 육성하기 위해 마포구가 자체 재원으로 추진하는 창업 지원사업입니다. 점포 임차료, 간판·인테리어 개선비, 홍보물 제작비 등을 항목별 한도 내에서 지원합니다.",
     docs: [
-      { fileName: "마포구 골목상권 특화 창업 지원사업 공고문.pdf" },
-      { fileName: "지원 신청서 양식.hwp" },
+      { attachmentId: 0, fileName: "마포구 골목상권 특화 창업 지원사업 공고문.pdf", fillable: false, downloadUrl: "" },
+      { attachmentId: 0, fileName: "지원 신청서 양식.hwp", fillable: false, downloadUrl: "" },
     ],
     homepageUrl: null,
   },
@@ -135,8 +141,8 @@ export const DUMMY_ANNOUNCEMENT_DETAILS: Record<string, AnnouncementDetail> = {
     content:
       "외식업 소상공인의 디지털 전환을 돕기 위해 스마트 주문·결제 시스템과 주방 자동화 설비 도입 비용을 지원합니다. 도입 설비의 종류에 따라 지원 한도가 다르며, 자부담률은 총 사업비의 30%입니다.",
     docs: [
-      { fileName: "외식업 스마트 매장 전환 지원 공고문.pdf" },
-      { fileName: "사업 신청서 양식.hwp" },
+      { attachmentId: 0, fileName: "외식업 스마트 매장 전환 지원 공고문.pdf", fillable: false, downloadUrl: "" },
+      { attachmentId: 0, fileName: "사업 신청서 양식.hwp", fillable: false, downloadUrl: "" },
     ],
     homepageUrl: null,
   },
@@ -157,8 +163,8 @@ export const DUMMY_ANNOUNCEMENT_DETAILS: Record<string, AnnouncementDetail> = {
     content:
       "소상공인의 디지털 역량 강화를 위해 온라인 판로 진출, 스마트 결제·재고관리 기기 도입, 디지털 마케팅 교육을 패키지로 지원합니다. 신청자는 3개 세부 프로그램 중 필요한 항목을 선택해 신청할 수 있습니다.",
     docs: [
-      { fileName: "2026년 소상공인 디지털 전환 지원 통합공고.pdf" },
-      { fileName: "참여 신청서 양식.hwp" },
+      { attachmentId: 0, fileName: "2026년 소상공인 디지털 전환 지원 통합공고.pdf", fillable: false, downloadUrl: "" },
+      { attachmentId: 0, fileName: "참여 신청서 양식.hwp", fillable: false, downloadUrl: "" },
     ],
     homepageUrl: null,
   },

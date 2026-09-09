@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>[테스트] 아이디어 카드 생성 (채팅형)</title>
+  <style>
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ccc;
+      border-top-color: #333;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>아이디어 카드 생성 테스트 (채팅형)</h1>
+  <p>
+    정식 슬롯필링 화면(질문 하나당 페이지 하나, 프론트 나오면 그쪽으로 대체)이 나오기 전,
+    질문 흐름 자체를 간단히 체험해보는 테스트 페이지입니다. 답할 때마다 아래에 하나씩 쌓입니다.<br>
+    DB에는 아무것도 저장하지 않습니다.
+  </p>
+
+  <p>
+    서버 주소:
+    <input type="text" id="apiBaseInput" style="width:240px;">
+    <button id="apiBaseSaveBtn" type="button">저장</button>
+  </p>
+
+  <div id="chatLog" style="max-width:480px;"></div>
+
+  <div id="inputArea" style="max-width:480px; margin-top:12px;">
+    <p id="questionText" style="font-weight:bold;"></p>
+    <textarea id="answerInput" rows="2" style="width:100%; box-sizing:border-box;"></textarea>
+    <p id="lengthWarning" style="color:#c0392b; font-size:13px; display:none;">
+      10글자 이상 입력해주세요 (이보다 짧으면 이 항목은 카드에 반영되지 않아요).
+    </p>
+    <button id="answerBtn" type="button" style="margin-top:8px;" disabled>답변</button>
+  </div>
+
+  <script>
+    // ocr-test.html / idea-card-test.html과 동일한 서버 주소 자동 인식/저장 방식.
+    function resolveApiBaseUrl() {
+      const saved = localStorage.getItem("idea_card_api_base_url");
+      if (saved) return saved;
+      const host = window.location.hostname;
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        return `http://${host}:8000`;
+      }
+      return "http://127.0.0.1:8000";
+    }
+
+    let API_BASE_URL = resolveApiBaseUrl();
+    const apiBaseInput = document.getElementById("apiBaseInput");
+    apiBaseInput.value = API_BASE_URL;
+    document.getElementById("apiBaseSaveBtn").addEventListener("click", () => {
+      const val = apiBaseInput.value.trim().replace(/\/$/, "");
+      if (!val) return;
+      localStorage.setItem("idea_card_api_base_url", val);
+      API_BASE_URL = val;
+      alert("저장했어요. 이제부터 이 주소로 요청을 보냅니다: " + val);
+    });
+
+    // idea_card_generator.py의 REQUIRED_SLOTS 순서/라벨 그대로.
+    const QUESTIONS = [
+      { key: "target", label: "어떤 대상을 타깃으로 하시나요?" },
+      { key: "differentiator", label: "다른 곳과 비교했을 때 차별점이 뭔가요?" },
+      { key: "revenue_model", label: "수익모델은 어떻게 되나요?" },
+      { key: "core_skill", label: "보유하고 계신 역량이나 경험이 있다면요?" },
+    ];
+
+    const MIN_ANSWER_LENGTH = 10; // idea_card_generator.py::MIN_SLOT_LENGTH와 동일 - 서버 안 거치고 미리 걸러줌
+
+    const answers = {};
+    let step = 0;
+
+    const chatLog = document.getElementById("chatLog");
+    const questionText = document.getElementById("questionText");
+    const answerInput = document.getElementById("answerInput");
+    const inputArea = document.getElementById("inputArea");
+    const lengthWarning = document.getElementById("lengthWarning");
+    const answerBtn = document.getElementById("answerBtn");
+
+    // 타이핑할 때마다 실시간으로 글자 수 체크 - 10자 미만이면 경고 + 다음 버튼 비활성화.
+    answerInput.addEventListener("input", () => {
+      const tooShort = answerInput.value.trim().length < MIN_ANSWER_LENGTH;
+      lengthWarning.style.display = tooShort ? "block" : "none";
+      answerBtn.disabled = tooShort;
+    });
+
+    function appendBubble(text, isQuestion) {
+      const div = document.createElement("div");
+      div.style.margin = "8px 0";
+      div.style.padding = "8px 12px";
+      div.style.borderRadius = "8px";
+      div.style.whiteSpace = "pre-wrap";
+      if (isQuestion) {
+        div.style.background = "#f0f0f0";
+      } else {
+        div.style.background = "#dbe9ff";
+        div.style.marginLeft = "40px";
+      }
+      div.textContent = text;
+      chatLog.appendChild(div);
+      return div;
+    }
+
+    function showQuestion() {
+      if (step >= QUESTIONS.length) {
+        inputArea.style.display = "none";
+        const bubble = appendBubble("", true);
+        bubble.innerHTML = '<span class="spinner"></span>아이디어 카드를 만들고 있어요... (몇 초 걸릴 수 있어요)';
+        submitIdeaCards(bubble);
+        return;
+      }
+      const q = QUESTIONS[step];
+      appendBubble(q.label, true);
+      questionText.textContent = q.label;
+      answerInput.value = "";
+      lengthWarning.style.display = "none";
+      answerBtn.disabled = true;
+      answerInput.focus();
+    }
+
+    answerBtn.addEventListener("click", () => {
+      const val = answerInput.value.trim();
+      if (val.length < MIN_ANSWER_LENGTH) return; // 버튼이 비활성화돼있어야 정상이지만 방어적으로 한 번 더 체크
+
+      const q = QUESTIONS[step];
+      answers[q.key] = val;
+      appendBubble(val, false);
+      step += 1;
+      showQuestion();
+    });
+
+    const MAX_CARDS = 3; // idea_card_generator.py가 만드는 고정 축 수 (타깃/수익모델/보유역량 관점)
+
+    function showRestartButton() {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "처음부터 다시 답하기";
+      btn.style.marginTop = "8px";
+      btn.addEventListener("click", () => {
+        // 어느 슬롯 때문인지 지금 정보로는 특정할 수 없어서(LLM이 판단한 경우는 이유를
+        // 안 알려줌 - 위 대화 참고), 전부 초기화하고 처음부터 다시 받는 게 지금은 유일한 방법.
+        Object.keys(answers).forEach((k) => delete answers[k]);
+        step = 0;
+        chatLog.innerHTML = "";
+        inputArea.style.display = "block";
+        showQuestion();
+      });
+      chatLog.appendChild(btn);
+    }
+
+    function showTechStartupButton(code) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = `업종코드 ${code}로 기술창업 분석 보기`;
+      btn.style.margin = "8px 0";
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        const bubble = appendBubble("", true);
+        bubble.innerHTML = '<span class="spinner"></span>기술창업 분석 조회 중...';
+        try {
+          const res = await fetch(`${API_BASE_URL}/analysis/tech-startup?ksic_code=${encodeURIComponent(code)}`);
+          const analysisData = await res.json();
+          bubble.textContent = JSON.stringify(analysisData, null, 2);
+        } catch (err) {
+          bubble.textContent = "기술창업 분석 요청 실패: " + err;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+      chatLog.appendChild(btn);
+    }
+
+    async function submitIdeaCards(spinnerBubble) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/test/idea-cards`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(answers),
+        });
+        const data = await response.json();
+        spinnerBubble.remove();
+
+        // weak_slots: 10자 미만이라 근거로 안 쓰인 슬롯 (idea_card_test.py가 계산해서 내려줌).
+        // 카드가 몇 개 나왔든 상관없이, 빠진 슬롯이 있으면 항상 알려준다.
+        if (data.weak_slots && data.weak_slots.length > 0) {
+          appendBubble(`⚠ 답변이 10글자 미만이라 근거로 안 쓰인 항목: ${data.weak_slots.join(", ")}`, true);
+        }
+
+        // ksic: 4개 슬롯 답변을 합친 텍스트로 decide_industry() 돌린 결과 (idea_card_test.py가 계산).
+        // 코드가 나오면 바로 다음 단계(기술창업 분석)로 이어볼 수 있는 버튼을 붙여준다.
+        if (data.ksic && data.ksic.codes && data.ksic.codes.length > 0) {
+          appendBubble(`🏷 판정된 업종코드: ${data.ksic.codes.join(", ")} (${data.ksic.names.join(", ")})`, true);
+          showTechStartupButton(data.ksic.codes[0]);
+        } else if (data.ksic) {
+          appendBubble("🏷 업종코드를 판정하지 못했어요 (특정불가).", true);
+        }
+
+        if (!data.success) {
+          appendBubble("생성 실패: " + data.error, true);
+          showRestartButton();
+          return;
+        }
+        if (!data.cards || data.cards.length === 0) {
+          appendBubble("카드가 생성되지 않았어요.", true);
+          showRestartButton();
+          return;
+        }
+        data.cards.forEach((card) => {
+          appendBubble(`[${card.axis}] ${card.title}\n${card.description}`, true);
+        });
+        // 카드가 3개 미만이면(weak_slots로 못 잡은 것 포함) LLM이 일부 축을 스스로
+        // 부실하다고 판단해서 건너뛴 것 - 어느 것 때문인지는 알 수 없으니 다시 시작만 안내.
+        if (data.cards.length < MAX_CARDS) {
+          appendBubble(
+            `카드가 ${data.cards.length}/${MAX_CARDS}개만 나왔어요 - 일부 답변이 근거로 쓰기엔 부실하다고 AI가 판단한 것 같아요. 어느 항목인지는 지금 알 수 없어서, 다시 답해보시는 걸 추천해요.`,
+            true
+          );
+          showRestartButton();
+        }
+      } catch (err) {
+        spinnerBubble.remove();
+        appendBubble("요청 실패: " + err, true);
+        showRestartButton();
+      }
+    }
+
+    showQuestion();
+  </script>
+</body>
+</html>

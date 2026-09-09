@@ -202,7 +202,11 @@ CREATE TABLE IF NOT EXISTS announcement_attachments (
     attachment_role  VARCHAR(20),          -- 공고문/신청서양식/붙임 등 역할 구분
     source_url       TEXT NOT NULL,        -- 원본 다운로드 URL
     storage_path     TEXT,                 -- 자체 저장소에 받아둔 경우의 경로
-    collected_at     TIMESTAMPTZ NOT NULL
+    collected_at     TIMESTAMPTZ NOT NULL,
+    -- 2026-09-09 backend/preprocessing/check_attachment_fillable.py로 채움. hwpx 파일을
+    -- data/field_mapping.xlsx 기준으로 실제 채워보고 매칭된 자리 수를 기록한다.
+    -- NULL=아직 확인 안 함, -1=열어보다 실패(진짜 hwpx가 아니거나 손상), 0 이상=매칭된 자리 수.
+    fillable_field_count INT
 );
 CREATE INDEX IF NOT EXISTS idx_announcement_attachments_announcement_id
     ON announcement_attachments (announcement_id);

@@ -29,6 +29,9 @@ data/**/*.csv
 !data/ksic_clean_v2.csv
 data/**/*.xls
 data/**/*.xlsx
+# 예외: 신청서 자동채우기(backend/assistant) 필드매핑표(소규모 정적 참고자료).
+# 원래 팀원 개인 PC(Downloads)에만 있던 파일이라 저장소로 옮김(2026-09-09).
+!data/field_mapping.xlsx
 
 # data/ 폴더에 들어오는 이미지 (테스트용 사업자등록증 사진 등 개인정보 포함 가능 — DB/로컬에만 두고 git에는 안 올림)
 data/**/*.jpg
@@ -48,3 +51,6 @@ dryrun_sync_*.xlsx
 
 # 로컬에서 backend/frontend를 백그라운드로 띄울 때 생기는 임시 stdout/stderr 로그
 /_*.log
+
+# 작업 중 임시로 남겨둔 백업 파일 (예: 프론트 붙이기 전 원본 보관용, 다 되면 삭제 예정)
+*.bak

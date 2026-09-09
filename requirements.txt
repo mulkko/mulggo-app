@@ -12,7 +12,7 @@ psycopg2-binary
 python-multipart  # 파일 업로드 처리 (FastAPI UploadFile, backend/api/test_ocr.py)
 bcrypt            # 비밀번호 해싱 (backend/auth/login.py, signup.py)
 
-openai            # 고객센터 챗봇(backend/customer_chatbot/) + 아이디어 카드 생성(backend/idea_llm/) LLM 호출
+openai            # 고객센터 챗봇(backend/customer_chatbot/) + 아이디어 카드 생성(backend/chatbot/) LLM 호출
 
 # --- AI 신청서 어시스턴트 (backend/assistant/) ---
 openpyxl          # 필드매핑 xlsx 로드 (biz_cert_ocr.py)
