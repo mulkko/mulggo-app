@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/profileEdit.module.css";
 
@@ -13,13 +13,45 @@ import styles from "../../styles/profileEdit.module.css";
  * 이메일은 계정 식별값이라 이 화면에서 수정 불가 — form state에 넣지 않고
  * 상수(READONLY_EMAIL)를 readOnly input으로 흐리게 표시한다.
  *
- * 실제 동작: 뒤로가기(→ /mypage), 저장하기(→ /mypage).
- * TODO로만 남긴 것: 프로필 사진 변경, 사업자등록증 재업로드/OCR, 저장 API 연동.
+ * [2026-09-09] backend/api/mypage.py의 GET/PUT /api/mypage/profile 연동함
+ * (business_profiles 테이블 - 실제 로그인 사용자 6명 데이터 있음). 로그인 시
+ * user_id를 저장하는 세션 처리가 아직 없어서(LoginForm.tsx가 로그인 성공해도
+ * user_id를 버림) TEMP_USER_ID로 고정해뒀다 - 로그인 세션이 붙으면 이 상수를
+ * 그 값으로 교체하면 됨.
+ *
+ * "기업유형"(companyType) 필드는 연동 안 함 - DB엔 이 화면 드롭다운(예비창업자/
+ * 중소/소상공인/창업벤처)에 대응하는 컬럼이 없고, business_profiles.profile_type
+ * (예비창업자/기존사업자 2종류만) / entity_type_code(개인/법인)만 있어서 그대로
+ * 매핑하면 값이 깨짐 - 어느 컬럼/옵션 목록으로 갈지 팀 확인 필요.
+ *
+ * 실제 동작: 뒤로가기(→ /mypage), 저장하기(→ API PUT 후 /mypage).
+ * TODO로만 남긴 것: 프로필 사진 변경, 사업자등록증 재업로드/OCR, 이름(users.name) 저장.
  * (사업자등록증 행은 기존 BizCertUpload 컴포넌트를 재사용하지 않고 이 화면에선 정적 표시만 한다.)
  */
 
-/** 계정 이메일 — 읽기전용(이 화면에서 수정 불가). 백엔드 연동 시 로그인 사용자 정보로 교체. */
-const READONLY_EMAIL = "startup@email.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// TODO: 로그인 세션에 user_id 저장하는 기능 붙으면 그 값으로 교체.
+// 지금은 business_profiles에 실데이터가 있는 계정(user_id=27)으로 고정.
+const TEMP_USER_ID = 27;
+
+/** 계정 이메일 — 읽기전용(이 화면에서 수정 불가). API 응답의 email로 갱신됨. */
+const DEFAULT_READONLY_EMAIL = "startup@email.com";
+
+interface ProfileApiData {
+  name: string;
+  email: string;
+  profile_type: string | null;
+  entity_type_code: string | null;
+  entity_type_name: string | null;
+  business_name: string | null;
+  industry_text: string | null;
+  region: string | null;
+  business_age_months: number | null;
+  annual_revenue: number | null;
+  employee_count: number | null;
+  founder_age_group: string | null;
+}
 
 interface ProfileForm {
   name: string;
@@ -151,6 +183,31 @@ function SelectField({
 function ProfileEdit() {
   const navigate = useNavigate();
   const [form, setForm] = useState<ProfileForm>(INITIAL_FORM);
+  const [email, setEmail] = useState(DEFAULT_READONLY_EMAIL);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${TEMP_USER_ID}`)
+      .then((res) => res.json())
+      .then((res: { success: boolean; data?: ProfileApiData }) => {
+        if (!res.success || !res.data) return;
+        const d = res.data;
+        setEmail(d.email);
+        setForm((prev) => ({
+          ...prev,
+          name: d.name ?? prev.name,
+          bizName: d.business_name ?? prev.bizName,
+          industryDesc: d.industry_text ?? prev.industryDesc,
+          region: d.region ?? prev.region,
+          monthsInBusiness: d.business_age_months != null ? String(d.business_age_months) : prev.monthsInBusiness,
+          employees: d.employee_count != null ? String(d.employee_count) : prev.employees,
+          annualRevenue: d.annual_revenue != null ? String(d.annual_revenue) : prev.annualRevenue,
+          ownerAgeGroup: d.founder_age_group ?? prev.ownerAgeGroup,
+        }));
+      })
+      .catch(() => {
+        /* 조회 실패 시 더미값 그대로 유지 */
+      });
+  }, []);
 
   // input/select 공통 핸들러 — name 속성으로 어떤 필드인지 구분한다.
   const handleChange = (
@@ -172,8 +229,24 @@ function ProfileEdit() {
     // TODO: 사업자등록증 재업로드 + OCR 재추출 연동 — 이번 범위 아님
   };
 
-  const handleSave = () => {
-    // TODO: 백엔드 프로필 저장 API 연동 (form 전송) — 성공 시 마이페이지로 이동
+  const handleSave = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${TEMP_USER_ID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          business_name: form.bizName || null,
+          industry_text: form.industryDesc || null,
+          region: form.region || null,
+          business_age_months: form.monthsInBusiness ? Number(form.monthsInBusiness) : null,
+          annual_revenue: form.annualRevenue ? Number(form.annualRevenue) : null,
+          employee_count: form.employees ? Number(form.employees) : null,
+          founder_age_group: form.ownerAgeGroup || null,
+        }),
+      });
+    } catch {
+      /* 저장 실패해도 일단 마이페이지로 이동 (에러 UI는 이번 범위 아님) */
+    }
     navigate("/mypage");
   };
 
@@ -236,7 +309,7 @@ function ProfileEdit() {
             value={form.name}
             onChange={handleChange}
           />
-          <TextField label="이메일" name="email" value={READONLY_EMAIL} inter readOnly />
+          <TextField label="이메일" name="email" value={email} inter readOnly />
         </div>
 
         <div className={styles.divider} />

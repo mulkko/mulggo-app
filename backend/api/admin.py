@@ -52,6 +52,37 @@ def get_kstartup_count() -> dict:
     return {"count": _count_rows(RAW_TABLES["kstartup"])}
 
 
+def _backlog(source: str, raw_table: str, raw_id_col: str) -> dict:
+    """raw 테이블엔 있는데 announcements(통합 테이블)엔 아직 없는 건수.
+    [2026-09-09] 수집(raw)은 됐는데 통합 반영("실행" 버튼)만 안 됐거나
+    전처리 중 조용히 실패한 경우를 관리자 메인 화면에서 놓치기 쉬워서 추가함
+    (이번 세션에서 겪은 날짜/OCR/컬럼명 버그들이 전부 이 유형)."""
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT count(*) FROM {raw_table}")
+        raw = cursor.fetchone()[0]
+        cursor.execute(
+            f"SELECT count(*) FROM announcements WHERE source = %s AND {raw_id_col} IS NOT NULL",
+            (source,),
+        )
+        done = cursor.fetchone()[0]
+        return {"source": source, "raw": raw, "done": done, "pending": raw - done}
+    finally:
+        connection.close()
+
+
+@router.get("/backlog")
+def get_backlog() -> dict:
+    return {
+        "success": True,
+        "data": [
+            _backlog("bizinfo", RAW_TABLES["bizinfo"], "raw_bizinfo_id"),
+            _backlog("kstartup", RAW_TABLES["kstartup"], "raw_kstartup_id"),
+        ],
+    }
+
+
 @router.get("/export")
 def export_raw(source: str) -> Response:
     """raw 테이블 전체를 CSV로 내려준다. source_raw(원본 JSON)는 제외."""
