@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>[테스트] 아이디어 카드 생성 (채팅형)</title>
+</head>
+<body>
+  <h1>아이디어 카드 생성 테스트 (채팅형)</h1>
+  <p>
+    정식 슬롯필링 화면(질문 하나당 페이지 하나, 프론트 나오면 그쪽으로 대체)이 나오기 전,
+    질문 흐름 자체를 간단히 체험해보는 테스트 페이지입니다. 답할 때마다 아래에 하나씩 쌓입니다.<br>
+    DB에는 아무것도 저장하지 않습니다.
+  </p>
+
+  <p>
+    서버 주소:
+    <input type="text" id="apiBaseInput" style="width:240px;">
+    <button id="apiBaseSaveBtn" type="button">저장</button>
+  </p>
+
+  <div id="chatLog" style="max-width:480px;"></div>
+
+  <div id="inputArea" style="max-width:480px; margin-top:12px;">
+    <p id="questionText" style="font-weight:bold;"></p>
+    <textarea id="answerInput" rows="2" style="width:100%; box-sizing:border-box;"></textarea>
+    <button id="answerBtn" type="button" style="margin-top:8px;">답변</button>
+  </div>
+
+  <script>
+    // ocr-test.html / idea-card-test.html과 동일한 서버 주소 자동 인식/저장 방식.
+    function resolveApiBaseUrl() {
+      const saved = localStorage.getItem("idea_card_api_base_url");
+      if (saved) return saved;
+      const host = window.location.hostname;
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        return `http://${host}:8000`;
+      }
+      return "http://127.0.0.1:8000";
+    }
+
+    let API_BASE_URL = resolveApiBaseUrl();
+    const apiBaseInput = document.getElementById("apiBaseInput");
+    apiBaseInput.value = API_BASE_URL;
+    document.getElementById("apiBaseSaveBtn").addEventListener("click", () => {
+      const val = apiBaseInput.value.trim().replace(/\/$/, "");
+      if (!val) return;
+      localStorage.setItem("idea_card_api_base_url", val);
+      API_BASE_URL = val;
+      alert("저장했어요. 이제부터 이 주소로 요청을 보냅니다: " + val);
+    });
+
+    // idea_card_generator.py의 REQUIRED_SLOTS 순서/라벨 그대로.
+    const QUESTIONS = [
+      { key: "target", label: "어떤 대상을 타깃으로 하시나요?" },
+      { key: "differentiator", label: "다른 곳과 비교했을 때 차별점이 뭔가요?" },
+      { key: "revenue_model", label: "수익모델은 어떻게 되나요?" },
+      { key: "core_skill", label: "보유하고 계신 역량이나 경험이 있다면요?" },
+    ];
+
+    const answers = {};
+    let step = 0;
+
+    const chatLog = document.getElementById("chatLog");
+    const questionText = document.getElementById("questionText");
+    const answerInput = document.getElementById("answerInput");
+    const inputArea = document.getElementById("inputArea");
+
+    function appendBubble(text, isQuestion) {
+      const div = document.createElement("div");
+      div.style.margin = "8px 0";
+      div.style.padding = "8px 12px";
+      div.style.borderRadius = "8px";
+      div.style.whiteSpace = "pre-wrap";
+      if (isQuestion) {
+        div.style.background = "#f0f0f0";
+      } else {
+        div.style.background = "#dbe9ff";
+        div.style.marginLeft = "40px";
+      }
+      div.textContent = text;
+      chatLog.appendChild(div);
+    }
+
+    function showQuestion() {
+      if (step >= QUESTIONS.length) {
+        inputArea.style.display = "none";
+        appendBubble("질문이 모두 끝났어요. 아이디어 카드를 만들고 있어요...", true);
+        submitIdeaCards();
+        return;
+      }
+      const q = QUESTIONS[step];
+      appendBubble(q.label, true);
+      questionText.textContent = q.label;
+      answerInput.value = "";
+      answerInput.focus();
+    }
+
+    document.getElementById("answerBtn").addEventListener("click", () => {
+      const val = answerInput.value.trim();
+      if (!val) return;
+
+      const q = QUESTIONS[step];
+      answers[q.key] = val;
+      appendBubble(val, false);
+      step += 1;
+      showQuestion();
+    });
+
+    async function submitIdeaCards() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/test/idea-cards`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(answers),
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+          appendBubble("생성 실패: " + data.error, true);
+          return;
+        }
+        if (!data.cards || data.cards.length === 0) {
+          appendBubble("카드가 생성되지 않았어요 (답변이 너무 짧으면 그 축은 건너뜁니다).", true);
+          return;
+        }
+        data.cards.forEach((card) => {
+          appendBubble(`[${card.axis}] ${card.title}\n${card.description}`, true);
+        });
+      } catch (err) {
+        appendBubble("요청 실패: " + err, true);
+      }
+    }
+
+    showQuestion();
+  </script>
+</body>
+</html>
