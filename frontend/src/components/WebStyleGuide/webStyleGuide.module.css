@@ -498,6 +498,19 @@
   box-shadow: var(--shadow-inset-navy);
 }
 
+.matchLoadMoreButton {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+  background: var(--color-white);
+  box-shadow: var(--shadow-inset-gray);
+  border: none;
+  padding: 12px;
+  border-radius: var(--radius-input);
+}
+
 .matchCountLabel {
   font-size: 13px;
   font-weight: 700;

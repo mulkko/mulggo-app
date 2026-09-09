@@ -3,10 +3,23 @@
 # backend/analysis_report/{market,tech_startup} 함수들이 쓸 원본 데이터를
 # 5개 테이블(administrative_dong, resident_population, living_population,
 # commercial_districts, venture_companies)에 적재하는 1회성 스크립트.
+# 사람이 손으로 직접 실행할 때만 돈다(자동 스케줄 없음) - 아래 "재실행 안전성"은
+# "다시 실행해도 안전하다"는 뜻이지 "자동으로 다시 실행된다"는 뜻이 아니다.
 #
 # [2026-09-08] 원본 파일은 팀원에게 받아 E:\3차프로젝트\데이터\ 에 둔 상태.
 # 대용량 원본이라 이 프로젝트(data/) 안으로 옮기지 않고 그 경로에서 바로 읽는다
-# (data/README.md 원칙 — 대용량 원본은 저장소에 안 둠).
+# (data/README.md 원칙 — 대용량 원본은 저장소에 안 둠). 인터넷에서 매번 다시
+# 받아오는 게 아니라, 이미 로컬에 있는 파일을 읽어서 DB에 넣기만 한다.
+#
+# [2026-09-09 수정] commercial_districts(270만 건, ~700MB)만 메인 DB가 아니라
+# 별도 분석용 DB(get_analysis_connection())로 적재한다. 원래 이 스크립트가
+# 5개 테이블을 전부 메인 DB에 넣도록 짜여 있었는데, 그 크기 때문에 메인 DB
+# 무료 플랜 저장 용량(500MB)을 넘겨 프로젝트 전체가 읽기전용으로 잠기는 사고가
+# 있었다(이후 migrate_commercial_districts.py로 기존 데이터는 분석용 DB로
+# 옮김). 그런데 이 로더 스크립트 자체는 그때 안 고쳐진 채로 남아있었다 -
+# 그대로 뒀으면 나중에 원본 데이터가 갱신돼서 이 스크립트를 다시 돌리는 순간
+# 메인 DB에 commercial_districts가 또 들어가면서 같은 사고가 재발했을 것.
+# 나머지 4개 테이블(administrative_dong 등)은 작아서 메인 DB에 그대로 둔다.
 #
 # [표준산업분류코드 형식 차이] 원본 파일은 "I56221"처럼 대분류 알파벳 + 5자리
 # 코드를 쓰는데, DB의 ksic_codes.code는 5자리 숫자만 저장한다(예: "56221").
@@ -30,7 +43,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"), override=True)
 
-from backend.db.connection import get_connection
+from backend.db.connection import get_connection, get_analysis_connection
 
 DATA_DIR = r"E:\3차프로젝트\데이터"
 BATCH_SIZE = 5000
@@ -102,7 +115,9 @@ def load_living_population(cur):
 
 
 def load_commercial_districts(cur, known_ksic_codes):
-    print("[4/5] commercial_districts 적재 중 (17개 파일, 시간이 좀 걸림)...")
+    """cur는 반드시 분석용 DB(get_analysis_connection()) 커서여야 한다 - 메인
+    DB에 넣으면 저장 용량 초과로 사고가 재발한다(파일 상단 주석 참고)."""
+    print("[4/5] commercial_districts 적재 중 (17개 파일, 시간이 좀 걸림, 분석용 DB로) ...")
     cur.execute("TRUNCATE commercial_districts")
     total = 0
     files = sorted(glob.glob(os.path.join(DATA_DIR, "소상공인 상권", "*.xls")))
@@ -162,31 +177,40 @@ def load_venture_companies(cur, known_ksic_codes):
 
 
 def main():
+    # commercial_districts만 별도 분석용 DB로 간다(파일 상단 주석 참고) - 그래서
+    # 연결도 두 개, 트랜잭션도 두 개다. 한쪽이 실패해도 다른 쪽엔 영향 없다.
     conn = get_connection()
+    analysis_conn = get_analysis_connection()
     try:
         cur = conn.cursor()
+        analysis_cur = analysis_conn.cursor()
+
         cur.execute("SELECT code FROM ksic_codes")
         known_ksic_codes = {r[0] for r in cur.fetchall()}
 
         load_administrative_dong(cur)
         load_resident_population(cur)
         load_living_population(cur)
-        load_commercial_districts(cur, known_ksic_codes)
+        load_commercial_districts(analysis_cur, known_ksic_codes)
         load_venture_companies(cur, known_ksic_codes)
 
         conn.commit()
-        print("\n전체 커밋 완료.")
+        analysis_conn.commit()
+        print("\n전체 커밋 완료 (메인 DB 4개 테이블 + 분석용 DB commercial_districts).")
 
         print("\n최종 row count 확인:")
-        for t in ["administrative_dong", "resident_population", "living_population",
-                  "commercial_districts", "venture_companies"]:
+        for t in ["administrative_dong", "resident_population", "living_population", "venture_companies"]:
             cur.execute(f"SELECT COUNT(*) FROM {t}")
             print(f"  {t}: {cur.fetchone()[0]}건")
+        analysis_cur.execute("SELECT COUNT(*) FROM commercial_districts")
+        print(f"  commercial_districts (분석용 DB): {analysis_cur.fetchone()[0]}건")
     except Exception:
         conn.rollback()
+        analysis_conn.rollback()
         raise
     finally:
         conn.close()
+        analysis_conn.close()
 
 
 if __name__ == "__main__":

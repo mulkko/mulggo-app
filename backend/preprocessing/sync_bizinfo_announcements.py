@@ -48,6 +48,7 @@
 #      실행 시 에러가 난다 - 이것도 스키마 쪽 문제라 여기서 해결 안 함.
 
 import json
+import os
 
 import pandas as pd
 
@@ -340,24 +341,71 @@ def map_ksic(common_df: pd.DataFrame, use_llm_fallback: bool = False) -> pd.Data
     df = common_df.copy()
     codes_col, names_col, excluded_col, status_col, content_col = [], [], [], [], []
 
-    for _, r in df.iterrows():
-        # 첨부파일 원문 추출 - 무거운 단계라 실제 운영에선 캐시(이미 추출된
-        # 적 있으면 재추출 안 함) 붙이는 걸 권장하지만, 이번 범위(연결 지점
-        # 구성)에선 매번 호출하는 가장 단순한 형태로 둔다.
-        full_text, _extract_status = get_notice_full_text(r.get("_print_flpth_nm") or "")
-        full_text = full_text or ""
-        content = full_text or r.get("content") or ""
+    # [2026-09-09] 첨부파일(신청서 양식/공고문) 원문 추출은 다운로드+OCR이라
+    # 무거운 단계. bizinfo_attachment_text_cache 에 먼저 있는지 보고, 없을 때만
+    # 실제로 추출해서 성공한 것만 캐시에 저장한다. 이 실행이 이후 단계(검증/
+    # upsert)에서 실패하거나 서버가 중간에 죽어도, 재실행 때 이미 뽑아둔 첨부는
+    # 다시 다운로드+OCR 하지 않는다. announcements 에 그 행이 성공적으로 들어가면
+    # (같은 텍스트가 announcements.content 에도 남으므로) 캐시 행은
+    # upsert_announcements() 에서 바로 지운다 - 계속 쌓이는 테이블이 아니다.
+    cache_conn = get_connection()
+    total = len(df)
+    try:
+        cache_cur = cache_conn.cursor()
+        for i, (_, r) in enumerate(df.iterrows(), start=1):
+            raw_id = r.get("raw_bizinfo_id")
 
-        match_text = " | ".join(
-            p for p in [r.get("_pblanc_nm") or "", r.get("_hashtags") or "", full_text] if p
-        )
-        result = decide_industry(match_text, use_llm_fallback=use_llm_fallback) if match_text.strip() else None
+            cache_cur.execute(
+                "SELECT full_text FROM bizinfo_attachment_text_cache WHERE raw_bizinfo_id = %s", (raw_id,)
+            )
+            cached = cache_cur.fetchone()
+            if cached:
+                full_text = cached[0] or ""
+                extract_status = "success(cache)"
+            else:
+                full_text, extract_status = get_notice_full_text(r.get("_print_flpth_nm") or "")
+                # 첨부원문(OCR/pdfplumber/pyhwp)에 간혹 NUL(0x00)이 섞여 들어오는데,
+                # PostgreSQL text 컬럼은 NUL을 저장 못 해서 캐시 INSERT 자체가
+                # 죽는다(upsert_announcements()가 이미 _strip_nul로 겪은 것과 동일
+                # 원인) - 캐시에 넣기 전에도 똑같이 제거해야 한다.
+                full_text = _strip_nul(full_text) or ""
+                if extract_status.startswith("success") and raw_id is not None:
+                    cache_cur.execute(
+                        """
+                        INSERT INTO bizinfo_attachment_text_cache (raw_bizinfo_id, full_text, extract_status)
+                        VALUES (%s, %s, %s)
+                        ON CONFLICT (raw_bizinfo_id) DO UPDATE
+                        SET full_text = EXCLUDED.full_text, extract_status = EXCLUDED.extract_status, cached_at = now()
+                        """,
+                        (raw_id, full_text, extract_status),
+                    )
+                    cache_conn.commit()
+            content = full_text or r.get("content") or ""
 
-        codes_col.append(result["확정코드"] if result else [])
-        names_col.append(result["확정업종명"] if result else [])
-        excluded_col.append([x["코드"] for x in (result.get("제외업종") or [])] if result else [])
-        status_col.append(result["확정단계"] if result else "특정불가")
-        content_col.append(content)
+            match_text = " | ".join(
+                p for p in [r.get("_pblanc_nm") or "", r.get("_hashtags") or "", full_text] if p
+            )
+            result = decide_industry(match_text, use_llm_fallback=use_llm_fallback) if match_text.strip() else None
+            ksic_stage = result["확정단계"] if result else "특정불가"
+
+            # 관리자 화면 실행 로그에는 파일별 처리 단계 진단(디폴트로 안 찍음,
+            # EXTRACT_DEBUG=1이면 찍힘) 대신 건별 "번호 | 본문추출 | 업종분류"
+            # 성공/실패 요약 한 줄만 항상 남긴다.
+            extract_ok = extract_status.startswith("success")
+            ksic_ok = ksic_stage != "특정불가"
+            print(
+                f"[{i}/{total}] raw_bizinfo_id={raw_id} | "
+                f"본문추출 {'성공' if extract_ok else '실패'}({extract_status}) | "
+                f"업종분류 {'성공' if ksic_ok else '실패'}({ksic_stage})"
+            )
+
+            codes_col.append(result["확정코드"] if result else [])
+            names_col.append(result["확정업종명"] if result else [])
+            excluded_col.append([x["코드"] for x in (result.get("제외업종") or [])] if result else [])
+            status_col.append(ksic_stage)
+            content_col.append(content)
+    finally:
+        cache_conn.close()
 
     df["ksic_codes_matched"] = codes_col
     df["ksic_names_matched"] = names_col
@@ -463,7 +511,15 @@ INSERT_COLUMNS = FINAL_COLUMNS  # 순서 동일하게 유지
 
 def _strip_nul(v):
     """PostgreSQL text 컬럼은 NUL(0x00)을 저장 못 하는데, 첨부파일 원문
-    추출(OCR/pdfplumber/pyhwp) 결과에 간혹 섞여 들어온다. 저장 직전에 제거."""
+    추출(OCR/pdfplumber/pyhwp) 결과에 간혹 섞여 들어온다. 저장 직전에 제거.
+
+    그리고 값이 None인 컬럼이 섞인 행을 final_df.iterrows()로 순회하면
+    pandas가 그 None을 float('nan')으로 바꿔서 내보낸다(컬럼 dtype이
+    문자열이어도 row Series로 합쳐지는 순간 생김) - apply_start_date처럼
+    date 컬럼에 이게 들어가면 "'NaN'::float" 캐스팅 에러로 저장이 실패함.
+    NaN은 자기 자신과도 같지 않다(v != v)는 성질로 판별해 None으로 되돌린다."""
+    if isinstance(v, float) and v != v:
+        return None
     if isinstance(v, str):
         return v.replace("\x00", "")
     if isinstance(v, list):
@@ -471,15 +527,62 @@ def _strip_nul(v):
     return v
 
 
-def upsert_announcements(final_df: pd.DataFrame) -> int:
+# [2026-09-09] 신청서류 첨부(announcement_attachments) 채우기.
+# file_nm/flpth_nm은 같은 순서로 "@" 이어붙인 목록(여러 첨부) - raw 테이블에 이미
+# 있는 값이라 별도 API 호출 없이 그대로 쪼개서 넣는다. zip 안에 뭐가 들었는지는
+# 못 열어보므로 zip 자체를 그냥 파일 하나로 취급한다(사용자 확인, 2026-09-09).
+_APPLICATION_FORM_HINTS = ("신청서", "양식")
+
+
+def _file_type_of(file_name: str) -> str | None:
+    ext = os.path.splitext(file_name)[1].lstrip(".").lower()
+    return ext or None
+
+
+def _attachment_role_of(file_name: str) -> str:
+    return "신청서양식" if any(h in file_name for h in _APPLICATION_FORM_HINTS) else "붙임"
+
+
+def _replace_attachments(cur, announcement_id: int, file_nm: str | None, flpth_nm: str | None) -> None:
+    """announcement_attachments를 이 공고 기준으로 통째로 갈아끼운다(재실행 시
+    중복 누적 방지) - DELETE 후 INSERT."""
+    cur.execute("DELETE FROM announcement_attachments WHERE announcement_id = %s", (announcement_id,))
+    # pd.isna(): file_nm/flpth_nm이 raw_df(pd.read_sql 결과)에서 온 값이라
+    # None 대신 NaN(float)으로 올 수 있다 - 이번 세션에서 겪은 것과 동일한 함정.
+    if pd.isna(file_nm) or pd.isna(flpth_nm):
+        return
+
+    names = [n for n in file_nm.split("@") if n]
+    urls = [u for u in flpth_nm.split("@") if u]
+    if len(names) != len(urls):
+        # 개수가 안 맞으면(원본 데이터 이상) 매칭을 신뢰할 수 없으므로 건너뛴다.
+        return
+
+    for name, url in zip(names, urls):
+        cur.execute(
+            """
+            INSERT INTO announcement_attachments
+                (announcement_id, file_name, file_type, attachment_role, source_url, collected_at)
+            VALUES (%s, %s, %s, %s, %s, now())
+            """,
+            (announcement_id, name, _file_type_of(name), _attachment_role_of(name), url),
+        )
+
+
+def upsert_announcements(final_df: pd.DataFrame, attachments_by_raw_id: dict | None = None) -> int:
     """source='bizinfo'인 행은 raw_bizinfo_id로 UPSERT한다(ERD 설계상
     announcements.raw_bizinfo_id가 announcements_raw_bizinfo의 PK를 참조하는
     FK이자 자연 유니크 키 - 같은 원본 공고를 재수집해도 행이 늘지 않음).
     지역/업종 매핑까지 끝난 완성된 행만 이 함수로 들어온다는 전제 -
-    불완전한 상태로 먼저 INSERT하고 나중에 UPDATE하는 방식은 안 씀."""
+    불완전한 상태로 먼저 INSERT하고 나중에 UPDATE하는 방식은 안 씀.
+
+    attachments_by_raw_id: {raw_bizinfo_id: (file_nm, flpth_nm)} - 넘기면 UPSERT
+    직후(announcement_id를 알아야 FK를 채울 수 있어서 이 시점에만 가능) 신청서류
+    첨부까지 announcement_attachments에 같이 채운다."""
     if final_df.empty:
         return 0
 
+    attachments_by_raw_id = attachments_by_raw_id or {}
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -492,19 +595,36 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
             VALUES ({placeholders})
             ON CONFLICT (raw_bizinfo_id) WHERE source = 'bizinfo'
             DO UPDATE SET {update_sql}
+            RETURNING announcement_id
         """
 
         n = 0
         failed = []
         for _, r in final_df.iterrows():
+            # NaN -> None 처리는 _strip_nul()이 한다 (아래 함수 docstring 참고).
             values = [_strip_nul(list(r[c]) if c in ARRAY_COLUMNS else r[c]) for c in INSERT_COLUMNS]
+            raw_id = r.get("raw_bizinfo_id")
             try:
                 cur.execute(sql, values)
+                announcement_id = cur.fetchone()[0]
+
+                if raw_id in attachments_by_raw_id:
+                    file_nm, flpth_nm = attachments_by_raw_id[raw_id]
+                    _replace_attachments(cur, announcement_id, file_nm, flpth_nm)
+
                 conn.commit()
                 n += 1
+                # [2026-09-09] announcements에 성공적으로 들어갔으니(같은 텍스트가
+                # announcements.content에도 남음) 첨부 원문 캐시는 더 필요 없다.
+                if raw_id is not None:
+                    cur.execute(
+                        "DELETE FROM bizinfo_attachment_text_cache WHERE raw_bizinfo_id = %s",
+                        (raw_id,),
+                    )
+                    conn.commit()
             except Exception as e:
                 conn.rollback()
-                failed.append((r.get("raw_bizinfo_id"), str(e)))
+                failed.append((raw_id, str(e)))
 
         if failed:
             print(f"upsert_announcements: {len(failed)}건 저장 실패(건너뜀, 다음 재실행 때 재시도됨):")
@@ -540,7 +660,8 @@ def run(only_unprocessed: bool = True, use_llm_fallback: bool = False, limit: in
     if not review_df.empty:
         print(review_df.to_string())
 
-    n = upsert_announcements(final_df)
+    attachments_by_raw_id = dict(zip(raw_df["raw_bizinfo_id"], zip(raw_df["file_nm"], raw_df["flpth_nm"])))
+    n = upsert_announcements(final_df, attachments_by_raw_id)
     print(f"UPSERT 완료: {n}건")
 
 

@@ -9,7 +9,15 @@
 #   market/        상권 분석 (상주인구·유동인구, 인근 업종 분포, 반경 내 동일업종 밀집도)
 #   tech_startup/  기술창업 분석 (유사 벤처기업/투자유형, 특허 시계열 예측)
 #
-# [2026-09-08 기준] 아직 이 함수들을 호출하는 API 라우터가 없음(backend/api/).
-# 데이터 소스(현재 로컬 .xls 파일)를 그대로 쓸지 DB로 옮길지도 미정 — 각 함수는
-# DataFrame을 인자로 받는 순수함수라 데이터 로딩 방식이 나중에 뭐로 정해지든
-# 그대로 재사용 가능하도록 의도적으로 분리해뒀다.
+# [2026-09-09 기준] backend/api/analysis.py 가 이 함수들을 호출하는 라우터고
+# main.py에도 등록돼 있다(/analysis/market, /analysis/tech-startup,
+# /analysis/patent-startup). 데이터 소스는 DB로 확정 — commercial_districts만
+# 크기(270만 건) 때문에 별도 분석용 DB(get_analysis_connection())에 있고
+# 나머지 4개 테이블은 메인 DB에 있다(적재는 backend/db/load_analysis_data.py).
+# 이 파일들의 함수는 여전히 DataFrame을 인자로 받는 순수함수 그대로다 —
+# analysis.py가 DB에서 읽은 결과를 DataFrame으로 실어 나르기만 하고, 판단
+# 로직은 안 건드린다.
+#
+# [남은 일] 지금 이 API를 실제로 부르는 곳은 frontend/dev/analysis-test.html
+# (개발용 테스트 페이지)뿐이다. 원래 목적인 마이페이지 "나의 분석 리포트" /
+# 매칭 리스트 "물꼬 분석" 실제 화면(frontend/src/pages)엔 아직 연동 안 됨.

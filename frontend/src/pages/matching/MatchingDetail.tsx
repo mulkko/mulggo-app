@@ -1,18 +1,20 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "../../styles/matchingDetail.module.css";
-import { getAnnouncementDetail } from "./matchingDetailData";
+import type { AnnouncementDetail } from "./matchingDetailData";
 
 /**
  * 공고 상세(지원사업 상세) 화면.
  *
  * 공고 리스트(`/matching`)에서 카드를 누르면 `/matching/:id`로 들어온다.
- * URL의 id로 matchingDetailData의 더미 레코드를 찾아 렌더한다.
+ * URL의 id로 GET /api/matching/:id를 호출해 렌더한다 (id = announcements.announcement_id).
  *
  * 이 화면에는 하단 네비게이션(BottomNav)이 없다 — 상단에 뒤로가기 헤더만 있는 구조.
  *
  * 실제 동작으로 만든 것: 뒤로가기, 북마크(저장) 토글, 지원 여부 토글.
  * TODO로만 남긴 것: "채우기"(16-1 서류 미리보기 화면 예정), "원 공고 홈페이지로 이동"(외부 URL 미정).
+ * hashtags/aiComment는 백엔드가 아직 자리만 채운 값(빈 문자열/안내 문구)을 준다 -
+ * 해시태그 로직 확정, 사용자 프로필 연결(개인화 코멘트)은 별도 작업.
  */
 
 /**
@@ -37,13 +39,31 @@ const OVERVIEW_ICONS = [
   </>,
 ];
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 function MatchingDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const detail = getAnnouncementDetail(id);
 
+  const [detail, setDetail] = useState<AnnouncementDetail | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    fetch(`${API_BASE_URL}/api/matching/${id}`)
+      .then((res) => res.json())
+      .then((body: { success: boolean; data?: AnnouncementDetail }) => {
+        setDetail(body.success ? body.data : undefined);
+      })
+      .catch(() => setDetail(undefined))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const handleBack = () => {
     navigate("/matching");
@@ -57,13 +77,25 @@ function MatchingDetail() {
     setApplied((prev) => !prev);
   };
 
-  const handleFill = (fileName: string) => {
-    navigate(`/matching/${id}/doc-preview`, { state: { fileName } });
+  const handleFill = (doc: { fileName: string; attachmentId: number }) => {
+    navigate(`/matching/${id}/doc-preview`, {
+      state: { fileName: doc.fileName, attachmentId: doc.attachmentId },
+    });
   };
 
   const handleGoHomepage = () => {
-    // TODO: 원 공고 홈페이지(외부 URL)로 이동 — detail.homepageUrl 연결 예정
+    if (detail?.homepageUrl) {
+      window.open(detail.homepageUrl, "_blank", "noopener,noreferrer");
+    }
   };
+
+  if (loading) {
+    return (
+      <div className={`pageContainer ${styles.page}`}>
+        <p className={styles.notFoundText}>불러오는 중...</p>
+      </div>
+    );
+  }
 
   if (!detail) {
     return (
@@ -193,16 +225,31 @@ function MatchingDetail() {
           {detail.docs.map((doc) => (
             <div key={doc.fileName} className={styles.docRow}>
               <span className={styles.docName}>{doc.fileName}</span>
-              <button
-                type="button"
-                className={styles.fillButton}
-                onClick={() => handleFill(doc.fileName)}
-              >
-                <span className={styles.fillButtonText}>채우기</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M9 6l6 6-6 6" />
-                </svg>
-              </button>
+              <div className={styles.docActions}>
+                <a
+                  href={doc.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.fillButton}
+                >
+                  <span className={styles.fillButtonText}>원본 다운로드</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M9 6l6 6-6 6" />
+                  </svg>
+                </a>
+                {doc.fillable && (
+                  <button
+                    type="button"
+                    className={styles.fillButton}
+                    onClick={() => handleFill(doc)}
+                  >
+                    <span className={styles.fillButtonText}>채우기</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </section>
@@ -226,7 +273,12 @@ function MatchingDetail() {
             )}
             <span className={styles.applyToggleText}>{applied ? "지원함" : "지원 시 체크"}</span>
           </button>
-          <button type="button" className={styles.homeButton} onClick={handleGoHomepage}>
+          <button
+            type="button"
+            className={styles.homeButton}
+            onClick={handleGoHomepage}
+            disabled={!detail.homepageUrl}
+          >
             <span className={styles.homeButtonText}>원 공고 홈페이지로 이동</span>
           </button>
         </div>

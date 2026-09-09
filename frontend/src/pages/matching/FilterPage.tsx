@@ -31,6 +31,9 @@ type FilterGroup = {
 /** 필터 그룹 데이터 — 프로토타입 값 그대로 하드코딩. */
 const FILTER_GROUPS: FilterGroup[] = [
   {
+    // [2026-09-09] announcements.target_summary(bizinfo) 실제 distinct 값 기준으로 교체.
+    // 기존엔 프로토타입 값 그대로라 "청소년/대학생/일반인" 등 실제 데이터에 없는 항목이
+    // 섞여 있었고, 실제로 있는 "여성기업"은 빠져 있었음.
     key: "company",
     title: "기업유형 (지원대상)",
     mode: "multi",
@@ -38,17 +41,11 @@ const FILTER_GROUPS: FilterGroup[] = [
       "전체",
       "소상공인",
       "창업벤처",
-      "청소년",
-      "예비창업자",
-      "대학생",
-      "일반인",
-      "대학",
-      "연구기관",
-      "1인 창조기업",
-      "장애인기업",
-      "마을기업",
       "중소기업",
       "사회적기업",
+      "여성기업",
+      "장애인기업",
+      "마을기업",
       "협동조합",
       "제조업",
     ],
@@ -80,10 +77,14 @@ const FILTER_GROUPS: FilterGroup[] = [
     ],
   },
   {
+    // [2026-09-09] announcements.business_age_condition(kstartup만 값 있음) 실제
+    // distinct 값 기준으로 교체. "2년미만"은 실제 데이터에 없어서 제거, "업력무관" 추가.
+    // "전체"(index 0)를 추가해서 단일선택이어도 "필터 없음" 상태를 가질 수 있게 함
+    // (원래는 이게 없어서 항상 "예비창업자"가 기본 선택된 것처럼 취급됐음).
     key: "bizAge",
     title: "사업신청가능업력",
     mode: "single",
-    options: ["예비창업자", "1년미만", "2년미만", "3년미만", "5년미만", "7년미만", "10년미만"],
+    options: ["전체", "예비창업자", "1년미만", "3년미만", "5년미만", "7년미만", "10년미만", "업력무관"],
   },
   {
     key: "age",
@@ -150,8 +151,25 @@ function FilterPage() {
   };
 
   const handleApply = () => {
-    // TODO: 선택한 필터(filters)를 매칭 리스트 쿼리 파라미터/상태로 넘겨 실제 필터링에 반영
-    navigate("/matching");
+    // [2026-09-09] 기업유형/업력은 실제 데이터 기준 값이라 넘긴다. 지원분야/연령은
+    // 아직 실제 카테고리가 안 정해져서(팀원 검토 대기, docs/filter_options_review_
+    // 2026-09-09.xlsx) 보내봐야 매칭 안 되므로 제외.
+    const companyGroup = FILTER_GROUPS.find((g) => g.key === "company")!;
+    const selectedCompanies = filters.company
+      .filter((i) => i !== 0) // 0 = "전체" - 필터 없음
+      .map((i) => companyGroup.options[i]);
+
+    const bizAgeGroup = FILTER_GROUPS.find((g) => g.key === "bizAge")!;
+    const selectedBizAge = filters.bizAge !== 0 ? bizAgeGroup.options[filters.bizAge] : "";
+
+    const params = new URLSearchParams();
+    if (selectedCompanies.length > 0) {
+      params.set("company", selectedCompanies.join(","));
+    }
+    if (selectedBizAge) {
+      params.set("biz_age", selectedBizAge);
+    }
+    navigate(`/matching${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
   return (

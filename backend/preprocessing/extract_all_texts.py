@@ -10,6 +10,7 @@
 import csv
 import gc
 import io
+import logging
 import os
 import re
 import sys
@@ -20,6 +21,12 @@ import argparse
 
 import requests
 import pdfplumber
+
+# pyhwp(hwp5)가 일부 HWP 파일의 밑줄 스타일 값이 자기가 아는 범위 밖이면
+# logger.warning()으로 파일 하나당 수백~수천 줄씩 찍는 경우가 실측 확인됨
+# (관리자 화면 실행 로그를 도배해서 정작 우리 쪽 진행 요약을 못 보게 만듦).
+# 추출 결과 자체엔 영향 없는 경고라 조용히 시킨다.
+logging.getLogger("hwp5").setLevel(logging.ERROR)
 
 # [2026-09 추가] 파이썬 csv 모듈의 기본 필드 크기 제한(131,072자)을 없앰.
 # 원문이 긴 공고(19만자 넘는 것도 실측 확인됨)를 다시 읽을 때
@@ -50,6 +57,17 @@ HEADERS = {
 _ocr_reader = None
 _ocr_disabled = False  # --skip-ocr 옵션으로 켜짐
 _cuda_dlls_preloaded = False
+
+# [2026-09-09] 파일당 처리 단계(다운로드/PDF/HWP/HWPX/OCR)별 진단 로그가
+# 통합 반영 실행 로그(관리자 화면)를 너무 도배해서, 기본은 끄고 필요할 때만
+# (EXTRACT_DEBUG=1) 켜도록 함. 건별 성공/실패 요약은 sync_bizinfo_announcements.py
+# 쪽에서 별도로 항상 찍는다.
+_DEBUG = os.environ.get("EXTRACT_DEBUG") == "1"
+
+
+def _debug_print(msg):
+    if _DEBUG:
+        print(msg)
 
 
 def _preload_cuda_dlls():
@@ -99,8 +117,18 @@ def _get_ocr_reader():
         # (GitHub 이슈: use_gpu 관련 TypeError, set_optimization_level 누락 등).
         # 옵션을 아예 안 주면 라이브러리가 자동으로 GPU 있으면 GPU, 없으면 CPU를
         # 씀(공식 문서 기준) — 이게 지금 버전들과 제일 안전하게 맞는 방식.
-        _ocr_reader = PaddleOCR(lang="korean")
-        print("  [OCR] 로딩 완료(GPU 있으면 자동으로 사용)")
+        #
+        # [2026-09-09 버그 수정] CPU(oneDNN)로 돌 때 스캔본 OCR이 거의 매번
+        # "NotImplementedError: ConvertPirAttribute2RuntimeAttribute not
+        # support [pir::ArrayAttribute<pir::DoubleAttribute>]"로 죽는 문제를
+        # 실측 확인함 - paddlepaddle 3.3.1의 새 PIR 실행엔진이 oneDNN 커널
+        # 일부를 아직 완전히 지원 안 해서 생기는 라이브러리 자체 버그
+        # (모델 종류·이미지를 바꿔도 동일하게 재현됨). enable_mkldnn=False로
+        # oneDNN 가속만 꺼서 우회 - 그 경로를 안 타므로 크래시가 사라진다
+        # (직접 재현 확인, 같은 파일로 텍스트 추출 성공함). GPU 있으면
+        # 이 옵션은 어차피 안 쓰이므로 영향 없음.
+        _ocr_reader = PaddleOCR(lang="korean", enable_mkldnn=False)
+        _debug_print("  [OCR] 로딩 완료(GPU 있으면 자동으로 사용)")
     return _ocr_reader
 
 
@@ -135,7 +163,7 @@ def extract_text_from_pdf(content):
         result = "\n".join(texts)
         return result if result.strip() else None
     except Exception as e:
-        print(f"    [PDF진단] pdfplumber 실패: {type(e).__name__}: {e}")
+        _debug_print(f"    [PDF진단] pdfplumber 실패: {type(e).__name__}: {e}")
         return None
 
 
@@ -155,7 +183,7 @@ def _hwp5_prvtext_fallback(tmp_path):
         text = raw.decode("utf-16le", errors="ignore")
         return text if text.strip() else None
     except Exception as e:
-        print(f"    [HWP진단] PrvText 폴백도 실패: {type(e).__name__}: {e}")
+        _debug_print(f"    [HWP진단] PrvText 폴백도 실패: {type(e).__name__}: {e}")
         return None
 
 
@@ -197,7 +225,7 @@ def extract_text_from_hwp(content):
         # [2026-09-03] 요약정보 우회로도 못 넘는 경우(예: 본문 안에 XML로
         # 직렬화 불가능한 제어문자가 섞인 경우)가 실측 확인됨 — 이때는
         # PrvText(미리보기) 스트림으로 최소한의 텍스트라도 건진다.
-        print(f"    [HWP진단] pyhwp 본문 추출 실패({type(e).__name__}: {e}) -> PrvText 폴백 시도")
+        _debug_print(f"    [HWP진단] pyhwp 본문 추출 실패({type(e).__name__}: {e}) -> PrvText 폴백 시도")
         fallback = _hwp5_prvtext_fallback(tmp_path) if tmp_path else None
         return (fallback, "preview") if fallback else (None, None)
     finally:
@@ -245,7 +273,7 @@ def extract_text_from_hwpx(content):
 
         return None, None
     except Exception as e:
-        print(f"    [HWPX진단] zip/xml 파싱 실패: {type(e).__name__}: {e}")
+        _debug_print(f"    [HWPX진단] zip/xml 파싱 실패: {type(e).__name__}: {e}")
         return None, None
 
 
@@ -261,7 +289,7 @@ def _resize_if_too_big(img_array, max_side=4000, label=""):
         return img_array
     scale = max_side / max(h, w)
     new_w, new_h = int(w * scale), int(h * scale)
-    print(f"    [OCR진단] {label}너무 커서 리사이즈: ({w},{h}) -> ({new_w},{new_h})")
+    _debug_print(f"    [OCR진단] {label}너무 커서 리사이즈: ({w},{h}) -> ({new_w},{new_h})")
     return np.array(PILImage.fromarray(img_array).resize((new_w, new_h)))
 
 
@@ -277,7 +305,7 @@ def extract_text_from_image(content):
 
         img = PILImage.open(io.BytesIO(content)).convert("RGB")
         img_array = np.array(img)
-        print(f"    [OCR진단] 이미지 크기: {img_array.shape}")
+        _debug_print(f"    [OCR진단] 이미지 크기: {img_array.shape}")
         img_array = _resize_if_too_big(img_array)
 
         reader = _get_ocr_reader()
@@ -291,7 +319,7 @@ def extract_text_from_image(content):
         result_text = "\n".join(texts)
         return result_text if result_text.strip() else None
     except Exception as e:
-        print(f"    [OCR진단] 이미지 OCR 처리 실패: {type(e).__name__}: {e}")
+        _debug_print(f"    [OCR진단] 이미지 OCR 처리 실패: {type(e).__name__}: {e}")
         return None
 
 
@@ -313,7 +341,7 @@ def extract_text_from_scanned_pdf(content):
         from PIL import Image as PILImage
 
         doc = pymupdf.open(stream=content, filetype="pdf")
-        print(f"    [OCR진단] 페이지 수: {doc.page_count}")
+        _debug_print(f"    [OCR진단] 페이지 수: {doc.page_count}")
         reader = _get_ocr_reader()
 
         texts = []
@@ -332,9 +360,9 @@ def extract_text_from_scanned_pdf(content):
                 scale = max_side / max(h, w)
                 new_w, new_h = int(w * scale), int(h * scale)
                 img_array = np.array(PILImage.fromarray(img_array).resize((new_w, new_h)))
-                print(f"    [OCR진단] {page_num + 1}페이지 너무 커서 리사이즈: ({w},{h}) -> ({new_w},{new_h})")
+                _debug_print(f"    [OCR진단] {page_num + 1}페이지 너무 커서 리사이즈: ({w},{h}) -> ({new_w},{new_h})")
 
-            print(f"    [OCR진단] {page_num + 1}페이지 크기: {img_array.shape}")
+            _debug_print(f"    [OCR진단] {page_num + 1}페이지 크기: {img_array.shape}")
             result = reader.predict(img_array)
             for res in result:
                 texts.extend(res["rec_texts"])
@@ -346,7 +374,7 @@ def extract_text_from_scanned_pdf(content):
         result_text = "\n".join(texts)
         return result_text if result_text.strip() else None
     except Exception as e:
-        print(f"    [OCR진단] OCR 처리 실패: {type(e).__name__}: {e}")
+        _debug_print(f"    [OCR진단] OCR 처리 실패: {type(e).__name__}: {e}")
         return None
 
 
@@ -373,8 +401,8 @@ def get_notice_full_text(print_flpth_url):
             # 중간에 끊긴 다운로드인지 확인. 불일치하면 재시도.
             expected_len = response.headers.get("Content-Length")
             if expected_len and int(expected_len) != len(content):
-                print(f"    [다운로드진단] 크기 불일치(예상 {expected_len} / 실제 {len(content)}) "
-                      f"-> 재시도({attempt + 1}/3)")
+                _debug_print(f"    [다운로드진단] 크기 불일치(예상 {expected_len} / 실제 {len(content)}) "
+                             f"-> 재시도({attempt + 1}/3)")
                 if attempt < 2:
                     time.sleep(1.5)
                     continue

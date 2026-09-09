@@ -323,6 +323,12 @@ function WebStyleGuide() {
               <span className={styles.codeLabel}>카운트 박스 · --shadow-inset-navy</span>
             </div>
           </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <button type="button" className={styles.matchLoadMoreButton}>더보기</button>
+              <span className={styles.codeLabel}>더보기 버튼 · --color-teal-green · --shadow-inset-gray · --radius-input</span>
+            </div>
+          </div>
         </div>
 
         <p className={styles.subheading}>하단 네비게이션 (BottomNav)</p>
