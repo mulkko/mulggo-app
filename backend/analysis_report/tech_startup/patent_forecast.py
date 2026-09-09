@@ -32,27 +32,41 @@ def _openai_client() -> OpenAI:
     return OpenAI(api_key=environ.get("OPENAI_API_KEY"), http_client=custom_http_client)
 
 
-def generate_patent_keyword(seed_interest: str, problem_to_solve: str, solution_approach: str) -> str:
-    """슬롯 3개(관심분야/해결과제/해결방식) → 특허검색용 키워드 변환"""
+def _build_keyword_prompt(seed_interest: str, problem_to_solve: str, solution_approach: str) -> str:
     combined = f"{seed_interest} / {problem_to_solve} / {solution_approach}"
-    response = _openai_client().chat.completions.create(
-        model="gpt-5-nano",
-        messages=[{
-            "role": "user",
-            "content": f"""다음은 한 창업 아이디어의 핵심 요소입니다.
+    return f"""다음은 한 창업 아이디어의 핵심 요소입니다.
 여기서 특허 검색에 쓸 핵심 기술 키워드를 딱 하나만, 최대한 짧게 뽑아줘.
 반드시 2개의 한국어 단어 조합으로 답해 (예: "스마트팜 제어", "온도 센서"). 3개 이상 단어는 절대 쓰지 마.
 
 다음 JSON 형식으로만 답해: {{"keyword": "여기에 키워드"}}
 
-핵심 요소: {combined}""",
-        }],
+핵심 요소: {combined}"""
+
+
+def generate_patent_keyword_with_debug(seed_interest: str, problem_to_solve: str, solution_approach: str) -> dict:
+    """
+    [2026-09-08 추가] generate_patent_keyword()와 똑같이 동작하지만, GPT한테 보낸
+    프롬프트와 원본 응답까지 같이 반환한다 — "왜 이 키워드가 나왔는지" 과정을
+    확인할 방법이 없다는 실측 피드백(예: 입력 3개 슬롯에 비해 키워드가 너무
+    뭉뚱그려진 "온도 관리"로 나온 경우)에 대응하기 위함. get_patent_trend_with_forecast()가
+    이 함수를 써서 결과에 keyword_debug를 실어 보낸다.
+    """
+    prompt = _build_keyword_prompt(seed_interest, problem_to_solve, solution_approach)
+    response = _openai_client().chat.completions.create(
+        model="gpt-5-nano",
+        messages=[{"role": "user", "content": prompt}],
         max_completion_tokens=2000,
         reasoning_effort="low",
         response_format={"type": "json_object"},
     )
-    result = json.loads(response.choices[0].message.content)
-    return result["keyword"].strip()
+    raw_response = response.choices[0].message.content
+    keyword = json.loads(raw_response)["keyword"].strip()
+    return {"prompt": prompt, "raw_response": raw_response, "keyword": keyword}
+
+
+def generate_patent_keyword(seed_interest: str, problem_to_solve: str, solution_approach: str) -> str:
+    """슬롯 3개(관심분야/해결과제/해결방식) → 특허검색용 키워드 변환"""
+    return generate_patent_keyword_with_debug(seed_interest, problem_to_solve, solution_approach)["keyword"]
 
 
 def get_patent_count(keyword: str, year: int, field: str = "astrtCont", max_retries: int = 3):
@@ -154,7 +168,8 @@ def backtest_forecast(year_count_dict: dict, min_train_years: int = 5) -> tuple:
 
 def get_patent_trend_with_forecast(seed_interest, problem_to_solve, solution_approach, past_years, exclude_recent=2):
     """전체 파이프라인: 키워드 생성 + 조회기간 확장 + 예측 + 백테스트까지 한 번에"""
-    keyword = generate_patent_keyword(seed_interest, problem_to_solve, solution_approach)
+    keyword_debug = generate_patent_keyword_with_debug(seed_interest, problem_to_solve, solution_approach)
+    keyword = keyword_debug["keyword"]
     print(f"검색 키워드: {keyword}")
 
     actual = {}
@@ -170,6 +185,7 @@ def get_patent_trend_with_forecast(seed_interest, problem_to_solve, solution_app
 
     return {
         "keyword": keyword,
+        "keyword_debug": {"prompt": keyword_debug["prompt"], "raw_response": keyword_debug["raw_response"]},
         "actual": actual,
         "reliable_years": reliable_years,
         "forecast": forecast,   # 이제 {2025: 값} 딱 하나만 나옴

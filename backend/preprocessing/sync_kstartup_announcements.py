@@ -511,6 +511,12 @@ def run(only_unprocessed: bool = True):
 
     clean_df = clean_kstartup(raw_df)
     print(f"모집중 필터 후: {len(clean_df)}건")
+    if clean_df.empty:
+        # [2026-09-08 버그 수정] 전부 필터링돼서 0건이면 pd.DataFrame([])가
+        # 컬럼 없는 빈 DataFrame이 되어 이후 단계(parse_target_conditions 등)에서
+        # KeyError('_biz_trgt_age_single')로 죽었음 - 실측 확인(raw 21건 전부
+        # 마감이라 여기서 0건 됨). raw_df.empty와 동일하게 여기서도 조기 종료.
+        return
     common_df = transform_kstartup_to_common(clean_df)
     common_df = parse_target_conditions(common_df)
     common_df = normalize_support_fields(common_df)
