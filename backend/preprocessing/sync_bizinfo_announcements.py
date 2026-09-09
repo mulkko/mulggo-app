@@ -340,24 +340,67 @@ def map_ksic(common_df: pd.DataFrame, use_llm_fallback: bool = False) -> pd.Data
     df = common_df.copy()
     codes_col, names_col, excluded_col, status_col, content_col = [], [], [], [], []
 
-    for _, r in df.iterrows():
-        # 첨부파일 원문 추출 - 무거운 단계라 실제 운영에선 캐시(이미 추출된
-        # 적 있으면 재추출 안 함) 붙이는 걸 권장하지만, 이번 범위(연결 지점
-        # 구성)에선 매번 호출하는 가장 단순한 형태로 둔다.
-        full_text, _extract_status = get_notice_full_text(r.get("_print_flpth_nm") or "")
-        full_text = full_text or ""
-        content = full_text or r.get("content") or ""
+    # [2026-09-09] 첨부파일(신청서 양식/공고문) 원문 추출은 다운로드+OCR이라
+    # 무거운 단계. bizinfo_attachment_text_cache 에 먼저 있는지 보고, 없을 때만
+    # 실제로 추출해서 성공한 것만 캐시에 저장한다. 이 실행이 이후 단계(검증/
+    # upsert)에서 실패하거나 서버가 중간에 죽어도, 재실행 때 이미 뽑아둔 첨부는
+    # 다시 다운로드+OCR 하지 않는다. announcements 에 그 행이 성공적으로 들어가면
+    # (같은 텍스트가 announcements.content 에도 남으므로) 캐시 행은
+    # upsert_announcements() 에서 바로 지운다 - 계속 쌓이는 테이블이 아니다.
+    cache_conn = get_connection()
+    total = len(df)
+    try:
+        cache_cur = cache_conn.cursor()
+        for i, (_, r) in enumerate(df.iterrows(), start=1):
+            raw_id = r.get("raw_bizinfo_id")
 
-        match_text = " | ".join(
-            p for p in [r.get("_pblanc_nm") or "", r.get("_hashtags") or "", full_text] if p
-        )
-        result = decide_industry(match_text, use_llm_fallback=use_llm_fallback) if match_text.strip() else None
+            cache_cur.execute(
+                "SELECT full_text FROM bizinfo_attachment_text_cache WHERE raw_bizinfo_id = %s", (raw_id,)
+            )
+            cached = cache_cur.fetchone()
+            if cached:
+                full_text = cached[0] or ""
+                extract_status = "success(cache)"
+            else:
+                full_text, extract_status = get_notice_full_text(r.get("_print_flpth_nm") or "")
+                full_text = full_text or ""
+                if extract_status.startswith("success") and raw_id is not None:
+                    cache_cur.execute(
+                        """
+                        INSERT INTO bizinfo_attachment_text_cache (raw_bizinfo_id, full_text, extract_status)
+                        VALUES (%s, %s, %s)
+                        ON CONFLICT (raw_bizinfo_id) DO UPDATE
+                        SET full_text = EXCLUDED.full_text, extract_status = EXCLUDED.extract_status, cached_at = now()
+                        """,
+                        (raw_id, full_text, extract_status),
+                    )
+                    cache_conn.commit()
+            content = full_text or r.get("content") or ""
 
-        codes_col.append(result["확정코드"] if result else [])
-        names_col.append(result["확정업종명"] if result else [])
-        excluded_col.append([x["코드"] for x in (result.get("제외업종") or [])] if result else [])
-        status_col.append(result["확정단계"] if result else "특정불가")
-        content_col.append(content)
+            match_text = " | ".join(
+                p for p in [r.get("_pblanc_nm") or "", r.get("_hashtags") or "", full_text] if p
+            )
+            result = decide_industry(match_text, use_llm_fallback=use_llm_fallback) if match_text.strip() else None
+            ksic_stage = result["확정단계"] if result else "특정불가"
+
+            # 관리자 화면 실행 로그에는 파일별 처리 단계 진단(디폴트로 안 찍음,
+            # EXTRACT_DEBUG=1이면 찍힘) 대신 건별 "번호 | 본문추출 | 업종분류"
+            # 성공/실패 요약 한 줄만 항상 남긴다.
+            extract_ok = extract_status.startswith("success")
+            ksic_ok = ksic_stage != "특정불가"
+            print(
+                f"[{i}/{total}] raw_bizinfo_id={raw_id} | "
+                f"본문추출 {'성공' if extract_ok else '실패'}({extract_status}) | "
+                f"업종분류 {'성공' if ksic_ok else '실패'}({ksic_stage})"
+            )
+
+            codes_col.append(result["확정코드"] if result else [])
+            names_col.append(result["확정업종명"] if result else [])
+            excluded_col.append([x["코드"] for x in (result.get("제외업종") or [])] if result else [])
+            status_col.append(ksic_stage)
+            content_col.append(content)
+    finally:
+        cache_conn.close()
 
     df["ksic_codes_matched"] = codes_col
     df["ksic_names_matched"] = names_col
@@ -502,6 +545,14 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
                 cur.execute(sql, values)
                 conn.commit()
                 n += 1
+                # [2026-09-09] announcements에 성공적으로 들어갔으니(같은 텍스트가
+                # announcements.content에도 남음) 첨부 원문 캐시는 더 필요 없다.
+                if r.get("raw_bizinfo_id") is not None:
+                    cur.execute(
+                        "DELETE FROM bizinfo_attachment_text_cache WHERE raw_bizinfo_id = %s",
+                        (r.get("raw_bizinfo_id"),),
+                    )
+                    conn.commit()
             except Exception as e:
                 conn.rollback()
                 failed.append((r.get("raw_bizinfo_id"), str(e)))
