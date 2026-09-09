@@ -1,15 +1,18 @@
 # [테스트 전용] 사업 구체화 "아이디어 카드 생성" 검증용 엔드포인트.
-# 정식 슬롯필링 화면(프론트)이 아직 안 나와서, backend/idea_llm/idea_card_generator.py가
+# 정식 슬롯필링 화면(프론트)이 아직 안 나와서, backend/chatbot/idea_card_generator.py가
 # 잘 도는지만 먼저 확인하는 용도. DB에는 아무것도 저장하지 않는다.
 #
 # 실제 사용 함수는 이거 하나뿐: idea_card_generator.call_llm_for_idea_cards(slots, llm_client)
-# (backend/idea_llm/real_llm_client.py::call_llm을 llm_client로 주입)
+# (backend/chatbot/real_llm_client.py::call_llm을 llm_client로 주입)
+# [2026-09-09] idea_card_generator.py/real_llm_client.py는 원래 backend/idea_llm/에 있었는데,
+# CLAUDE.md 폴더 구조상 "사업구체화 챗봇" 코드는 backend/chatbot/에 있어야 해서(chain.py가
+# 이미 거기 있음) backend/chatbot/으로 옮김 - 같은 기능의 앞/뒤 반쪽이라 한 폴더에 모음.
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from backend.idea_llm.idea_card_generator import call_llm_for_idea_cards
-from backend.idea_llm.real_llm_client import call_llm
+from backend.chatbot.idea_card_generator import call_llm_for_idea_cards
+from backend.chatbot.real_llm_client import call_llm
 
 router = APIRouter(prefix="/api/test", tags=["test"])
 
