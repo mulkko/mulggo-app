@@ -45,3 +45,6 @@ logs/
 
 # 전처리 파이프라인 dry-run 결과물 (로컬 확인용)
 dryrun_sync_*.xlsx
+
+# 로컬에서 서버 띄울 때 생기는 stdout/stderr 리다이렉트 파일
+_*.log
