@@ -21,6 +21,13 @@ type BatchLog = {
   ran_at: string;
 };
 
+type Backlog = { source: string; raw: number; done: number; pending: number };
+
+const SOURCE_LABELS: Record<string, string> = {
+  bizinfo: "기업마당",
+  kstartup: "K-스타트업",
+};
+
 function formatLogTime(isoString: string): string {
   const d = new Date(isoString);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -45,9 +52,12 @@ function AdminHome() {
   const [kstartupCount, setKstartupCount] = useState<number | null>(null);
   const [kstartupError, setKstartupError] = useState(false);
   const [batchLogs, setBatchLogs] = useState<BatchLog[]>([]);
+  const [backlog, setBacklog] = useState<Backlog[]>([]);
   const [crawlSource, setCrawlSource] = useState(CRAWL_SOURCES[0].value);
   // 현재 백그라운드로 수집 중인 소스(없으면 null). 진행 중엔 셀렉트·버튼 잠금.
   const [crawlingSource, setCrawlingSource] = useState<string | null>(null);
+  // "배치하기" 버튼으로 미반영분 통합 반영을 실행 중인지(진행 중엔 버튼 잠금).
+  const [runningBatch, setRunningBatch] = useState(false);
 
   const fetchCount = () => {
     fetch(`${API_BASE_URL}/admin/bizinfo-count`)
@@ -70,10 +80,21 @@ function AdminHome() {
       .catch(() => {});
   };
 
+  // [2026-09-09] 수집(raw)은 됐는데 통합 반영("실행" 버튼)이 안 됐거나 전처리
+  // 중 조용히 실패해서 announcements까지 못 들어간 건수 - 수집 현황만 봐서는
+  // 안 보이던 부분이라 별도로 추가함.
+  const fetchBacklog = () => {
+    fetch(`${API_BASE_URL}/admin/backlog`)
+      .then((res) => res.json())
+      .then((data: { success: boolean; data: Backlog[] }) => setBacklog(data.data))
+      .catch(() => {});
+  };
+
   useEffect(() => {
     fetchCount();
     fetchKstartupCount();
     fetchBatchLogs();
+    fetchBacklog();
   }, []);
 
   // 수집이 끝날 때까지(= 해당 소스의 배치 로그가 새로 쌓일 때까지) 폴링.
@@ -120,6 +141,45 @@ function AdminHome() {
     } catch {
       alert("수집 시작 요청에 실패했습니다.");
       setCrawlingSource(null);
+    }
+  };
+
+  // source 하나의 /admin/sync가 끝날 때까지 폴링(진행 중이 아니게 될 때까지).
+  const pollSyncDone = async (source: string) => {
+    const deadline = Date.now() + CRAWL_POLL_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, CRAWL_POLL_INTERVAL_MS));
+      const running: boolean = await fetch(`${API_BASE_URL}/admin/sync-status?source=${source}`)
+        .then((res) => res.json())
+        .then((data: { data?: { running: boolean } }) => data.data?.running ?? false)
+        .catch(() => false);
+      if (!running) return;
+    }
+  };
+
+  // "배치하기": 미반영(raw는 있는데 announcements엔 없는) 건이 있는 소스만
+  // 골라서 통합 반영("실행")을 그대로 실행한다. AnnouncementsSync.tsx의
+  // "실행"과 동일한 API(only_unprocessed=True 기본값)라 이미 반영된 건
+  // 자동으로 건너뛰고 미반영분만 처리한다.
+  const handleRunBatch = async () => {
+    const pendingSources = backlog.filter((b) => b.pending > 0).map((b) => b.source);
+    if (pendingSources.length === 0) {
+      alert("미반영 건이 없습니다.");
+      return;
+    }
+
+    setRunningBatch(true);
+    try {
+      await Promise.all(
+        pendingSources.map((source) =>
+          fetch(`${API_BASE_URL}/admin/sync?source=${source}`, { method: "POST" }),
+        ),
+      );
+      await Promise.all(pendingSources.map((source) => pollSyncDone(source)));
+    } finally {
+      setRunningBatch(false);
+      fetchBacklog();
+      fetchBatchLogs();
     }
   };
 
@@ -266,6 +326,37 @@ function AdminHome() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className={styles.gridCard}>
+        <div className={styles.cardHeaderRow}>
+          <p className={styles.gridCardTitle}>통합 반영 미반영 현황</p>
+          <button
+            type="button"
+            className="btnSecondary"
+            onClick={handleRunBatch}
+            disabled={runningBatch}
+          >
+            {runningBatch ? "반영 중..." : "배치하기"}
+          </button>
+        </div>
+        <div className={styles.logsList}>
+          {backlog.map((b) => (
+            <div className={styles.logItem} key={b.source}>
+              <p className={styles.logTime}>
+                {SOURCE_LABELS[b.source] ?? b.source} — raw {b.raw.toLocaleString()}건 / 반영{" "}
+                {b.done.toLocaleString()}건
+              </p>
+              <span
+                className={`${styles.statusBadge} ${
+                  b.pending > 0 ? styles.statusBadgeError : styles.statusBadgeSuccess
+                }`}
+              >
+                미반영 {b.pending.toLocaleString()}건
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 

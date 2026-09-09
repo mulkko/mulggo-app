@@ -1,11 +1,15 @@
+import { useNavigate } from "react-router-dom";
 import styles from "../../styles/bottomNav.module.css";
 
 /**
  * 앱 하단 고정 네비게이션 (공통 컴포넌트).
  *
  * 사용자(web) 화면 어디서든 재사용한다. 현재 화면이 어떤 탭에 해당하는지는
- * `active` prop으로 넘긴다. 탭을 누르면 해당 화면으로 이동해야 하지만,
- * 아직 각 화면 라우트가 없어서 이동 로직은 TODO로만 남겨둔다.
+ * `active` prop으로 넘긴다.
+ *
+ * [2026-09-09] 홈/매칭/마이페이지는 App.tsx에 라우트가 이미 있어서 이동 연결함.
+ * "아이디어" 탭(/idea)은 아직 라우트 자체가 없어서(사업구체화 챗봇 화면 미정)
+ * 클릭해도 이동 안 시키고 TODO로 남겨둠 - 그 화면 라우트 확정되면 연결.
  *
  * 사용 예:
  *   <BottomNav active="matching" />
@@ -76,9 +80,12 @@ const TABS: TabDef[] = [
 ];
 
 function BottomNav({ active }: BottomNavProps) {
+  const navigate = useNavigate();
+
   const handleTabClick = (tab: TabDef) => {
-    // TODO: 각 화면 라우트가 생기면 navigate(tab.path)로 이동 연결
-    void tab;
+    if (tab.key === "idea") return; // TODO: /idea 라우트 생기면 이동 연결
+    if (tab.key === active) return;
+    navigate(tab.path);
   };
 
   return (

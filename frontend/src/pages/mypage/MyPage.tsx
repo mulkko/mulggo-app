@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/myPage.module.css";
 import BottomNav from "../../components/BottomNav/BottomNav";
@@ -6,11 +6,27 @@ import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// TODO: 로그인 세션에 user_id 저장하는 기능 붙으면 그 값으로 교체 (ProfileEdit.tsx와 동일 사유).
+const TEMP_USER_ID = 27;
+
+interface ProfileSummary {
+  name: string;
+  profile_type: string | null;
+  region: string | null;
+}
+
 /**
  * 마이페이지 화면.
  *
  * 프로필 요약 + 나의 분석 리포트 / 관심있는 지원사업 / 채우기 이용내역 / 나의 지원내역
  * 4개 섹션 + 하단 공통 BottomNav("마이페이지" 탭 활성).
+ *
+ * [2026-09-09] 프로필 요약(이름/유형/지역)만 backend/api/mypage.py 실데이터로
+ * 교체함(TEMP_USER_ID - 로그인 세션 생기면 교체 필요, ProfileEdit.tsx 참고).
+ * 나머지 4개 섹션(분석 리포트/관심 지원사업/채우기 이용내역/지원내역)은 대응
+ * 테이블이 전부 0건이라(연동해도 항상 빈 목록) 더미데이터 그대로 둠.
  *
  * 지금은 화면(레이아웃 + 더미데이터)만 만든다. 백엔드 연동 전이라
  * 각 카드의 삭제(X) 버튼만 "로컬 state에서 해당 항목 제거" 동작으로 실제 구현하고
@@ -132,6 +148,18 @@ function MyPage() {
   const [interests, setInterests] = useState<AnnouncementCardData[]>(DUMMY_INTERESTS);
   const [fillHistory, setFillHistory] = useState<FillHistoryItem[]>(DUMMY_FILL_HISTORY);
   const [applyHistory, setApplyHistory] = useState<ApplyHistoryItem[]>(DUMMY_APPLY_HISTORY);
+  const [profile, setProfile] = useState<ProfileSummary | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${TEMP_USER_ID}`)
+      .then((res) => res.json())
+      .then((res: { success: boolean; data?: ProfileSummary }) => {
+        if (res.success && res.data) setProfile(res.data);
+      })
+      .catch(() => {
+        /* 조회 실패 시 아래 더미 문구 그대로 표시 */
+      });
+  }, []);
 
   const removeById =
     <T extends { id: string }>(setter: React.Dispatch<React.SetStateAction<T[]>>) =>
@@ -212,8 +240,10 @@ function MyPage() {
         {/* 2. 프로필 요약 카드 — 클릭 시 프로필 수정 화면(/mypage/edit)으로 이동 */}
         <button type="button" className={styles.profileCard} onClick={handleProfileClick}>
           <span className={styles.profileInfo}>
-            <span className={styles.profileName}>김창업 님</span>
-            <span className={styles.profileSub}>예비창업자 · 마포구</span>
+            <span className={styles.profileName}>{profile ? `${profile.name} 님` : "김창업 님"}</span>
+            <span className={styles.profileSub}>
+              {profile ? [profile.profile_type, profile.region].filter(Boolean).join(" · ") || "정보 없음" : "예비창업자 · 마포구"}
+            </span>
           </span>
           <span className={styles.profileArrow} aria-hidden="true">
             ›

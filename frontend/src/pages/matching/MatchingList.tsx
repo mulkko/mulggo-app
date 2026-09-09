@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "../../styles/matchingList.module.css";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import AnnouncementCard, {
@@ -12,8 +12,9 @@ import AnnouncementCard, {
  * 자격이 맞는 정부지원사업을 카드 리스트로 보여준다. 상단에 지역/업종/정렬
  * 필터바가 있고, 하단에는 공통 BottomNav("매칭" 탭 활성).
  *
- * 목록은 GET /api/matching(필터 없음, 전체 목록)에서 가져온다. 지역/업종
- * 드롭다운, "필터" 팝업의 실제 필터링 반영은 아직 TODO.
+ * 목록은 GET /api/matching에서 가져온다. 지역/업종 드롭다운, "필터" 팝업
+ * (기업유형/업력)까지 실제 필터링이 반영됨 - 지원분야/연령은 아직 실제
+ * 카테고리 미확정이라 FilterPage.tsx에서 제외.
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -26,17 +27,71 @@ type MatchingListResponse = {
   total?: number;
 };
 
+// [2026-09-09, 테스트용] 업종 드롭다운 - 전체 KSIC(1,200여개) 대신, 실제 공고에서
+// 자주 매칭된 것 중 몇 개만 넣어서 필터링 자체가 잘 되는지 확인하는 용도.
+const KSIC_OPTIONS = [
+  { label: "업종 전체", code: "" },
+  { label: "제조업", code: "C" },
+  { label: "농업", code: "01" },
+  { label: "건설업", code: "F" },
+  { label: "부동산업", code: "68" },
+  { label: "숙박업", code: "55" },
+  { label: "소프트웨어 개발·공급업", code: "58222" },
+];
+
+// [2026-09-09] announcements.regions 실제 distinct 값(시/도 단위) 전체. 구 단위는
+// extract_region.py가 의도적으로 안 뽑음(오탐 위험 - 팀 결정, docs 참고).
+const REGION_OPTIONS = [
+  "지역 전체",
+  "서울특별시",
+  "경기도",
+  "인천광역시",
+  "부산광역시",
+  "대구광역시",
+  "광주광역시",
+  "대전광역시",
+  "울산광역시",
+  "세종특별자치시",
+  "강원특별자치도",
+  "충청북도",
+  "충청남도",
+  "전라북도",
+  "전북특별자치도",
+  "전라남도",
+  "전남광주통합특별시",
+  "경상북도",
+  "경상남도",
+  "제주특별자치도",
+  "비수도권(수도권 제외 전체)",
+];
+
+const SORT_OPTIONS = [
+  { label: "최근 등록순", value: "recent" },
+  { label: "마감임박순", value: "deadline" },
+];
+
 function MatchingList() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [announcements, setAnnouncements] = useState<AnnouncementCardData[]>([]);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [ksic, setKsic] = useState("");
+  const [region, setRegion] = useState("");
+  const [sort, setSort] = useState("recent");
+  // FilterPage("전체 필터" 팝업)의 "적용하기"가 /matching?company=...&biz_age=... 형태로 넘겨준다.
+  const company = searchParams.get("company") ?? "";
+  const bizAge = searchParams.get("biz_age") ?? "";
 
   const fetchPage = (offset: number, onDone: (body: MatchingListResponse) => void) =>
-    fetch(`${API_BASE_URL}/api/matching?offset=${offset}&limit=${PAGE_SIZE}`)
+    fetch(
+      `${API_BASE_URL}/api/matching?offset=${offset}&limit=${PAGE_SIZE}&ksic=${ksic}` +
+        `&region=${encodeURIComponent(region)}&company=${encodeURIComponent(company)}` +
+        `&biz_age=${encodeURIComponent(bizAge)}&sort=${sort}`,
+    )
       .then((res) => res.json())
       .then((body: MatchingListResponse) => {
         if (body.success && body.data) {
@@ -48,12 +103,21 @@ function MatchingList() {
       .catch(() => setError("서버에 연결할 수 없습니다."));
 
   useEffect(() => {
+    setLoading(true);
+    // 필터가 바뀌면 이전 결과를 바로 지운다 - 안 그러면 새 결과가 올 때까지
+    // 이전 필터의 카드가 화면에 남아있어서 그걸 눌러 엉뚱한 공고로 들어갈 수 있다.
+    setAnnouncements([]);
     fetchPage(0, (body) => {
       setAnnouncements(body.data ?? []);
       setHasMore(body.has_more ?? false);
       setTotal(body.total ?? 0);
     }).finally(() => setLoading(false));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ksic, region, company, bizAge, sort]);
+
+  const handleClearFilters = () => {
+    setSearchParams({});
+  };
 
   const handleLoadMore = () => {
     setLoadingMore(true);
@@ -65,18 +129,6 @@ function MatchingList() {
 
   const handleAnalysisClick = () => {
     // TODO: "물꼬 분석"(분석 리포트) 화면으로 이동
-  };
-
-  const handleRegionClick = () => {
-    // TODO: 지역 선택 바텀시트/팝업 열기
-  };
-
-  const handleIndustryClick = () => {
-    // TODO: 업종 드롭다운 열기
-  };
-
-  const handleSortClick = () => {
-    // TODO: 정렬 드롭다운 열기 (최근 등록순 / 마감임박순 / 우대조건순 등)
   };
 
   const handleFilterClick = () => {
@@ -113,25 +165,41 @@ function MatchingList() {
         </button>
       </header>
 
-      {/* 필터바: 시각적 형태만. 클릭 동작은 전부 TODO */}
+      {/* 필터바: 지역/업종/정렬 드롭다운 + 상세 필터 버튼, 전부 실동작 */}
       <div className={styles.filterBar}>
-        <button type="button" className={styles.regionChip} onClick={handleRegionClick}>
-          <svg
-            className={styles.pinIcon}
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8Zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" />
-          </svg>
-          마포구 기준
-        </button>
-        <button type="button" className={styles.dropdownChip} onClick={handleIndustryClick}>
-          업종 전체 ▾
-        </button>
-        <button type="button" className={styles.dropdownChip} onClick={handleSortClick}>
-          최근 등록순 ▾
-        </button>
+        <select
+          className={styles.dropdownChip}
+          value={region}
+          onChange={(e) => setRegion(e.target.value === "지역 전체" ? "" : e.target.value)}
+        >
+          {REGION_OPTIONS.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <select
+          className={styles.dropdownChip}
+          value={ksic}
+          onChange={(e) => setKsic(e.target.value)}
+        >
+          {KSIC_OPTIONS.map((opt) => (
+            <option key={opt.code} value={opt.code}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <select
+          className={styles.dropdownChip}
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           className={styles.filterButton}
@@ -158,9 +226,21 @@ function MatchingList() {
 
       {/* 스크롤 영역: 안내 문구 + 카운트 박스 + 카드 리스트 */}
       <div className={styles.scrollArea}>
-        <p className={styles.guide}>
-          필터를 누르면 기업유형·업력 등 필터를 더 설정할 수 있어요
-        </p>
+        {company || bizAge ? (
+          <p className={styles.guide}>
+            필터 적용됨:{" "}
+            {[company && `기업유형 ${company.split(",").join(", ")}`, bizAge && `업력 ${bizAge}`]
+              .filter(Boolean)
+              .join(" · ")}{" "}
+            <button type="button" className={styles.clearFilterLink} onClick={handleClearFilters}>
+              해제
+            </button>
+          </p>
+        ) : (
+          <p className={styles.guide}>
+            필터를 누르면 기업유형·업력 등 필터를 더 설정할 수 있어요
+          </p>
+        )}
 
         <div className={styles.countBox}>
           <span className={styles.countLabel}>총 매칭 사업</span>

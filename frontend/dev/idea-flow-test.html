@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>[테스트] 업종매칭/아이디어 구체화 분기 흐름</title>
+  <style>
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ccc;
+      border-top-color: #333;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .startCard {
+      display: block;
+      width: 100%;
+      max-width: 480px;
+      text-align: left;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .startCard:hover { border-color: #999; background: #fafafa; }
+    .startCard b { display: block; font-size: 15px; margin-bottom: 4px; }
+    .startCard span { font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>업종매칭 / 아이디어 구체화 - 분기 테스트</h1>
+  <p>
+    시작 화면에서 경로를 고르면, 그 경로에 맞는 질문만 순서대로 진행됩니다.<br>
+    DB에는 아무것도 저장하지 않습니다. 정식 화면이 나오기 전 흐름 검증용 페이지입니다.
+  </p>
+
+  <p>
+    서버 주소:
+    <input type="text" id="apiBaseInput" style="width:240px;">
+    <button id="apiBaseSaveBtn" type="button">저장</button>
+  </p>
+
+  <div id="startScreen">
+    <button type="button" class="startCard" data-flow="industry">
+      <b>🏷 업종만 매칭</b>
+      <span>지금 하는(또는 하려는) 사업을 짧게 설명하면 업종코드만 바로 알려드려요.</span>
+    </button>
+    <button type="button" class="startCard" data-flow="idea">
+      <b>💡 아이디어 구체화</b>
+      <span>질문 4개에 답하면 아이디어 카드 + 업종코드까지 같이 만들어드려요.</span>
+    </button>
+  </div>
+
+  <div id="chatLog" style="max-width:480px; display:none;"></div>
+
+  <div id="inputArea" style="max-width:480px; margin-top:12px; display:none;">
+    <p id="questionText" style="font-weight:bold;"></p>
+    <textarea id="answerInput" rows="2" style="width:100%; box-sizing:border-box;"></textarea>
+    <p id="lengthWarning" style="color:#c0392b; font-size:13px; display:none;">
+      10글자 이상 입력해주세요.
+    </p>
+    <button id="answerBtn" type="button" style="margin-top:8px;" disabled>답변</button>
+  </div>
+
+  <script>
+    // ocr-test.html / idea-card-test.html과 동일한 서버 주소 자동 인식/저장 방식.
+    function resolveApiBaseUrl() {
+      const saved = localStorage.getItem("idea_card_api_base_url");
+      if (saved) return saved;
+      const host = window.location.hostname;
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        return `http://${host}:8000`;
+      }
+      return "http://127.0.0.1:8000";
+    }
+
+    let API_BASE_URL = resolveApiBaseUrl();
+    const apiBaseInput = document.getElementById("apiBaseInput");
+    apiBaseInput.value = API_BASE_URL;
+    document.getElementById("apiBaseSaveBtn").addEventListener("click", () => {
+      const val = apiBaseInput.value.trim().replace(/\/$/, "");
+      if (!val) return;
+      localStorage.setItem("idea_card_api_base_url", val);
+      API_BASE_URL = val;
+      alert("저장했어요. 이제부터 이 주소로 요청을 보냅니다: " + val);
+    });
+
+    const MIN_ANSWER_LENGTH = 10;
+    const MAX_CARDS = 3; // idea_card_generator.py가 만드는 고정 축 수
+
+    // 경로별 질문 세트 + API 연결 방법. "업종만 매칭"은 질문 1개 -> /industry-match,
+    // "아이디어 구체화"는 기존 질문 4개 -> /idea-cards 그대로 재사용.
+    const FLOWS = {
+      industry: {
+        questions: [
+          { key: "description", label: "지금 하시는(또는 하려는) 사업을 자유롭게 설명해주세요." },
+        ],
+        endpoint: "/api/test/industry-match",
+        buildPayload: (answers) => ({ description: answers.description }),
+      },
+      idea: {
+        questions: [
+          { key: "target", label: "어떤 대상을 타깃으로 하시나요?" },
+          { key: "differentiator", label: "다른 곳과 비교했을 때 차별점이 뭔가요?" },
+          { key: "revenue_model", label: "수익모델은 어떻게 되나요?" },
+          { key: "core_skill", label: "보유하고 계신 역량이나 경험이 있다면요?" },
+        ],
+        endpoint: "/api/test/idea-cards",
+        buildPayload: (answers) => ({ ...answers }),
+      },
+    };
+
+    let currentFlow = null;
+    const answers = {};
+    let step = 0;
+
+    const startScreen = document.getElementById("startScreen");
+    const chatLog = document.getElementById("chatLog");
+    const questionText = document.getElementById("questionText");
+    const answerInput = document.getElementById("answerInput");
+    const inputArea = document.getElementById("inputArea");
+    const lengthWarning = document.getElementById("lengthWarning");
+    const answerBtn = document.getElementById("answerBtn");
+
+    answerInput.addEventListener("input", () => {
+      const tooShort = answerInput.value.trim().length < MIN_ANSWER_LENGTH;
+      lengthWarning.style.display = tooShort ? "block" : "none";
+      answerBtn.disabled = tooShort;
+    });
+
+    document.querySelectorAll(".startCard").forEach((btn) => {
+      btn.addEventListener("click", () => startFlow(btn.dataset.flow));
+    });
+
+    function startFlow(flowKey) {
+      currentFlow = flowKey;
+      Object.keys(answers).forEach((k) => delete answers[k]);
+      step = 0;
+      startScreen.style.display = "none";
+      chatLog.style.display = "block";
+      chatLog.innerHTML = "";
+      inputArea.style.display = "block";
+      showQuestion();
+    }
+
+    function appendBubble(text, isQuestion) {
+      const div = document.createElement("div");
+      div.style.margin = "8px 0";
+      div.style.padding = "8px 12px";
+      div.style.borderRadius = "8px";
+      div.style.whiteSpace = "pre-wrap";
+      if (isQuestion) {
+        div.style.background = "#f0f0f0";
+      } else {
+        div.style.background = "#dbe9ff";
+        div.style.marginLeft = "40px";
+      }
+      div.textContent = text;
+      chatLog.appendChild(div);
+      return div;
+    }
+
+    function showQuestion() {
+      const questions = FLOWS[currentFlow].questions;
+      if (step >= questions.length) {
+        inputArea.style.display = "none";
+        const bubble = appendBubble("", true);
+        bubble.innerHTML = '<span class="spinner"></span>결과를 만들고 있어요... (몇 초 걸릴 수 있어요)';
+        submitFlow(bubble);
+        return;
+      }
+      const q = questions[step];
+      appendBubble(q.label, true);
+      questionText.textContent = q.label;
+      answerInput.value = "";
+      lengthWarning.style.display = "none";
+      answerBtn.disabled = true;
+      answerInput.focus();
+    }
+
+    answerBtn.addEventListener("click", () => {
+      const val = answerInput.value.trim();
+      if (val.length < MIN_ANSWER_LENGTH) return;
+
+      const q = FLOWS[currentFlow].questions[step];
+      answers[q.key] = val;
+      appendBubble(val, false);
+      step += 1;
+      showQuestion();
+    });
+
+    function showRestartButton() {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "처음(경로 선택)으로 돌아가기";
+      btn.style.marginTop = "8px";
+      btn.addEventListener("click", () => {
+        currentFlow = null;
+        chatLog.style.display = "none";
+        inputArea.style.display = "none";
+        startScreen.style.display = "block";
+      });
+      chatLog.appendChild(btn);
+    }
+
+    function showTechStartupButton(code) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = `업종코드 ${code}로 기술창업 분석 보기`;
+      btn.style.margin = "8px 0";
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        const bubble = appendBubble("", true);
+        bubble.innerHTML = '<span class="spinner"></span>기술창업 분석 조회 중...';
+        try {
+          const res = await fetch(`${API_BASE_URL}/analysis/tech-startup?ksic_code=${encodeURIComponent(code)}`);
+          const analysisData = await res.json();
+          bubble.textContent = JSON.stringify(analysisData, null, 2);
+        } catch (err) {
+          bubble.textContent = "기술창업 분석 요청 실패: " + err;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+      chatLog.appendChild(btn);
+    }
+
+    // ksic/에러 표시는 두 경로(업종매칭/아이디어 구체화) 공통이라 여기서 같이 처리.
+    function renderKsicAndCommon(data) {
+      if (data.ksic && data.ksic.codes && data.ksic.codes.length > 0) {
+        appendBubble(`🏷 판정된 업종코드: ${data.ksic.codes.join(", ")} (${data.ksic.names.join(", ")})`, true);
+        showTechStartupButton(data.ksic.codes[0]);
+      } else if (data.ksic !== undefined) {
+        appendBubble("🏷 업종코드를 판정하지 못했어요 (특정불가).", true);
+      }
+    }
+
+    async function submitFlow(spinnerBubble) {
+      const flow = FLOWS[currentFlow];
+      try {
+        const response = await fetch(`${API_BASE_URL}${flow.endpoint}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(flow.buildPayload(answers)),
+        });
+        const data = await response.json();
+        spinnerBubble.remove();
+
+        if (currentFlow === "idea" && data.weak_slots && data.weak_slots.length > 0) {
+          appendBubble(`⚠ 답변이 10글자 미만이라 근거로 안 쓰인 항목: ${data.weak_slots.join(", ")}`, true);
+        }
+
+        if (!data.success) {
+          appendBubble("실패: " + data.error, true);
+          showRestartButton();
+          return;
+        }
+
+        renderKsicAndCommon(data);
+
+        if (currentFlow === "idea") {
+          if (!data.cards || data.cards.length === 0) {
+            appendBubble("아이디어 카드가 생성되지 않았어요.", true);
+          } else {
+            data.cards.forEach((card) => {
+              appendBubble(`[${card.axis}] ${card.title}\n${card.description}`, true);
+            });
+            if (data.cards.length < MAX_CARDS) {
+              appendBubble(
+                `카드가 ${data.cards.length}/${MAX_CARDS}개만 나왔어요 - 일부 답변이 근거로 쓰기엔 부실하다고 AI가 판단한 것 같아요.`,
+                true
+              );
+            }
+          }
+        }
+
+        showRestartButton();
+      } catch (err) {
+        spinnerBubble.remove();
+        appendBubble("요청 실패: " + err, true);
+        showRestartButton();
+      }
+    }
+  </script>
+</body>
+</html>

@@ -21,6 +21,11 @@
 # 결과 코드가 있으면 /analysis/tech-startup?ksic_code=... 를 그대로 부르면 다음 단계로
 # 이어진다(사용자 위치 정보가 없어도 되는 쪽이라 여기 자동 연결 대상은 tech-startup만;
 # /analysis/market은 sido/sigungu/dong이 추가로 필요해서 여기선 연결 안 함).
+#
+# [2026-09-09 추가] "업종만 매칭" 경로 (사용자 확인, 정밀진단 대신 이 방향으로 결정).
+# "아이디어 구체화"(질문 4개, 위)와 별개로, 아이디어 카드 생성 없이 업종코드만 바로
+# 필요한 경우를 위한 짧은 경로 - 질문 1개(자유 서술) -> decide_industry() 직행.
+# 나중에 분류 정확도가 부족하면 질문을 늘리기로 함(사용자 확인) - 지금은 최소 형태.
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -38,6 +43,7 @@ SLOT_LABELS = {
     "core_skill": "보유역량",
 }
 SLOT_ORDER = ["target", "differentiator", "revenue_model", "core_skill"]
+MIN_DESCRIPTION_LENGTH = 10  # idea_card_generator.MIN_SLOT_LENGTH와 동일 기준으로 맞춤
 
 
 class IdeaCardTestRequest(BaseModel):
@@ -78,3 +84,27 @@ def test_idea_cards(payload: IdeaCardTestRequest) -> dict:
             }
 
     return {"success": True, "cards": result.get("cards", []), "weak_slots": weak_slots, "ksic": ksic, "error": None}
+
+
+class IndustryMatchTestRequest(BaseModel):
+    description: str = ""
+
+
+@router.post("/industry-match")
+def test_industry_match(payload: IndustryMatchTestRequest) -> dict:
+    """"업종만 매칭" 경로 - 자유 서술 1개만 받아서 바로 decide_industry() 호출."""
+    text = payload.description.strip()
+    if len(text) < MIN_DESCRIPTION_LENGTH:
+        return {"success": False, "ksic": None, "error": f"설명이 너무 짧아요 ({MIN_DESCRIPTION_LENGTH}글자 이상 입력해주세요)."}
+
+    industry = decide_industry(text)
+    ksic = None
+    if industry:
+        ksic = {
+            "codes": industry.get("확정코드", []),
+            "names": industry.get("확정업종명", []),
+            "stage": industry.get("확정단계"),
+            "confidence": industry.get("ksic_confidence"),
+        }
+
+    return {"success": True, "ksic": ksic, "error": None}

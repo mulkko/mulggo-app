@@ -29,23 +29,90 @@ def _format_dday(apply_end_date: date | None) -> str:
     return f"모집중 D-{remaining}"
 
 
+SORT_OPTIONS = {
+    # [2026-09-09 수정] 그냥 apply_end_date ASC만 하면 이미 지난 마감일이 날짜가
+    # 빠르다는 이유로 맨 위로 옴("마감임박"인데 이미 마감된 게 1등) - 실측 확인.
+    # 안 지난 것(false=0) 먼저, 그중 임박한 순, 그다음 지난 것(true=1) 순.
+    # NULL(상시모집 등 마감일 없음)은 Postgres 기본 정렬 규칙상 ASC 맨 뒤로 감
+    # - 두 정렬 기준 다 마찬가지라 결과적으로 맨 마지막.
+    "deadline": "(apply_end_date < CURRENT_DATE) ASC, apply_end_date ASC",
+    "recent": "collected_at DESC",
+}
+
+
 @router.get("")
-def list_announcements(offset: int = 0, limit: int = DEFAULT_LIMIT) -> dict:
+def list_announcements(
+    offset: int = 0,
+    limit: int = DEFAULT_LIMIT,
+    ksic: str = "",
+    region: str = "",
+    company: str = "",
+    biz_age: str = "",
+    sort: str = "recent",
+) -> dict:
     """"더보기" 버튼 방식 페이지네이션. limit+1건을 조회해서, limit보다 많이
-    돌아오면 다음 페이지가 더 있다는 뜻이므로 has_more=True로 알려준다."""
+    돌아오면 다음 페이지가 더 있다는 뜻이므로 has_more=True로 알려준다.
+
+    ksic: 콤마로 구분된 KSIC 코드 목록 (예: "C,01"). 넘기면 공고의
+    ksic_codes_matched 배열과 하나라도 겹치는 것만 필터. [2026-09-09, 테스트용]
+    지금은 업종 드롭다운에 전체 KSIC(1,200여개)가 아니라 실제로 매칭된 것 중
+    자주 나오는 몇 개만 넣어서 필터링 자체가 되는지 확인하는 용도.
+
+    region: 콤마로 구분된 시/도 목록 (예: "서울특별시,경기도"). 공고의 regions
+    배열과 하나라도 겹치는 것만 필터. regions는 시/군 단위까지만 있고 구 단위는
+    없음(extract_region.py 팀 결정 - 오탐 위험 때문에 의도적으로 제외).
+
+    company: 콤마로 구분된 기업유형 목록 (예: "소상공인,중소기업"). target_summary가
+    그중 하나와 정확히 일치하는 것만 필터. bizinfo만 값이 있음(kstartup의
+    target_summary는 자유 문장이라 이 필터 대상이 아님 - FilterPage.tsx 옵션도
+    bizinfo distinct 값 기준으로 만들어져 있음).
+
+    biz_age: 업력 값 하나 (예: "예비창업자", "3년미만", "업력무관"). business_age_condition에
+    이 값이 부분 문자열로 포함되면 매칭("=" 아님, "LIKE '%값%'") - kstartup 원본이
+    "예비창업자~3년미만"처럼 두 조건을 붙여서 한 값으로 주는 경우가 있어서, "예비창업자"만
+    선택해도 "예비창업자~3년미만" 같은 공고가 같이 잡히게 하려는 의도(docs/filter_options_
+    review_2026-09-09.xlsx 참고). bizinfo는 이 컬럼 자체가 항상 NULL이라 대상이 아님.
+
+    sort: "recent"(기본, 최근 등록순) 또는 "deadline"(마감임박순)."""
+    ksic_codes = [c.strip() for c in ksic.split(",") if c.strip()]
+    regions = [r.strip() for r in region.split(",") if r.strip()]
+    companies = [c.strip() for c in company.split(",") if c.strip()]
+    biz_age = biz_age.strip()
+    order_sql = SORT_OPTIONS.get(sort, SORT_OPTIONS["recent"])
+
+    # [2026-09-09] 이미 마감 지난 공고는 리스트에서 아예 뺀다. announcements 원본
+    # 데이터는 안 지운다(raw/가공 원칙) - 여기 조회 조건에서만 제외. 마감일이
+    # 없는(NULL, 상시모집 등) 공고는 계속 보여줌.
+    conditions = ["(apply_end_date IS NULL OR apply_end_date >= CURRENT_DATE)"]
+    params: list = []
+    if ksic_codes:
+        conditions.append("ksic_codes_matched && %s")
+        params.append(ksic_codes)
+    if regions:
+        conditions.append("regions && %s")
+        params.append(regions)
+    if companies:
+        conditions.append("target_summary = ANY(%s)")
+        params.append(companies)
+    if biz_age:
+        conditions.append("business_age_condition LIKE %s")
+        params.append(f"%{biz_age}%")
+    where_sql = "WHERE " + " AND ".join(conditions) if conditions else ""
+
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM announcements")
+        cur.execute(f"SELECT COUNT(*) FROM announcements {where_sql}", params)
         total = cur.fetchone()[0]
         cur.execute(
-            """
+            f"""
             SELECT announcement_id, host_org_name, title, apply_end_date
             FROM announcements
-            ORDER BY collected_at DESC
+            {where_sql}
+            ORDER BY {order_sql}
             LIMIT %s OFFSET %s
             """,
-            (limit + 1, offset),
+            [*params, limit + 1, offset],
         )
         rows = cur.fetchall()
     finally:
