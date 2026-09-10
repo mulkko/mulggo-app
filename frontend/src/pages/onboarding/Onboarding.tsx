@@ -104,12 +104,8 @@ function Onboarding() {
   };
 
   const handleIdeaCard = () => {
-<<<<<<< HEAD
+    // [2026-09-10] 진단 진입점은 /idea/choice(빠른매칭 vs 정밀구체화) → 이후 /diagnosis/select로 이어짐.
     navigate("/idea/choice");
-=======
-    // [2026-09-10] pages/diagnosis/DiagnosisSelect.tsx로 연결됨.
-    navigate("/diagnosis/select");
->>>>>>> f937900dc4d0bd3273a7dbdc6051d94321975a52
   };
 
   const handleMatchingCard = () => {
