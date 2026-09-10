@@ -21,6 +21,8 @@ interface AnnouncementCardData {
   title: string;
   /** 해시태그 (보통 2개 - 로직 확정 전까지는 개수 유동적) */
   tags: string[];
+  /** [임시] 채우기 가능한 서류가 있는 공고인지 (backend/api/matching.py fillable) */
+  fillable?: boolean;
 }
 
 interface AnnouncementCardProps {
@@ -41,7 +43,10 @@ function AnnouncementCard({ item, onClick, onDelete }: AnnouncementCardProps) {
       >
         <div className={`${styles.top} ${onDelete ? styles.topWithDelete : ""}`}>
           <span className={styles.agency}>{item.agency}</span>
-          <span className={styles.dday}>{item.dday}</span>
+          <div className={styles.rightGroup}>
+            {item.fillable && <span className={styles.fillableBadge}>채우기 가능</span>}
+            <span className={styles.dday}>{item.dday}</span>
+          </div>
         </div>
         <span className={styles.title}>{item.title}</span>
         <div className={styles.tagRow}>

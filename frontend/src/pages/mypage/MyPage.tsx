@@ -5,7 +5,7 @@ import BottomNav from "../../components/BottomNav/BottomNav";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
-import { clearSession, getUserId } from "../../auth/session";
+import { authHeaders, clearSession, getUserId } from "../../auth/session";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -27,12 +27,18 @@ interface ProfileSummary {
  * [2026-09-09] 프로필 요약(이름/유형/지역)만 backend/api/mypage.py 실데이터로 교체함.
  * [2026-09-10] user_id를 로그인 세션(auth/session.ts::getUserId)에서 가져오도록 교체,
  * 세션 없으면 FALLBACK_USER_ID로 동작(ProfileEdit.tsx 참고).
- * 나머지 4개 섹션(분석 리포트/관심 지원사업/채우기 이용내역/지원내역)은 대응
- * 테이블이 전부 0건이라(연동해도 항상 빈 목록) 더미데이터 그대로 둠.
+ * [2026-09-10] 관심있는 지원사업(찜하기)도 backend/api/mypage.py(GET /bookmarks) +
+ * backend/api/matching.py(POST·DELETE .../bookmark) 실데이터로 교체함 - 이 섹션만
+ * 세션 토큰(authHeaders) 기준이라 비로그인이면 빈 목록으로 보인다.
+ * [2026-09-10] 나머지 3개 섹션(분석 리포트/채우기 이용내역/지원내역)은 대응 테이블이
+ * 실제로 0건이라(applications/apply_status/idea_refinement_sessions - fetch해도
+ * 항상 빈 배열) API 연동 자체를 안 만들고, 그냥 빈 배열로 시작해서 각 섹션에
+ * 안내 문구("~이 없습니다")만 보여준다(사용자 확인). 더미데이터는 MyPage.tsx.bak에
+ * 남겨뒀다 - 나중에 진짜 테이블이 채워지면 그 파일의 카드 모양을 참고해서 연동할 것.
  *
- * 지금은 화면(레이아웃 + 더미데이터)만 만든다. 백엔드 연동 전이라
- * 각 카드의 삭제(X) 버튼만 "로컬 state에서 해당 항목 제거" 동작으로 실제 구현하고
- * (새로고침하면 더미데이터가 다시 채워짐), 나머지 화면 이동은 전부 TODO 주석으로만 표시.
+ * 삭제(X) 버튼은 "로컬 state에서 해당 항목 제거"만 하는 임시 동작(새로고침하면
+ * 사라짐) - 실제 서버 삭제 API는 없음. 화면 이동은 TODO 주석으로만 표시.
+ * (관심있는 지원사업은 위처럼 실연동이라 삭제 시 서버에서도 찜 해제됨.)
  *
  * 삭제 state 구조: 삭제 가능한 섹션마다 별도의 useState 배열을 두고,
  * 삭제 시 `setX(prev => prev.filter(item => item.id !== id))` 로 해당 id만 걸러낸다.
@@ -66,58 +72,6 @@ interface ApplyHistoryItem {
   date: string;
 }
 
-/* ===== 더미데이터 (값 출처: 프로토타입 "마이페이지" 화면) =====
-   백엔드 연동 시 각 배열을 API 응답으로 교체한다. */
-
-const DUMMY_REPORTS: AnalysisReport[] = [
-  {
-    id: "r1",
-    industry: "숙박 및 음식점업 (커피 전문점)",
-    summary: "업종코드 552303 · 서교동 주변 상권 동향",
-    createdAt: "2026.08.20 생성",
-  },
-  {
-    id: "r2",
-    industry: "전문, 과학 및 기술 서비스업 (전기ㆍ전자공학 연구개발업)",
-    summary: "업종코드 730005 · 업종 및 특허 분석 지표",
-    createdAt: "2026.08.12 생성",
-  },
-];
-
-const DUMMY_INTERESTS: AnnouncementCardData[] = [
-  {
-    id: "i1",
-    agency: "중소벤처기업부",
-    dday: "모집중 D-6",
-    title: "2026년 청년 소상공인 창업 자금 지원",
-    tags: ["#청년창업", "#소상공인"],
-  },
-  {
-    id: "i2",
-    agency: "마포구청",
-    dday: "모집중 D-18",
-    title: "마포구 골목상권 특화 창업 지원사업",
-    tags: ["#골목상권", "#지역특화"],
-  },
-];
-
-const DUMMY_FILL_HISTORY: FillHistoryItem[] = [
-  {
-    id: "f1",
-    title: "2026년 청년 소상공인 창업 자금 지원",
-    description: "채우기 이용했던 서류들을 다시 다운로드 받을 수 있습니다.",
-    badge: "다운로드 가능",
-  },
-];
-
-const DUMMY_APPLY_HISTORY: ApplyHistoryItem[] = [
-  {
-    id: "p1",
-    title: "마포구 골목상권 특화 창업 지원사업",
-    status: "지원함",
-    date: "2026.08.10",
-  },
-];
 
 /** 카드 우측 상단 삭제(X) 버튼 (공통 스펙: 22x22 원형, hover 배경). */
 function DeleteButton({ onClick }: { onClick: () => void }) {
@@ -146,10 +100,15 @@ function MyPage() {
   const navigate = useNavigate();
 
   // 삭제 가능한 섹션마다 별도 로컬 state (백엔드 연동 전이라 새로고침 시 초기화됨)
-  const [reports, setReports] = useState<AnalysisReport[]>(DUMMY_REPORTS);
-  const [interests, setInterests] = useState<AnnouncementCardData[]>(DUMMY_INTERESTS);
-  const [fillHistory, setFillHistory] = useState<FillHistoryItem[]>(DUMMY_FILL_HISTORY);
-  const [applyHistory, setApplyHistory] = useState<ApplyHistoryItem[]>(DUMMY_APPLY_HISTORY);
+  // [2026-09-10] 분석 리포트/채우기 이용내역/지원내역은 대응 테이블이 실제로
+  // 0건이라(applications/apply_status/idea_refinement_sessions) API를 만들어도 항상
+  // 빈 배열이므로, 더미데이터 대신 처음부터 빈 배열로 시작하고 각 섹션에 안내
+  // 문구를 보여준다(사용자 확인, 2026-09-10). 채워지는 테이블이 생기면 그때 프로필/
+  // 관심지원사업처럼 useEffect에서 fetch로 교체.
+  const [reports, setReports] = useState<AnalysisReport[]>([]);
+  const [interests, setInterests] = useState<AnnouncementCardData[]>([]);
+  const [fillHistory, setFillHistory] = useState<FillHistoryItem[]>([]);
+  const [applyHistory, setApplyHistory] = useState<ApplyHistoryItem[]>([]);
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
 
   useEffect(() => {
@@ -160,6 +119,17 @@ function MyPage() {
       })
       .catch(() => {
         /* 조회 실패 시 아래 더미 문구 그대로 표시 */
+      });
+
+    // [2026-09-10] 찜하기(bookmarks) 연동 - 이 엔드포인트는 위 프로필과 달리 세션
+    // 토큰(authHeaders)으로 로그인 사용자를 구분한다. 비로그인이면 401 → 빈 목록 그대로.
+    fetch(`${API_BASE_URL}/api/mypage/bookmarks`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((res: { success: boolean; data?: AnnouncementCardData[] }) => {
+        if (res.success && res.data) setInterests(res.data);
+      })
+      .catch(() => {
+        /* 조회 실패 시 빈 목록 그대로 */
       });
   }, []);
 
@@ -189,8 +159,17 @@ function MyPage() {
   };
 
   const handleInterestCardClick = (item: AnnouncementCardData) => {
-    // TODO: 공고 상세 화면으로 이동 (navigate(`/matching/${item.id}`) — 관심목록 id 체계 확정 후 연결)
-    void item;
+    navigate(`/matching/${item.id}`);
+  };
+
+  const handleRemoveInterest = (id: string) => {
+    removeById(setInterests)(id);
+    fetch(`${API_BASE_URL}/api/matching/${id}/bookmark`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    }).catch(() => {
+      /* 실패해도 화면에선 이미 지운 채로 둔다 - 다음 진입 시 서버 목록으로 다시 맞춰짐 */
+    });
   };
 
   const handleFillHistoryClick = (_id: string) => {
@@ -260,6 +239,7 @@ function MyPage() {
         {/* 3. 나의 분석 리포트 */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>나의 분석 리포트</h2>
+          {reports.length === 0 && <p className={styles.emptyText}>분석한 리포트가 없습니다</p>}
           {reports.map((report) => (
             <div key={report.id} className={styles.reportCard}>
               <button
@@ -287,20 +267,23 @@ function MyPage() {
         <section className={styles.section}>
           <div className={styles.sectionHead}>
             <h2 className={styles.sectionTitle}>관심있는 지원사업</h2>
-            <button
-              type="button"
-              className={styles.viewAllBtn}
-              onClick={handleViewAllInterests}
-            >
-              전체보기 →
-            </button>
+            {interests.length > 0 && (
+              <button
+                type="button"
+                className={styles.viewAllBtn}
+                onClick={handleViewAllInterests}
+              >
+                전체보기 →
+              </button>
+            )}
           </div>
+          {interests.length === 0 && <p className={styles.emptyText}>관심있는 지원사업이 없습니다</p>}
           {interests.map((item) => (
             <AnnouncementCard
               key={item.id}
               item={item}
               onClick={handleInterestCardClick}
-              onDelete={removeById(setInterests)}
+              onDelete={handleRemoveInterest}
             />
           ))}
         </section>
@@ -308,6 +291,7 @@ function MyPage() {
         {/* 5. 채우기 이용내역 */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>채우기 이용내역</h2>
+          {fillHistory.length === 0 && <p className={styles.emptyText}>채우기 이용내역이 없습니다</p>}
           {fillHistory.map((item) => (
             <div key={item.id} className={styles.fillCard}>
               <button
@@ -327,6 +311,7 @@ function MyPage() {
         {/* 6. 나의 지원내역 */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>나의 지원내역</h2>
+          {applyHistory.length === 0 && <p className={styles.emptyText}>지원하신 내역이 존재하지 않습니다</p>}
           {applyHistory.map((item) => (
             <div key={item.id} className={styles.applyCard}>
               <span className={styles.applyTitle}>{item.title}</span>

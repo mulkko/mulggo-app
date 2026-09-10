@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "../../styles/matchingDetail.module.css";
 import type { AnnouncementDetail } from "./matchingDetailData";
+import { authHeaders } from "../../auth/session";
 
 /**
  * 공고 상세(지원사업 상세) 화면.
@@ -13,8 +14,9 @@ import type { AnnouncementDetail } from "./matchingDetailData";
  *
  * 실제 동작으로 만든 것: 뒤로가기, 북마크(저장) 토글, 지원 여부 토글.
  * TODO로만 남긴 것: "채우기"(16-1 서류 미리보기 화면 예정), "원 공고 홈페이지로 이동"(외부 URL 미정).
- * hashtags/aiComment는 백엔드가 아직 자리만 채운 값(빈 문자열/안내 문구)을 준다 -
- * 해시태그 로직 확정, 사용자 프로필 연결(개인화 코멘트)은 별도 작업.
+ * hashtags는 기업마당(bizinfo) 공고만 값이 있음(announcements_raw_bizinfo.hashtags,
+ * K-Startup 원본엔 해당 필드 자체가 없음) - 2026-09-10 연동. aiComment는 백엔드가
+ * 아직 자리만 채운 값(안내 문구)을 준다 - 사용자 프로필 연결(개인화)은 별도 작업.
  */
 
 /**
@@ -44,11 +46,14 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 function MatchingDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
 
   const [detail, setDetail] = useState<AnnouncementDetail | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [contentExpanded, setContentExpanded] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -56,23 +61,41 @@ function MatchingDetail() {
       return;
     }
     setLoading(true);
-    fetch(`${API_BASE_URL}/api/matching/${id}`)
+    fetch(`${API_BASE_URL}/api/matching/${id}`, { headers: authHeaders() })
       .then((res) => res.json())
       .then((body: { success: boolean; data?: AnnouncementDetail }) => {
         setDetail(body.success ? body.data : undefined);
+        setSaved(body.success ? Boolean(body.data?.bookmarked) : false);
       })
       .catch(() => setDetail(undefined))
       .finally(() => setLoading(false));
   }, [id]);
 
   const handleBack = () => {
-    // [2026-09-10] bare navigate("/matching")로 가면 목록에서 걸어둔 필터(URL 쿼리)가
-    // 다 날아가서, 브라우저 history를 한 칸 되돌려 원래 있던 필터 붙은 URL로 복귀한다.
-    navigate(-1);
+    // [2026-09-10] navigate(-1)(브라우저 history 되돌리기)로 했었는데, 이 화면에
+    // 직접 링크로 들어온 경우(공유 링크, 새로고침 등) history에 리스트가 없어서
+    // 뒤로가기가 안 먹는 문제가 있었음. 대신 MatchingList가 카드 클릭 시 넘겨준
+    // location.state.fromSearch로 필터 쿼리를 그대로 복원해 명시적으로 이동한다.
+    // state가 없으면(직접 진입 등) 필터 없이 그냥 "/matching"으로.
+    const fromSearch = (location.state as { fromSearch?: string } | null)?.fromSearch;
+    navigate(fromSearch ? `/matching?${fromSearch}` : "/matching");
   };
 
   const handleToggleSave = () => {
-    setSaved((prev) => !prev);
+    // 낙관적으로 먼저 바꾸고, 실패하면(비로그인 401 등) 원래 상태로 되돌린다.
+    const next = !saved;
+    setSaved(next);
+    fetch(`${API_BASE_URL}/api/matching/${id}/bookmark`, {
+      method: next ? "POST" : "DELETE",
+      headers: authHeaders(),
+    }).then((res) => {
+      if (!res.ok) {
+        setSaved(!next);
+        return;
+      }
+      setToastMessage(next ? "선택하신 공고가 찜하기 되었습니다" : "찜하기가 취소되었습니다");
+      setTimeout(() => setToastMessage(null), 1500);
+    }).catch(() => setSaved(!next));
   };
 
   const handleToggleApplied = () => {
@@ -209,10 +232,22 @@ function MatchingDetail() {
           ))}
         </section>
 
-        {/* 공고 내용 카드 */}
+        {/* 공고 내용 카드 - 내용이 길면 약 6줄 높이로 접어두고, 그라데이션 + 버튼으로 펼침.
+            [2026-09-10] 실제 줄 수를 재는 대신 근사 높이(132px)로 자름 - 사용자 결정(B안):
+            내용이 132px보다 짧아도 버튼은 항상 보임(오버플로 여부를 JS로 안 재서 단순화). */}
         <section className={styles.card}>
           <h2 className={styles.cardTitle}>공고 내용</h2>
-          <p className={styles.contentBody}>{detail.content}</p>
+          <div className={`${styles.contentWrap} ${contentExpanded ? "" : styles.contentCollapsed}`}>
+            <p className={styles.contentBody}>{detail.content}</p>
+            {!contentExpanded && <div className={styles.contentFade} aria-hidden="true" />}
+          </div>
+          <button
+            type="button"
+            className={styles.expandButton}
+            onClick={() => setContentExpanded((prev) => !prev)}
+          >
+            {contentExpanded ? "접기" : "펼쳐보기"}
+          </button>
         </section>
 
         {/* 서류 자동채움 안내 배너 */}
@@ -285,6 +320,12 @@ function MatchingDetail() {
           </button>
         </div>
       </div>
+
+      {toastMessage && (
+        <div className={styles.toast} role="status">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

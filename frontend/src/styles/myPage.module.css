@@ -125,6 +125,13 @@
   gap: 10px;
 }
 
+.emptyText {
+  padding: 20px 0;
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+  text-align: center;
+}
+
 .sectionHead {
   display: flex;
   align-items: baseline;

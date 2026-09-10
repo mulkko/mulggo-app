@@ -123,12 +123,6 @@ const INITIAL_STATE: FilterState = {
   age: 0,
 };
 
-// [2026-09-10] "예비창업자"는 화면 표시만 "예비창업자 포함"으로 바꾸기로 결정(2축 분리는
-// 안 함). 실제 값(DB LIKE 매칭에 쓰이는 값)은 그대로 "예비창업자" 유지 - 여기 라벨만 교체.
-const CHIP_LABEL_OVERRIDES: Record<string, string> = {
-  예비창업자: "예비창업자 포함",
-};
-
 /** 복수선택 그룹 토글 — 프로토타입 원본 로직. */
 function toggleMulti(current: number[], index: number): number[] {
   if (index === 0) return [0];
@@ -287,7 +281,7 @@ function FilterPage() {
                     aria-pressed={selected}
                     onClick={() => handleChipClick(group, index)}
                   >
-                    {CHIP_LABEL_OVERRIDES[option] ?? option}
+                    {option}
                   </button>
                 );
               })}

@@ -52,3 +52,10 @@ def get_current_user_id(authorization: str | None = Header(default=None)) -> int
     if user_id is None:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     return user_id
+
+
+def get_optional_user_id(authorization: str | None = Header(default=None)) -> int | None:
+    """get_current_user_id와 동일하지만 비로그인이어도 401 대신 None을 준다 - 공고 상세처럼
+    비로그인도 볼 수 있는 화면에서 "로그인했으면 그 사람 기준 부가 정보(찜 여부 등)도 같이" 용도."""
+    token = authorization.removeprefix("Bearer ").strip() if authorization and authorization.startswith("Bearer ") else None
+    return get_user_id_by_token(token) if token else None

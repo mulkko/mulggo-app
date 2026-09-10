@@ -363,10 +363,14 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
 -- [2026-09-10] user_id(users FK) 기준으로 변경 — business_profiles는 매 회원가입 시
 -- 예비창업자로도 항상 같이 생성돼 1:1이라 정합성 문제는 없었지만, 조회할 때마다
 -- business_profiles를 거쳐야 하는 번거로움을 없애는 목적. 변경 시점에 0행이라
--- 데이터 이관 불필요. 아직 API/프론트 연동 전(테이블만 존재).
+-- 데이터 이관 불필요. [2026-09-10] API(backend/api/matching.py POST·DELETE .../bookmark,
+-- backend/api/mypage.py GET /bookmarks) + 프론트(MatchingDetail.tsx, MyPage.tsx) 연동 완료.
+-- (user_id, announcement_id) UNIQUE 제약 추가 - 같은 유저가 같은 공고를 중복 찜 못 함
+-- (앱 코드에서도 INSERT 전에 존재 확인하지만, 동시 요청 등 레이스 컨디션 대비 이중 안전장치).
 CREATE TABLE IF NOT EXISTS bookmarks (
     bookmark_id     BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(user_id),
     announcement_id BIGINT NOT NULL REFERENCES announcements(announcement_id),
-    bookmarked_at   TIMESTAMPTZ NOT NULL
+    bookmarked_at   TIMESTAMPTZ NOT NULL,
+    CONSTRAINT uq_bookmarks_user_announcement UNIQUE (user_id, announcement_id)
 );

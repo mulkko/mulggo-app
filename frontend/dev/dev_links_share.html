@@ -188,6 +188,26 @@
         <td></td>
       </tr>
       <tr>
+        <td colspan="6" style="background:#eef7ff;">
+          <details>
+            <summary style="font-weight:bold; cursor:pointer;">[보고용, 확인 후 삭제 예정] 회원 기능 완료 내역 (2026-09-10)</summary>
+            <div style="margin-top:10px; line-height:1.6; font-weight:normal;">
+              <b>프론트 화면</b>: Splash, Signup(회원가입), Onboarding(가입완료), Home, MyPage(마이페이지), ProfileEdit(정보수정), LoginForm(사용자/관리자 공용)<br>
+              <b>백엔드 /api/auth</b>: 회원가입, 로그인, 관리자 로그인, DEV 자동로그인(사용자/관리자), 사업자등록증 OCR<br>
+              <b>백엔드 /api/mypage</b>: 프로필 조회/수정(GET·PUT /profile), 사업자등록증 등록(POST /biz-cert)<br>
+              <b>로그인 세션</b>: auth_sessions 토큰 발급/검증(opaque token, JWT 미사용) 배관 완료, MyPage/ProfileEdit도 세션의 user_id로 조회하도록 연결됨(2026-09-10)<br>
+              <b>아직 미구현</b>
+              <ul style="margin:4px 0 0 20px; padding:0;">
+                <li>MyPage의 분석리포트/관심지원사업/채우기이용내역/지원내역/고객센터 5개 섹션 — 전부 TODO·더미데이터</li>
+                <li>ProfileEdit 프로필사진 변경</li>
+                <li>ProfileEdit 사업자등록증 재업로드</li>
+                <li>Signup 약관 실제 문구 (지금은 placeholder만 있음)</li>
+              </ul>
+            </div>
+          </details>
+        </td>
+      </tr>
+      <tr>
         <td class="tit" colspan="6">사용자용 화면 - 사업구체화</td>
       </tr>
       <tr>
@@ -295,7 +315,7 @@
         <td>2026-09-08</td>
         <td>2026-09-10</td>
         <td class="done">2026-09-10</td>
-        <td>85%</td>
+        <td>100%</td>
       </tr>
             <tr>
         <td>매칭결과 - 필터</td>
@@ -303,14 +323,14 @@
         <td>2026-09-08</td>
         <td>2026-09-10</td>
         <td></td>
-        <td>90%</td>
+        <td>100%</td>
       </tr>
       <tr>
         <td>매칭결과 - 상세보기</td>
         <td><a href="http://192.168.0.160:5173/matching/a1" target="_blank">http://192.168.0.160:5173/matching/a1</a></td>
         <td>2026-09-08</td>
-        <td></td>
-        <td class="done">2026-09-09</td>
+        <td>2026-09-10</td>
+        <td class="done">2026-09-10</td>
         <td>85%</td>
       </tr>
       <tr>
@@ -330,13 +350,32 @@
         <td></td>
       </tr>
       <tr>
+        <td colspan="6" style="background:#eef7ff;">
+          <details>
+            <summary style="font-weight:bold; cursor:pointer;">[보고용, 확인 후 삭제 예정] 매칭 기능 완료 내역 (2026-09-10)</summary>
+            <div style="margin-top:10px; line-height:1.6; font-weight:normal;">
+              <b>프론트 화면 4개</b>: MatchingList(리스트+필터+정렬), FilterPage(업종/지역/기업유형/업력/지원분야/연령), MatchingDetail(상세), DocPreview(서류 미리보기)<br>
+              <b>백엔드 /api/matching</b>: 리스트 조회(6종 필터+정렬, 마감 자동 제외), 상세 조회, 신청서 자동채우기(HWPX)<br>
+              <b>매칭 판정 로직</b>: KSIC 업종 자동분류(explicit_match/llm_match/decide_industry), 국세청 코드 매칭(nts_code_match), 지역 추출(시/도 단위)<br>
+              <b>아직 미구현</b>
+              <ul style="margin:4px 0 0 20px; padding:0;">
+                <li>매칭 재정렬 모델(ranker, 빈 스텁)</li>
+                <li>해시태그/개인화 AI 코멘트</li>
+                <li>신청서 자동채우기 대상자(로그인 전까지 DB 1건 고정)</li>
+                <li>찜하기 API/프론트 연동</li>
+              </ul>
+            </div>
+          </details>
+        </td>
+      </tr>
+      <tr>
         <td class="tit" colspan="6">관리자페이지</td>
       </tr>
       <tr>
         <td>관리자 로그인</td>
         <td><a href="http://192.168.0.160:5173/admin/login" target="_blank">http://192.168.0.160:5173/admin/login</a></td>
         <td>2026-09-05</td>
-        <td>2026-09-07</td>
+        <td>2026-09-10</td>
         <td class="done">2026-09-07</td>
         <td>90%</td>
       </tr>

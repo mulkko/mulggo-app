@@ -6,11 +6,12 @@ import tempfile
 from datetime import date
 
 import requests
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends
 from fastapi.responses import FileResponse
 
 from backend.assistant.hwpx_fill import fill_hwpx_all
 from backend.assistant.pipeline import _load_mapping
+from backend.auth.session import get_current_user_id, get_optional_user_id
 from backend.db.connection import get_connection
 
 router = APIRouter(prefix="/api/matching", tags=["matching"])
@@ -34,8 +35,16 @@ SORT_OPTIONS = {
     # 안 지난 것(false=0) 먼저, 그중 임박한 순, 그다음 지난 것(true=1) 순.
     # NULL(상시모집 등 마감일 없음)은 Postgres 기본 정렬 규칙상 ASC 맨 뒤로 감
     # - 두 정렬 기준 다 마찬가지라 결과적으로 맨 마지막.
-    "deadline": "(apply_end_date < CURRENT_DATE) ASC, apply_end_date ASC",
-    "recent": "collected_at DESC",
+    #
+    # [2026-09-10 수정] 끝에 announcement_id를 2차 정렬로 추가함. collected_at은
+    # 배치 크롤 시각이라 동점이 매우 흔하고(실측: 활성 공고 1,764건 중 distinct
+    # collected_at이 5개뿐, 한 그룹이 1,417건), apply_end_date도 "상시모집"(NULL)
+    # 922건이 전부 동점 - 정렬 기준에 동점이 있으면 Postgres가 쿼리마다 순서를
+    # 다르게 줄 수 있어서, "더보기" 페이지네이션(LIMIT/OFFSET)이 같은 행을 다시
+    # 보여주거나 건너뛰는 문제가 있었음. 유니크한 announcement_id를 마지막
+    # 기준으로 추가해서 동점을 완전히 없애 순서를 고정한다.
+    "deadline": "(apply_end_date < CURRENT_DATE) ASC, apply_end_date ASC, announcement_id DESC",
+    "recent": "collected_at DESC, announcement_id DESC",
 }
 
 
@@ -125,8 +134,13 @@ def list_announcements(
         total = cur.fetchone()[0]
         cur.execute(
             f"""
-            SELECT announcement_id, host_org_name, title, apply_end_date
-            FROM announcements
+            SELECT a.announcement_id, a.host_org_name, a.title, a.apply_end_date,
+                   EXISTS (
+                       SELECT 1 FROM announcement_attachments att
+                       WHERE att.announcement_id = a.announcement_id
+                         AND att.fillable_field_count > 0
+                   ) AS fillable
+            FROM announcements a
             {where_sql}
             ORDER BY {order_sql}
             LIMIT %s OFFSET %s
@@ -148,8 +162,9 @@ def list_announcements(
             "title": title,
             # [2026-09-09] 해시태그 로직은 사용자가 직접 확인 중 - 우선 빈 배열로 둔다.
             "tags": [],
+            "fillable": bool(fillable),
         }
-        for announcement_id, host_org_name, title, apply_end_date in rows
+        for announcement_id, host_org_name, title, apply_end_date, fillable in rows
     ]
     return {"success": True, "data": data, "has_more": has_more, "total": total}
 
@@ -294,16 +309,20 @@ def fill_attachment(attachment_id: int, background_tasks: BackgroundTasks):
 
 
 @router.get("/{announcement_id}")
-def get_announcement_detail(announcement_id: int) -> dict:
+def get_announcement_detail(
+    announcement_id: int, user_id: int | None = Depends(get_optional_user_id)
+) -> dict:
     conn = get_connection()
     try:
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT title, content, host_org_name, supervising_org, target_summary,
-                   apply_method, contact, apply_start_date, apply_end_date,
-                   detail_page_url
-            FROM announcements WHERE announcement_id = %s
+            SELECT a.title, a.content, a.host_org_name, a.supervising_org, a.target_summary,
+                   a.apply_method, a.contact, a.apply_start_date, a.apply_end_date,
+                   a.detail_page_url, b.hashtags
+            FROM announcements a
+            LEFT JOIN announcements_raw_bizinfo b ON b.raw_bizinfo_id = a.raw_bizinfo_id
+            WHERE a.announcement_id = %s
             """,
             (announcement_id,),
         )
@@ -313,9 +332,21 @@ def get_announcement_detail(announcement_id: int) -> dict:
 
         (title, content, host_org_name, supervising_org, target_summary,
          apply_method, contact, apply_start_date, apply_end_date,
-         detail_page_url) = row
+         detail_page_url, raw_hashtags) = row
+
+        # 해시태그는 기업마당(bizinfo) 원본에만 있는 필드 (K-Startup 원본엔 없음).
+        # 원본은 "경영,전남광주,홍보시책" 처럼 콤마로만 구분돼있어 "#" 붙여서 공백으로 이어붙인다.
+        hashtags = " ".join(f"#{t.strip()}" for t in (raw_hashtags or "").split(",") if t.strip())
 
         docs = _fetch_docs(announcement_id, conn)
+
+        bookmarked = False
+        if user_id is not None:
+            cur.execute(
+                "SELECT 1 FROM bookmarks WHERE user_id = %s AND announcement_id = %s",
+                (user_id, announcement_id),
+            )
+            bookmarked = cur.fetchone() is not None
     finally:
         conn.close()
 
@@ -328,8 +359,8 @@ def get_announcement_detail(announcement_id: int) -> dict:
             "period": _format_period(apply_start_date, apply_end_date),
             "dday": _format_dday_short(apply_end_date),
             "title": title,
-            # [2026-09-09] 해시태그 로직은 사용자가 직접 확인 중 - 우선 빈 문자열.
-            "hashtags": "",
+            "hashtags": hashtags,
+            "bookmarked": bookmarked,
             # [2026-09-09] 사용자 프로필(지역/업종) 연결 전까지는 진짜 개인화된 코멘트를
             # 만들 수 없다 - 근거 없는 맞춤 문구를 지어내지 않고 안내 문구로 대신한다.
             "aiComment": "맞춤 코멘트는 준비 중입니다.",
@@ -344,3 +375,40 @@ def get_announcement_detail(announcement_id: int) -> dict:
             "homepageUrl": detail_page_url,
         },
     }
+
+
+@router.post("/{announcement_id}/bookmark")
+def add_bookmark(announcement_id: int, user_id: int = Depends(get_current_user_id)) -> dict:
+    """찜하기. bookmarks에 (user_id, announcement_id) 유니크 제약이 없어서 INSERT 전에
+    직접 존재 여부를 확인한다 - 중복 클릭해도 행이 여러 개 쌓이지 않게."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT 1 FROM bookmarks WHERE user_id = %s AND announcement_id = %s",
+            (user_id, announcement_id),
+        )
+        if cur.fetchone() is None:
+            cur.execute(
+                "INSERT INTO bookmarks (user_id, announcement_id, bookmarked_at) VALUES (%s, %s, now())",
+                (user_id, announcement_id),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+    return {"success": True, "data": {"bookmarked": True}}
+
+
+@router.delete("/{announcement_id}/bookmark")
+def remove_bookmark(announcement_id: int, user_id: int = Depends(get_current_user_id)) -> dict:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM bookmarks WHERE user_id = %s AND announcement_id = %s",
+            (user_id, announcement_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"success": True, "data": {"bookmarked": False}}
