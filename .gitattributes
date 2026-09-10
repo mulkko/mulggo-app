@@ -1,2 +1,5 @@
 # 시드 데이터 CSV — 줄바꿈/인코딩 변환 없이 그대로 보관 (BOM·LF 유지)
 data/ksic_clean_v2.csv -text
+
+# Windows 배치 스크립트는 항상 CRLF로 (LF면 일부 환경에서 실행 오류)
+*.bat text eol=crlf
