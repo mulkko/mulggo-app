@@ -63,6 +63,28 @@ def get_analysis_connection():
     )
 
 
+def log_crawl_batch(source: str, fetched_count: int, inserted_count: int, status: str) -> None:
+    """crawl_batch_logs 에 원본 수집 실행 결과를 한 줄 남긴다.
+
+    스케줄러(GitHub Actions 등)로 `python -m backend.crawler.*` 를 직접 실행할 때
+    호출한다. admin API 경로(backend/api/admin.py::_log_crawl)는 별도로 있고,
+    이 함수는 그 경로를 안 타는 단독 실행용이다. ran_at 은 컬럼 DEFAULT now() 로 채워진다.
+    """
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO crawl_batch_logs (source, fetched_count, inserted_count, status)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (source, fetched_count, inserted_count, status),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
 def list_tables() -> list:
     connection = get_connection()
     try:
