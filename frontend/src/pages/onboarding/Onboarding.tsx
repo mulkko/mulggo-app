@@ -96,7 +96,7 @@ function Onboarding() {
   };
 
   const handleSkip = () => {
-    // TODO: /home 라우트가 아직 없음 — 추가되면 navigate("/home")로 연결
+    navigate("/home");
   };
 
   const handleNext = () => {
@@ -104,7 +104,8 @@ function Onboarding() {
   };
 
   const handleIdeaCard = () => {
-    // TODO: 05-1 진단 방식 선택 화면 라우트가 아직 없음 — 추가되면 연결
+    // [2026-09-10] pages/diagnosis/DiagnosisSelect.tsx로 연결됨.
+    navigate("/diagnosis/select");
   };
 
   const handleMatchingCard = () => {
@@ -266,9 +267,12 @@ function Onboarding() {
         // 두 오버레이가 겹쳐 보이는 "다중 팝업"처럼 보임.
         const ocrRunning = bizCertRunning && !bizCertFields;
         return (
-          <div className={styles.bizPopupOverlay} onClick={closeBizCertPopup}>
+          <div
+            className={ocrRunning ? styles.bizPopupBare : styles.bizPopupOverlay}
+            onClick={closeBizCertPopup}
+          >
             <div
-              className={styles.bizPopupCard}
+              className={ocrRunning ? styles.bizPopupBare : styles.bizPopupCard}
               role="dialog"
               aria-modal="true"
               aria-label="사업자등록증 첨부"

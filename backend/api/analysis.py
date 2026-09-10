@@ -83,6 +83,18 @@ def _load_commercial_districts(sido: str, sigungu: str) -> pd.DataFrame:
     )
 
 
+@router.get("/regions")
+def get_regions() -> JSONResponse:
+    """지역 3단 선택(시/도 → 시/군/구 → 행정동) 셀렉트박스용 전체 목록.
+    administrative_dong 3,924행을 한 번에 내려주고 프론트에서 계층으로 묶어 캐스케이딩
+    셀렉트를 구성한다 - 작은 테이블이라 시/도·시군구가 바뀔 때마다 다시 요청하는 API로
+    쪼개지 않았다. _load_administrative_dong()과 달리 한글 별칭 없이 원본 컬럼명 그대로
+    내려준다(이 엔드포인트는 프론트 전용이라 analysis_report 쪽 한글 컬럼명 재사용 불필요).
+    [2026-09-10] pages/diagnosis/DiagnosisStep4.tsx(사업구체화 진단4)에서 처음 씀."""
+    df = _query_df('SELECT sido, sigungu, dong_name, level FROM administrative_dong')
+    return JSONResponse(content={"success": True, "data": df.to_dict(orient="records")})
+
+
 @router.get("/market")
 def get_market_report(sido: str, sigungu: str, dong: str, ksic_code: str | None = None) -> JSONResponse:
     """

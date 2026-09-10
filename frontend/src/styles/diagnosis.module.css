@@ -1,0 +1,226 @@
+/* 사업구체화 진단(슬롯필링) 5개 화면 공용 스타일: DiagnosisSelect/Step1~4.
+   값은 webTokens.css 토큰만 사용한다. 헤더는 matchingDetail.module.css(뒤로가기+타이틀),
+   선택 카드는 onboarding.module.css(.choiceCard), 인풋은 profileEdit.module.css(.input)와
+   같은 스펙 - 이 프로젝트에 아직 전용 디자인이 없어서(사용자 확인, 2026-09-10) 기존 화면
+   스펙을 재사용해 톤을 맞췄다.
+   레이아웃: 모바일 우선 + 데스크톱은 common.css .pageContainer(최대 640px 가운데 정렬). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  color: var(--color-ink-charcoal);
+}
+
+.header {
+  flex-shrink: 0;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.backButton {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-ink-charcoal);
+}
+
+.backButton svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.headerTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.stepLabel {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-stone-gray);
+}
+
+.scrollArea {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 20px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.questionTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: var(--color-ink-charcoal);
+}
+
+.questionSub {
+  margin: -8px 0 0;
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 120px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  padding: 14px;
+  box-sizing: border-box;
+  font-family: var(--font-family-base);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-ink-charcoal);
+  outline: none;
+  resize: vertical;
+}
+
+.lengthWarning {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-error-text);
+}
+
+/* ===== 선택 카드 (출발점 분기 / 매장운영여부) — onboarding.module.css .choiceCard 동일 스펙 ===== */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.choiceCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 20px;
+  border: none;
+  border-radius: var(--radius-onboarding-card);
+  background: var(--color-white);
+  box-shadow: var(--shadow-onboarding-card);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.choiceCard:hover {
+  box-shadow: var(--shadow-onboarding-card-hover);
+}
+
+.choiceCardSelected {
+  background: var(--color-teal-mist);
+  box-shadow: 0 0 0 2px var(--color-light-teal) inset;
+}
+
+.choiceCardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.choiceCardDesc {
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+}
+
+/* ===== 지역 3단 (구체화 진단4) ===== */
+/* [2026-09-10] 처음엔 자유입력 → 네이티브 select로 바꿨다가, 최종적으로
+   components/SelectSheet(칩 트리거 + 하단 시트, MatchingList.tsx와 동일 인터랙션)로
+   교체 - 이 프로젝트에서 이미 정한 "select 대체 방식"과 통일. SelectSheet 자체
+   스타일은 그쪽 selectSheet.module.css에 있어서 여기는 배치(간격)만 잡는다. */
+.regionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ===== 하단 CTA ===== */
+.footer {
+  flex-shrink: 0;
+  padding: 12px 20px 26px;
+  box-sizing: border-box;
+}
+
+.nextButton {
+  width: 100%;
+  height: var(--btn-height-save);
+  border: none;
+  border-radius: var(--radius-cta);
+  background: var(--color-light-teal);
+  color: var(--color-white);
+  font-family: var(--font-family-base);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nextButton:hover {
+  background: var(--color-light-teal-hover-strong);
+}
+
+.nextButton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.errorText {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-error-text);
+}
+
+/* ===== 제출 결과 (구체화 진단4 제출 후) ===== */
+.resultCard {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--color-teal-mist);
+  border-radius: var(--radius-cta);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.resultAxis {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+}
+
+.resultTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.resultDesc {
+  font-size: 12.5px;
+  color: var(--color-ink-charcoal);
+  line-height: 1.5;
+}
+
+.noticeText {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-stone-gray);
+}
