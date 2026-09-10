@@ -223,6 +223,41 @@
   font-size: 12.5px;
   color: var(--color-ink-charcoal);
   line-height: 1.75;
+  white-space: pre-line;
+}
+
+.contentWrap {
+  position: relative;
+}
+
+/* line-height 1.75 * font-size 12.5px = 21.875px, 6줄 근사치 */
+.contentCollapsed {
+  max-height: 132px;
+  overflow: hidden;
+}
+
+.contentFade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+  background: linear-gradient(to bottom, transparent, var(--color-white));
+  pointer-events: none;
+}
+
+.expandButton {
+  cursor: pointer;
+  width: 100%;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+  background: var(--color-white);
+  box-shadow: var(--shadow-inset-gray);
+  border: none;
+  padding: 10px;
+  border-radius: var(--radius-input);
 }
 
 /* ===== 서류 자동채움 안내 배너 ===== */
@@ -419,4 +454,33 @@
   font-weight: 700;
   color: var(--color-teal-green);
   cursor: pointer;
+}
+
+/* ===== 찜 토스트 (Signup.tsx의 .toast와 같은 스펙) ===== */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: calc(var(--mobile-frame-width) - 2 * var(--spacing-outer));
+  padding: 12px 20px;
+  border-radius: var(--radius-input);
+  background: var(--color-ink-charcoal);
+  color: var(--color-white);
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  text-align: center;
+  animation: toastIn 160ms ease-out;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }

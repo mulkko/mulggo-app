@@ -344,3 +344,33 @@ CREATE TABLE IF NOT EXISTS profile_business_types (
     ksic_code VARCHAR(10) REFERENCES ksic_codes(code),
     is_primary BOOLEAN NOT NULL DEFAULT false
 );
+
+-- 로그인 세션 토큰. 발급: POST /api/auth/login(-또는 dev-auto-login) 성공 시
+-- backend/auth/session.py::create_session()이 INSERT. 검증: get_current_user_id()가
+-- Authorization: Bearer <token> 헤더로 조회 (JWT 안 씀 — 새 의존성 없이 opaque
+-- random token + DB 조회로 충분, 서버 쪽에서 즉시 폐기(로그아웃)도 쉬움).
+-- [2026-09-10] MyPage.tsx/ProfileEdit.tsx의 TEMP_USER_ID=27 하드코딩을 대체할
+-- 진짜 로그인 세션 배관 - 프론트 연동은 별도 작업.
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    token        VARCHAR(64) PRIMARY KEY,
+    user_id      BIGINT NOT NULL REFERENCES users(user_id),
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_used_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 공고 찜하기. 실 DB엔 원래 profile_id(business_profiles FK)로 있었는데, 로그인
+-- 세션(auth_sessions)/마이페이지 API가 전부 user_id 기준으로 돌아가는 것과 맞춰
+-- [2026-09-10] user_id(users FK) 기준으로 변경 — business_profiles는 매 회원가입 시
+-- 예비창업자로도 항상 같이 생성돼 1:1이라 정합성 문제는 없었지만, 조회할 때마다
+-- business_profiles를 거쳐야 하는 번거로움을 없애는 목적. 변경 시점에 0행이라
+-- 데이터 이관 불필요. [2026-09-10] API(backend/api/matching.py POST·DELETE .../bookmark,
+-- backend/api/mypage.py GET /bookmarks) + 프론트(MatchingDetail.tsx, MyPage.tsx) 연동 완료.
+-- (user_id, announcement_id) UNIQUE 제약 추가 - 같은 유저가 같은 공고를 중복 찜 못 함
+-- (앱 코드에서도 INSERT 전에 존재 확인하지만, 동시 요청 등 레이스 컨디션 대비 이중 안전장치).
+CREATE TABLE IF NOT EXISTS bookmarks (
+    bookmark_id     BIGSERIAL PRIMARY KEY,
+    user_id         BIGINT NOT NULL REFERENCES users(user_id),
+    announcement_id BIGINT NOT NULL REFERENCES announcements(announcement_id),
+    bookmarked_at   TIMESTAMPTZ NOT NULL,
+    CONSTRAINT uq_bookmarks_user_announcement UNIQUE (user_id, announcement_id)
+);

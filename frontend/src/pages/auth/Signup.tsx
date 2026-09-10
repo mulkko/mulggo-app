@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
+// [2026-09-10, 임시 주석] BizCertUpload를 쓰는 페이지 자체를 바꿀 예정이라 잠시 꺼둠.
+// import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
 import TermsModal from "../../components/TermsModal/TermsModal";
 import backArrow from "../../assets/backArrow.svg";
 import styles from "../../styles/signup.module.css";
@@ -43,11 +44,11 @@ function Signup() {
   // 열려 있는 약관 팝업 (없으면 null). 화면 표시용, 서버와 무관.
   const [openTerms, setOpenTerms] = useState<TermsKey | null>(null);
 
-  // 사업자등록증: 확인/수정까지 끝낸 값(bizCertFile+bizCertFields) 또는 "나중에 하기"(bizCertSkipped) 중 하나.
-  // 둘 다 비어있으면 아직 업로드 컴포넌트를 보여주는 중.
-  const [bizCertFile, setBizCertFile] = useState<File | null>(null);
-  const [bizCertFields, setBizCertFields] = useState<Record<string, string> | null>(null);
-  const [bizCertSkipped, setBizCertSkipped] = useState(false);
+  // [2026-09-10, 임시 주석] 사업자등록증: 확인/수정까지 끝낸 값(bizCertFile+bizCertFields)
+  // 또는 "나중에 하기"(bizCertSkipped) 중 하나. 둘 다 비어있으면 아직 업로드 컴포넌트를 보여주는 중.
+  // const [bizCertFile, setBizCertFile] = useState<File | null>(null);
+  // const [bizCertFields, setBizCertFields] = useState<Record<string, string> | null>(null);
+  // const [bizCertSkipped, setBizCertSkipped] = useState(false);
 
   // "전체 동의"는 서버로 보내지 않는 화면 편의 요소 — 필수 약관 두 개를 한 번에 토글만 한다.
   // (백엔드 /api/auth/signup 은 agree_terms, agree_privacy 만 받는다.)
@@ -57,16 +58,16 @@ function Signup() {
     setAgreePrivacy(checked);
   };
 
-  const handleBizCertConfirm = (fields: Record<string, string>, file: File) => {
-    setBizCertFields(fields);
-    setBizCertFile(file);
-  };
+  // const handleBizCertConfirm = (fields: Record<string, string>, file: File) => {
+  //   setBizCertFields(fields);
+  //   setBizCertFile(file);
+  // };
 
-  const handleBizCertReset = () => {
-    setBizCertFields(null);
-    setBizCertFile(null);
-    setBizCertSkipped(false);
-  };
+  // const handleBizCertReset = () => {
+  //   setBizCertFields(null);
+  //   setBizCertFile(null);
+  //   setBizCertSkipped(false);
+  // };
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -84,10 +85,10 @@ function Signup() {
     formData.append("password_confirm", passwordConfirm);
     formData.append("agree_terms", String(agreeTerms));
     formData.append("agree_privacy", String(agreePrivacy));
-    if (bizCertFile && bizCertFields) {
-      formData.append("biz_cert_file", bizCertFile);
-      formData.append("biz_cert_data", JSON.stringify(bizCertFields));
-    }
+    // if (bizCertFile && bizCertFields) {
+    //   formData.append("biz_cert_file", bizCertFile);
+    //   formData.append("biz_cert_data", JSON.stringify(bizCertFields));
+    // }
 
     setSubmitting(true);
     try {
@@ -172,6 +173,7 @@ function Signup() {
           />
         </div>
 
+        {/* [2026-09-10, 임시 주석] 사업자등록증 업로드 - 사용 페이지 변경 예정이라 잠시 뺌.
         <div className={styles.bizField}>
           <div className={styles.bizRow}>
             <span className={styles.bizLabel}>사업자등록증 (선택)</span>
@@ -198,6 +200,7 @@ function Signup() {
             />
           )}
         </div>
+        */}
 
         <div className={styles.divider} />
 

@@ -54,6 +54,7 @@
 .filterBar {
   flex-shrink: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 0 20px 14px;
@@ -83,8 +84,12 @@
 }
 
 .dropdownChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   cursor: pointer;
   white-space: nowrap;
+  font-family: var(--font-family-base);
   font-size: 11.5px;
   color: var(--color-ink-charcoal);
   background: var(--color-white);
@@ -92,6 +97,27 @@
   border: none;
   padding: 7px 11px;
   border-radius: var(--radius-pill);
+}
+
+.chevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.chipLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* [임시] 450px 미만 좁은 화면에서 업종 칩("소프트웨어 개발·공급업" 등 긴 라벨)만
+   말줄임 처리 - 지역/정렬은 기본 라벨이 짧아서 해당 없음. */
+@media (max-width: 449px) {
+  .ksicChip {
+    max-width: 90px;
+  }
 }
 
 .filterButton {
@@ -196,4 +222,86 @@
 .loadMoreButton:disabled {
   cursor: default;
   opacity: 0.6;
+}
+
+/* ===== 지역/업종/정렬 시트 팝업 (칩 눌렀을 때) ===== */
+.sheetOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--color-scrim);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheetPanel {
+  width: 100%;
+  max-width: 640px;
+  max-height: 70vh;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-modal) var(--radius-modal) 0 0;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+}
+
+.sheetHead {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+.sheetTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-ink-charcoal);
+}
+
+.sheetCloseBtn {
+  border: none;
+  background: none;
+  padding: 4px;
+  font-size: 15px;
+  color: var(--color-stone-gray);
+  cursor: pointer;
+}
+
+.sheetList {
+  list-style: none;
+  margin: 0;
+  padding: 0 20px 20px;
+  overflow-y: auto;
+}
+
+.sheetOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 12px 4px;
+  font-family: var(--font-family-base);
+  font-size: 14px;
+  color: var(--color-ink-charcoal);
+  text-align: left;
+  cursor: pointer;
+}
+
+.radio {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border-dashed);
+  box-sizing: border-box;
+}
+
+.radioOn {
+  border-color: var(--color-teal-green);
+  border-width: 5px;
 }
