@@ -12,13 +12,47 @@ import AnnouncementCard, {
  * 자격이 맞는 정부지원사업을 카드 리스트로 보여준다. 상단에 지역/업종/정렬
  * 필터바가 있고, 하단에는 공통 BottomNav("매칭" 탭 활성).
  *
- * 목록은 GET /api/matching에서 가져온다. 지역/업종 드롭다운, "필터" 팝업
- * (기업유형/업력)까지 실제 필터링이 반영됨 - 지원분야/연령은 아직 실제
- * 카테고리 미확정이라 FilterPage.tsx에서 제외.
+ * 목록은 GET /api/matching에서 가져온다. 지역/업종/정렬, "필터" 팝업
+ * (기업유형/지원분야/업력/연령) 전부 실제 필터링이 반영됨.
+ *
+ * [2026-09-10] 지역/업종/정렬은 원래 네이티브 <select> 3개였는데, 화면 폭이 좁을 때
+ * (예: 360px) select 3개 + 필터 버튼이 flex 한 줄에 안 들어가고 오른쪽이 밀려나가는
+ * 문제가 있었음. 이 프로젝트는 common.css .pageContainer가 항상 최대 640px로
+ * 고정이라(데스크톱 전용 레이아웃 없음, CLAUDE.md) 화면 크기로 분기하지 않고,
+ * 셀렉트 대신 칩 버튼 + 하단 시트 팝업(라디오 버튼 목록)으로 화면 크기 상관없이
+ * 통일함 (DocPreview.tsx 다운로드 모달과 같은 오버레이 패턴 재사용).
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const PAGE_SIZE = 20;
+// [2026-09-10] 한 화면에 카드가 너무 많이 보인다는 피드백 - 처음엔 8개만 보여주고,
+// "더보기" 누를 때마다 12개씩 추가로 불러온다(기존엔 둘 다 20개였음).
+const INITIAL_PAGE_SIZE = 8;
+const LOAD_MORE_PAGE_SIZE = 12;
+
+// [2026-09-10] 상세 화면 갔다가 뒤로가기로 돌아오면 "더보기"로 불러온 만큼은
+// 유지해야 한다는 요구사항 - 필터 쿼리별로 마지막에 로드된 개수를 세션에 저장해두고,
+// 돌아왔을 때(같은 쿼리면) 그 개수만큼 한 번에 다시 불러온다(탭 닫으면 초기화되는
+// sessionStorage면 충분 - 새로고침/새 탭까지 유지할 필요는 없음).
+const LIST_STATE_KEY = "mulkko_matching_list_state";
+
+function readSavedCount(query: string): number | null {
+  try {
+    const raw = sessionStorage.getItem(LIST_STATE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as { query: string; count: number };
+    return saved.query === query ? saved.count : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveListState(query: string, count: number): void {
+  try {
+    sessionStorage.setItem(LIST_STATE_KEY, JSON.stringify({ query, count }));
+  } catch {
+    // 프라이빗 모드 등 sessionStorage 못 쓰는 환경 - 조용히 무시(더보기 상태 유지만 안 될 뿐).
+  }
+}
 
 type MatchingListResponse = {
   success: boolean;
@@ -70,6 +104,35 @@ const SORT_OPTIONS = [
   { label: "마감임박순", value: "deadline" },
 ];
 
+type SheetKey = "region" | "ksic" | "sort";
+type SheetOption = { label: string; value: string };
+
+// select 3개를 시트 팝업으로 통일하기 위한 {label, value} 정규화.
+const REGION_SHEET_OPTIONS: SheetOption[] = REGION_OPTIONS.map((r) => ({
+  label: r,
+  value: r === "지역 전체" ? "" : r,
+}));
+const KSIC_SHEET_OPTIONS: SheetOption[] = KSIC_OPTIONS.map((o) => ({ label: o.label, value: o.code }));
+const SORT_SHEET_OPTIONS: SheetOption[] = SORT_OPTIONS;
+
+/** 칩 버튼 옆 아래방향 화살표 — "누르면 목록이 뜬다"는 select 관례 표시(ProfileEdit.tsx의 Chevron과 동일 모양). */
+function Chevron() {
+  return (
+    <svg
+      className={styles.chevron}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 function MatchingList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -79,18 +142,59 @@ function MatchingList() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  const [ksic, setKsic] = useState("");
-  const [region, setRegion] = useState("");
-  const [sort, setSort] = useState("recent");
-  // FilterPage("전체 필터" 팝업)의 "적용하기"가 /matching?company=...&biz_age=... 형태로 넘겨준다.
+  // [2026-09-10] region/ksic/sort도 로컬 state가 아니라 URL 쿼리로 옮김 - 로컬 state였을 땐
+  // "필터" 팝업(다른 라우트)에 갔다 오면 MatchingList가 언마운트/리마운트되면서 초기화돼서,
+  // 지역/업종/정렬 골라둔 게 필터 팝업 갔다오면 풀리는 버그가 있었음.
+  const ksic = searchParams.get("ksic") ?? "";
+  const region = searchParams.get("region") ?? "";
+  const sort = searchParams.get("sort") ?? "recent";
+  // FilterPage("전체 필터" 팝업)의 "적용하기"가
+  // /matching?company=...&field=...&biz_age=...&age=... 형태로 넘겨준다.
   const company = searchParams.get("company") ?? "";
+  const field = searchParams.get("field") ?? "";
   const bizAge = searchParams.get("biz_age") ?? "";
+  const age = searchParams.get("age") ?? "";
 
-  const fetchPage = (offset: number, onDone: (body: MatchingListResponse) => void) =>
+  // 지역/업종/정렬 칩 값 변경 - 다른 쿼리 파라미터(필터 팝업 값 등)는 그대로 두고
+  // 이 키 하나만 갱신(없으면 삭제)한다.
+  const updateParam = (key: string, value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value) {
+        next.set(key, value);
+      } else {
+        next.delete(key);
+      }
+      return next;
+    });
+  };
+
+  // 지금 열려있는 시트 팝업(없으면 null) - 지역/업종/정렬 칩 중 하나를 누르면 열림.
+  const [openSheet, setOpenSheet] = useState<SheetKey | null>(null);
+
+  const SHEETS: Record<SheetKey, { title: string; options: SheetOption[]; value: string; paramKey: string }> = {
+    region: { title: "지역", options: REGION_SHEET_OPTIONS, value: region, paramKey: "region" },
+    ksic: { title: "업종", options: KSIC_SHEET_OPTIONS, value: ksic, paramKey: "ksic" },
+    sort: { title: "정렬", options: SORT_SHEET_OPTIONS, value: sort, paramKey: "sort" },
+  };
+
+  const sheetChipLabel = (key: SheetKey) => {
+    const cfg = SHEETS[key];
+    return cfg.options.find((o) => o.value === cfg.value)?.label ?? cfg.options[0].label;
+  };
+
+  const handleSheetSelect = (option: SheetOption) => {
+    if (!openSheet) return;
+    updateParam(SHEETS[openSheet].paramKey, option.value);
+    setOpenSheet(null);
+  };
+
+  const fetchPage = (offset: number, limit: number, onDone: (body: MatchingListResponse) => void) =>
     fetch(
-      `${API_BASE_URL}/api/matching?offset=${offset}&limit=${PAGE_SIZE}&ksic=${ksic}` +
+      `${API_BASE_URL}/api/matching?offset=${offset}&limit=${limit}&ksic=${ksic}` +
         `&region=${encodeURIComponent(region)}&company=${encodeURIComponent(company)}` +
-        `&biz_age=${encodeURIComponent(bizAge)}&sort=${sort}`,
+        `&field=${encodeURIComponent(field)}&biz_age=${encodeURIComponent(bizAge)}` +
+        `&age=${encodeURIComponent(age)}&sort=${sort}`,
     )
       .then((res) => res.json())
       .then((body: MatchingListResponse) => {
@@ -107,13 +211,17 @@ function MatchingList() {
     // 필터가 바뀌면 이전 결과를 바로 지운다 - 안 그러면 새 결과가 올 때까지
     // 이전 필터의 카드가 화면에 남아있어서 그걸 눌러 엉뚱한 공고로 들어갈 수 있다.
     setAnnouncements([]);
-    fetchPage(0, (body) => {
+    const query = searchParams.toString();
+    const savedCount = readSavedCount(query);
+    const initialLimit = savedCount && savedCount > INITIAL_PAGE_SIZE ? savedCount : INITIAL_PAGE_SIZE;
+    fetchPage(0, initialLimit, (body) => {
       setAnnouncements(body.data ?? []);
       setHasMore(body.has_more ?? false);
       setTotal(body.total ?? 0);
+      saveListState(query, (body.data ?? []).length);
     }).finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ksic, region, company, bizAge, sort]);
+  }, [ksic, region, company, field, bizAge, age, sort]);
 
   const handleClearFilters = () => {
     setSearchParams({});
@@ -121,8 +229,13 @@ function MatchingList() {
 
   const handleLoadMore = () => {
     setLoadingMore(true);
-    fetchPage(announcements.length, (body) => {
-      setAnnouncements((prev) => [...prev, ...(body.data ?? [])]);
+    const query = searchParams.toString();
+    fetchPage(announcements.length, LOAD_MORE_PAGE_SIZE, (body) => {
+      setAnnouncements((prev) => {
+        const next = [...prev, ...(body.data ?? [])];
+        saveListState(query, next.length);
+        return next;
+      });
       setHasMore(body.has_more ?? false);
     }).finally(() => setLoadingMore(false));
   };
@@ -132,13 +245,17 @@ function MatchingList() {
   };
 
   const handleFilterClick = () => {
-    navigate("/matching/filter");
+    // 지금 적용 중인 필터(company/field/biz_age/age)를 그대로 들고 들어가서,
+    // FilterPage가 열릴 때 칩 선택 상태를 복원할 수 있게 한다.
+    navigate(`/matching/filter?${searchParams.toString()}`);
   };
 
   const handleCardClick = (item: AnnouncementCardData) => {
-    // 공고 상세 화면으로 이동. id를 넘기면 상세 화면이 matchingDetailData에서
-    // 해당 id의 더미데이터를 찾아 렌더한다.
-    navigate(`/matching/${item.id}`);
+    // 공고 상세로 이동하면서 지금 적용 중인 필터 쿼리를 state로 같이 넘긴다 -
+    // 상세 화면의 뒤로가기가 이 값으로 "/matching?<필터>"를 만들어 복귀한다.
+    // (예전엔 navigate(-1)로 브라우저 history를 되돌렸는데, 상세 화면에 직접 링크로
+    // 들어온 경우 등 history에 리스트가 없으면 안 먹는 문제가 있었음.)
+    navigate(`/matching/${item.id}`, { state: { fromSearch: searchParams.toString() } });
   };
 
   return (
@@ -165,41 +282,24 @@ function MatchingList() {
         </button>
       </header>
 
-      {/* 필터바: 지역/업종/정렬 드롭다운 + 상세 필터 버튼, 전부 실동작 */}
+      {/* 필터바: 지역/업종/정렬 칩(누르면 시트 팝업) + 상세 필터 버튼, 전부 실동작 */}
       <div className={styles.filterBar}>
-        <select
-          className={styles.dropdownChip}
-          value={region}
-          onChange={(e) => setRegion(e.target.value === "지역 전체" ? "" : e.target.value)}
+        <button type="button" className={styles.dropdownChip} onClick={() => setOpenSheet("region")}>
+          {sheetChipLabel("region")}
+          <Chevron />
+        </button>
+        <button
+          type="button"
+          className={`${styles.dropdownChip} ${styles.ksicChip}`}
+          onClick={() => setOpenSheet("ksic")}
         >
-          {REGION_OPTIONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-        <select
-          className={styles.dropdownChip}
-          value={ksic}
-          onChange={(e) => setKsic(e.target.value)}
-        >
-          {KSIC_OPTIONS.map((opt) => (
-            <option key={opt.code} value={opt.code}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <select
-          className={styles.dropdownChip}
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          <span className={styles.chipLabel}>{sheetChipLabel("ksic")}</span>
+          <Chevron />
+        </button>
+        <button type="button" className={styles.dropdownChip} onClick={() => setOpenSheet("sort")}>
+          {sheetChipLabel("sort")}
+          <Chevron />
+        </button>
         <button
           type="button"
           className={styles.filterButton}
@@ -223,6 +323,49 @@ function MatchingList() {
           </svg>
         </button>
       </div>
+
+      {/* 지역/업종/정렬 시트 팝업 - 라디오 버튼 목록, DocPreview.tsx 다운로드 모달과 같은
+          오버레이 패턴(하단 시트만 다름). 고르면 바로 적용 + 닫힘. */}
+      {openSheet && (
+        <div className={styles.sheetOverlay} onClick={() => setOpenSheet(null)}>
+          <div
+            className={styles.sheetPanel}
+            role="dialog"
+            aria-modal="true"
+            aria-label={SHEETS[openSheet].title}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.sheetHead}>
+              <span className={styles.sheetTitle}>{SHEETS[openSheet].title}</span>
+              <button
+                type="button"
+                className={styles.sheetCloseBtn}
+                aria-label="닫기"
+                onClick={() => setOpenSheet(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <ul className={styles.sheetList}>
+              {SHEETS[openSheet].options.map((opt) => {
+                const active = opt.value === SHEETS[openSheet]!.value;
+                return (
+                  <li key={opt.value || opt.label}>
+                    <button
+                      type="button"
+                      className={styles.sheetOption}
+                      onClick={() => handleSheetSelect(opt)}
+                    >
+                      <span className={`${styles.radio} ${active ? styles.radioOn : ""}`} aria-hidden="true" />
+                      <span>{opt.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* 스크롤 영역: 안내 문구 + 카운트 박스 + 카드 리스트 */}
       <div className={styles.scrollArea}>

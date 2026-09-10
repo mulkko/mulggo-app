@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { ensureDevAutoLogin, getUserEmail, getUserId } from "./auth/session";
 import Splash from "./pages/splash/Splash";
 import Signup from "./pages/auth/Signup";
 import Home from "./pages/home/Home";
@@ -18,9 +20,68 @@ import FilterPage from "./pages/matching/FilterPage";
 import MyPage from "./pages/mypage/MyPage";
 import ProfileEdit from "./pages/mypage/ProfileEdit";
 
+/**
+ * [임시/디버그] 지금 로그인된 사람이 누구인지 확인용 - 확인 끝나면 지울 것.
+ * 화면 가리지 않게 우하단 작은 플로팅 점으로 표시, 클릭하면 펼쳐서 상세 표시.
+ */
+function DevAuthBadge() {
+  const [session, setSessionState] = useState({ userId: getUserId(), email: getUserEmail() });
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    const tick = () => setSessionState({ userId: getUserId(), email: getUserEmail() });
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const color = session.userId ? "#0a7d32" : "#c0392b";
+
+  return (
+    <button
+      type="button"
+      onClick={() => setExpanded((v) => !v)}
+      style={{
+        position: "fixed",
+        bottom: 12,
+        right: 12,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        border: "none",
+        borderRadius: 999,
+        padding: expanded ? "5px 10px" : 0,
+        width: expanded ? "auto" : 14,
+        height: expanded ? "auto" : 14,
+        background: expanded ? "#222" : color,
+        color: "#fff",
+        fontSize: 11,
+        lineHeight: 1.4,
+        cursor: "pointer",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+      }}
+      title="[DEV] 로그인 상태 (클릭해서 펼치기)"
+    >
+      {expanded ? (
+        <>
+          <span style={{ width: 8, height: 8, borderRadius: 999, background: color, flexShrink: 0 }} />
+          {session.userId
+            ? `user_id=${session.userId}${session.email ? ` (${session.email})` : ""}`
+            : "로그인 안 됨"}
+        </>
+      ) : null}
+    </button>
+  );
+}
+
 function App() {
+  useEffect(() => {
+    ensureDevAutoLogin();
+  }, []);
+
   return (
     <BrowserRouter>
+      <DevAuthBadge />
       <Routes>
         <Route path="/" element={<Splash />} />
         <Route path="/home" element={<Home />} />

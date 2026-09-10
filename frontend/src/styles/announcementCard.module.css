@@ -44,6 +44,13 @@
   gap: 10px;
 }
 
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 /* 삭제(X) 버튼이 있을 때 상단 텍스트가 버튼 아래로 들어가지 않도록 여백 확보 */
 .topWithDelete {
   padding-right: 22px;
@@ -70,6 +77,11 @@
   font-weight: 700;
   color: var(--color-ink-charcoal);
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .tagRow {
@@ -79,6 +91,17 @@
 
 .tag {
   font-size: 11px;
+  color: var(--color-teal-green);
+  background: var(--color-teal-mist);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+/* [임시] 채우기 가능한 서류가 있는 공고 뱃지 - .tag(해시태그 칩)와 동일한 민트 톤 재사용 */
+.fillableBadge {
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--color-teal-green);
   background: var(--color-teal-mist);
   padding: 3px 8px;
