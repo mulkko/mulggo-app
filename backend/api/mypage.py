@@ -5,16 +5,17 @@
 # user_id를 쿼리 파라미터로 직접 받는다. 로그인 세션이 붙으면 이 파라미터를
 # 그 세션에서 채우도록 프론트만 바꾸면 되고, 이 API 자체는 안 바뀐다.
 #
-# business_profiles만 연동한다 - applications/apply_status/idea_refinement_sessions는
-# 실제 DB에 0건이라(연동해도 항상 빈 목록) 지금 범위에서 제외함(사용자 확인, 2026-09-09).
-# [2026-09-10] bookmarks(찜하기)는 연동함 - 다른 프로필 API와 달리 user_id를 쿼리
-# 파라미터가 아니라 로그인 세션(Depends(get_current_user_id))으로 받는다. 찜하기
-# 토글(POST/DELETE)이 backend/api/matching.py에 이미 세션 기준으로 만들어져 있어서
-# 같은 기능끼리는 인증 방식을 맞추는 게 맞다고 판단(다른 프로필 API는 세션 연동 전에
-# 만들어진 것들이라 그대로 둠).
+# business_profiles만 연동한다 - apply_status/idea_refinement_sessions는 실제 DB에
+# 0건이라(연동해도 항상 빈 목록) 지금 범위에서 제외함(사용자 확인, 2026-09-09).
+# [2026-09-10] bookmarks(찜하기), fill-history(채우기 이용내역)는 연동함 - 다른 프로필
+# API와 달리 user_id를 쿼리 파라미터가 아니라 로그인 세션(Depends(get_current_user_id))
+# 으로 받는다. 찜하기 토글/채우기(POST .../bookmark, GET .../fill)가 backend/api/
+# matching.py에 이미 세션 기준으로 만들어져 있어서 같은 기능끼리는 인증 방식을 맞추는
+# 게 맞다고 판단(다른 프로필 API는 세션 연동 전에 만들어진 것들이라 그대로 둠).
 
 import json
 import os
+from datetime import date
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import JSONResponse
@@ -86,6 +87,7 @@ def get_profile(user_id: int) -> JSONResponse:
 
 
 class ProfileUpdateRequest(BaseModel):
+    name: str | None = None
     business_name: str | None = None
     industry_text: str | None = None
     region: str | None = None
@@ -105,6 +107,9 @@ def update_profile(user_id: int, payload: ProfileUpdateRequest) -> JSONResponse:
     if not fields:
         return _error(400, "수정할 필드가 없습니다.", "NO_FIELDS")
 
+    # name은 business_profiles가 아니라 users 테이블 컬럼이라 따로 뺀다.
+    name = fields.pop("name", None)
+
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -112,11 +117,15 @@ def update_profile(user_id: int, payload: ProfileUpdateRequest) -> JSONResponse:
         if cur.fetchone() is None:
             return _error(404, f"user_id={user_id}에 해당하는 business_profiles가 없습니다.", "PROFILE_NOT_FOUND")
 
-        set_clause = ", ".join(f"{col} = %s" for col in fields)
-        cur.execute(
-            f"UPDATE business_profiles SET {set_clause}, updated_at = now() WHERE user_id = %s",
-            (*fields.values(), user_id),
-        )
+        if name is not None:
+            cur.execute("UPDATE users SET name = %s WHERE user_id = %s", (name, user_id))
+
+        if fields:
+            set_clause = ", ".join(f"{col} = %s" for col in fields)
+            cur.execute(
+                f"UPDATE business_profiles SET {set_clause}, updated_at = now() WHERE user_id = %s",
+                (*fields.values(), user_id),
+            )
         conn.commit()
     finally:
         conn.close()
@@ -181,5 +190,50 @@ def list_bookmarks(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
             "tags": [],
         }
         for announcement_id, host_org_name, title, apply_end_date in rows
+    ]
+    return JSONResponse(content={"success": True, "data": data})
+
+
+@router.get("/fill-history")
+def list_fill_history(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
+    """마이페이지 "채우기 이용내역". backend/api/matching.py::fill_attachment()가
+    채우기 성공 시 applications에 남긴 기록(파일 자체는 저장 안 함 - attachmentId로
+    프론트가 /api/matching/attachments/:id/fill을 다시 호출해 즉석 재생성)을 읽는다.
+    공고가 마감됐어도 개인 이용기록이라 목록에서 안 빼고 expired만 표시(사용자 확인, 2026-09-10)."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        if row is None:
+            return JSONResponse(content={"success": True, "data": []})
+        profile_id = row[0]
+
+        cur.execute(
+            """
+            SELECT ap.application_id, att.attachment_id, att.file_name,
+                   an.title, an.apply_end_date, ap.exported_at
+            FROM applications ap
+            JOIN announcement_attachments att ON att.attachment_id = ap.attachment_id
+            JOIN announcements an ON an.announcement_id = att.announcement_id
+            WHERE ap.profile_id = %s
+            ORDER BY ap.exported_at DESC
+            """,
+            (profile_id,),
+        )
+        rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    data = [
+        {
+            "id": str(application_id),
+            "attachmentId": attachment_id,
+            "fileName": file_name,
+            "title": title,
+            "expired": bool(apply_end_date and apply_end_date < date.today()),
+            "exportedAt": exported_at.strftime("%Y.%m.%d") if exported_at else "",
+        }
+        for application_id, attachment_id, file_name, title, apply_end_date, exported_at in rows
     ]
     return JSONResponse(content={"success": True, "data": data})

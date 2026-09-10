@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import type { ChangeEvent } from "react";
 import styles from "./bizCertUpload.module.css";
 
@@ -42,6 +42,10 @@ const NOT_APPLICABLE_WHEN: Record<string, string> = {
 // DB(biz_registration_docs)가 NOT NULL로 요구하는 필드 — 확인 버튼 누르기 전에 채워져 있어야 함.
 const REQUIRED_FIELDS = ["company_name", "ceo_name", "biz_no", "open_date", "business_address"];
 
+// 업태/종목 - 표준 목록이 없는 자유 기재 항목이라 비어 있어도 경고(빨간 테두리) 없이
+// "선택 사항"으로만 안내한다.
+const OPTIONAL_FIELDS = new Set(["business_category", "business_item"]);
+
 const ERROR_FALLBACK = "알 수 없는 오류가 발생했습니다.";
 
 interface OcrResponse {
@@ -58,9 +62,30 @@ interface BizCertUploadProps {
   onConfirm: (fields: Record<string, string>, file: File) => void;
   // "나중에 하기" — 사업자등록증 없이 진행 (선택 사항이라 항상 가능).
   onSkip: () => void;
+  // [2026-09-10] true면 파일 선택해도 OCR을 바로 시작 안 하고 파일명만 보여주며
+  // 대기한다 - 부모가 ref.start()로 수동 시작(Onboarding.tsx 팝업의 "실행하기"
+  // 버튼용). 기본 false면 기존 동작(선택 즉시 자동 시작) 그대로 유지.
+  deferStart?: boolean;
+  // deferStart일 때, 파일이 선택돼서 "실행하기"를 누를 수 있게 됐음을 부모에게 알림.
+  onFileSelected?: (file: File) => void;
+  // [2026-09-10] OCR 실패 후 "다시 시도"를 누르면 내부적으로 idle로 돌아가는데(파일도
+  // 지워짐), deferStart 쓰는 부모(Onboarding.tsx)의 바깥 버튼 상태(파일명/실행중 여부)도
+  // 같이 리셋해야 팝업을 닫았다 열지 않고도 바로 재실행할 수 있어서 이 콜백으로 알려준다.
+  onReset?: () => void;
+  // [2026-09-10] OCR 실패한 순간 바로 알림 - 넘기면 부모가 자체 경고창(alert 등)으로
+  // 대신 안내하고 ref.reset()으로 강제 복귀시키는 용도(Onboarding.tsx 팝업). 안 넘기면
+  // (Signup.tsx/ProfileEdit.tsx처럼) 기존과 동일하게 내부 error 페이즈만 보여준다.
+  onError?: (message: string) => void;
 }
 
-type Phase = "idle" | "uploading" | "error" | "review";
+export interface BizCertUploadHandle {
+  /** deferStart=true일 때 선택된 파일로 OCR 시작. 선택된 파일 없으면 아무 일도 안 함. */
+  start: () => void;
+  /** idle(파일 선택 전) 상태로 강제 복귀. onError와 함께 써서 내부 error 페이즈를 건너뛸 때 씀. */
+  reset: () => void;
+}
+
+type Phase = "idle" | "selected" | "uploading" | "error" | "review";
 
 function validateFile(file: File): string | null {
   const ext = "." + (file.name.split(".").pop() ?? "").toLowerCase();
@@ -73,7 +98,10 @@ function validateFile(file: File): string | null {
   return null;
 }
 
-function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
+const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(function BizCertUpload(
+  { onConfirm, onSkip, deferStart = false, onFileSelected, onReset, onError },
+  ref,
+) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [file, setFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -94,31 +122,39 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
   }, [phase]);
 
   const reset = () => {
+    // deferStart 쓰는 부모(Onboarding.tsx)는 실패해도 파일을 다시 고를 필요 없이
+    // 바로 재실행할 수 있어야 하므로, 파일은 유지한 채 "selected" 단계로만 되돌린다.
+    if (deferStart && file) {
+      setPhase("selected");
+      setErrorMessage("");
+      onReset?.();
+      return;
+    }
     setPhase("idle");
     setFile(null);
     setErrorMessage("");
     setOpenFields(new Set());
     setJustOpenedKey(null);
+    onReset?.();
   };
 
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0];
-    event.target.value = ""; // 같은 파일 다시 선택해도 onChange 다시 뜨게
-    if (!selected) return;
-
-    const validationError = validateFile(selected);
-    if (validationError) {
-      setFile(null);
-      setErrorMessage(validationError);
+  // onError를 받은 부모(Onboarding.tsx)는 실패 처리를 완전히 대신하겠다는 뜻이라
+  // 내부 error 페이즈는 아예 안 띄운다(그래야 팝업 안에 또 다른 화면이 겹쳐 보이는
+  // 일이 없음) - onError 없으면(Signup.tsx/ProfileEdit.tsx) 기존처럼 내부에서 처리.
+  const fail = (message: string) => {
+    setErrorMessage(message);
+    if (onError) {
+      onError(message);
+    } else {
       setPhase("error");
-      return;
     }
+  };
 
-    setFile(selected);
+  const startUpload = async (target: File) => {
     setPhase("uploading");
 
     const formData = new FormData();
-    formData.append("file", selected);
+    formData.append("file", target);
 
     try {
       const response = await fetch(`${OCR_API_BASE_URL}/api/auth/biz-cert-ocr`, {
@@ -128,8 +164,7 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
       const data: OcrResponse = await response.json();
 
       if (!data.ocr_success || !data.extracted) {
-        setErrorMessage(data.error_label ?? ERROR_FALLBACK);
-        setPhase("error");
+        fail(data.error_label ?? ERROR_FALLBACK);
         return;
       }
 
@@ -146,9 +181,39 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
       setOpenFields(initialOpen);
       setPhase("review");
     } catch {
-      setErrorMessage("서버에 연결할 수 없습니다.");
-      setPhase("error");
+      fail("서버에 연결할 수 없습니다.");
     }
+  };
+
+  useImperativeHandle(ref, () => ({
+    start: () => {
+      if (file) startUpload(file);
+    },
+    reset,
+  }));
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0];
+    event.target.value = ""; // 같은 파일 다시 선택해도 onChange 다시 뜨게
+    if (!selected) return;
+
+    const validationError = validateFile(selected);
+    if (validationError) {
+      setFile(null);
+      setErrorMessage(validationError);
+      setPhase("error");
+      return;
+    }
+
+    setFile(selected);
+
+    if (deferStart) {
+      setPhase("selected");
+      onFileSelected?.(selected);
+      return;
+    }
+
+    await startUpload(selected);
   };
 
   const handleFieldChange = (key: string, value: string) => {
@@ -189,6 +254,24 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
     );
   }
 
+  if (phase === "selected") {
+    // deferStart용 - 파일명만 보여주고 대기(부모의 "실행하기" 버튼이 ref.start()로 진행시킴).
+    return (
+      <div className={styles.selectedFile}>
+        <span className={styles.selectedFileName}>{file?.name}</span>
+        <label className={styles.selectedFileChange}>
+          다른 파일 선택
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            onChange={handleFileChange}
+            className={styles.fileInput}
+          />
+        </label>
+      </div>
+    );
+  }
+
   if (phase === "uploading") {
     return (
       <div className={styles.overlay}>
@@ -226,8 +309,9 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
         {REVIEW_FIELDS.map(({ key, label }) => {
           const value = fields[key] ?? "";
           const notApplicable = NOT_APPLICABLE_WHEN[key] === fields.entity_type;
+          const isOptional = OPTIONAL_FIELDS.has(key);
           const isOpen = openFields.has(key);
-          const showWarnBadge = isOpen && !value; // 열려있는데 아직도 비어있으면 "확인 필요" 유지
+          const showWarnBadge = isOpen && !value && !isOptional; // 열려있는데 아직도 비어있으면 "확인 필요" 유지 (선택 항목 제외)
 
           return (
             <div key={key} className={styles.fieldRow}>
@@ -235,6 +319,7 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
                 {label}
                 {showWarnBadge && <span className={styles.badgeWarn}> 확인 필요</span>}
                 {notApplicable && <span className={styles.badgeMuted}> 해당 없음</span>}
+                {isOptional && !notApplicable && <span className={styles.badgeMuted}> 선택 사항</span>}
               </label>
 
               {notApplicable ? (
@@ -278,6 +363,6 @@ function BizCertUpload({ onConfirm, onSkip }: BizCertUploadProps) {
       </div>
     </div>
   );
-}
+});
 
 export default BizCertUpload;

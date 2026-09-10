@@ -49,6 +49,36 @@
   color: var(--color-stone-gray);
 }
 
+/* ===== 파일 선택됨(deferStart) - 실행 전 대기 ===== */
+.selectedFile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 96px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px dashed var(--color-border-web);
+  border-radius: var(--radius-input);
+}
+
+.selectedFileName {
+  font-size: var(--font-size-input-label);
+  font-weight: var(--font-weight-input-label);
+  color: var(--color-navy-sphere);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectedFileChange {
+  flex-shrink: 0;
+  font-size: var(--font-size-caption);
+  color: var(--color-teal-green);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ===== 인식 중 — 팝업 ===== */
 .loadingBox {
   display: flex;

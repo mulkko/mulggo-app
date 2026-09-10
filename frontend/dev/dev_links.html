@@ -68,7 +68,7 @@
   <div class="container">
     <h1>mulkko 로컬 서버 링크</h1>
     <p class="s_tit">각 서버를 먼저 실행한 상태에서 아래 링크를 클릭하세요.</p>
-    <p class="s_tit">"백엔드 연동일"은 해당 화면이 실제 백엔드 API까지 연결되어 동작하는 화면일 때만 채웁니다(마지막으로 그 연동 코드가 수정된 날짜). 비어있으면 아직 UI만 있거나 목업 데이터로 동작하는 화면입니다.</p>
+    <p class="s_tit">"백엔드 연동일"은 해당 화면이 실제 백엔드 API까지 연결되어 동작하는 화면일 때만 채웁니다(그 연동이 최초로 붙은 날짜 - 이후 같은 연동을 개선/보강한 날짜가 아님). 비어있으면 아직 UI만 있거나 목업 데이터로 동작하는 화면입니다.</p>
     <p class="s_tit">"구현율"은 자동 계산이 안 돼서 직접 입력하는 칸입니다(예: "70%"). 화면마다 "다 됐다"의 기준이 달라서 코드량이나 커밋 수로 추측할 수 없어 수동으로 채웁니다. 비어있으면 아직 입력 전이라는 뜻입니다.</p>
 
     <div id="summary"></div>
@@ -113,7 +113,7 @@
         <td>사용자 스타일 가이드</td>
         <td><a href="http://localhost:5173/dev/web-style-guide" target="_blank">http://localhost:5173/dev/web-style-guide</a></td>
         <td>2026-09-06</td>
-        <td>2026-09-08</td>
+        <td>2026-09-09</td>
         <td></td>
         <td></td>
       </tr>
@@ -124,7 +124,7 @@
         <td>스플래시</td>
         <td><a href="http://localhost:5173" target="_blank">http://localhost:5173/splash</a></td>
         <td>2026-09-06</td>
-        <td></td>
+        <td>2026-09-06</td>
         <td></td>
         <td></td>
       </tr>
@@ -132,7 +132,7 @@
         <td>로그인</td>
         <td><a href="http://localhost:5173/login" target="_blank">http://localhost:5173/login</a></td>
         <td>2026-09-03</td>
-        <td>2026-09-07</td>
+        <td>2026-09-10</td>
         <td class="done">2026-09-07</td>
         <td>90%</td>
       </tr>
@@ -140,7 +140,7 @@
         <td>회원가입</td>
         <td><a href="http://localhost:5173/signup" target="_blank">http://localhost:5173/signup</a></td>
         <td>2026-09-03</td>
-        <td>2026-09-07</td>
+        <td>2026-09-10</td>
         <td class="done">2026-09-09</td>
         <td>85%</td>
       </tr>
@@ -165,15 +165,15 @@
         <td><a href="http://localhost:5173/mypage" target="_blank">http://localhost:5173/mypage</a></td>
         <td>2026-09-08</td>
         <td>2026-09-10</td>
-        <td class="done">2026-09-10</td>
-        <td>55%</td>
+        <td class="done">2026-09-09</td>
+        <td>65%</td>
       </tr>
       <tr>
         <td>마이페이지 - 정보수정</td>
         <td><a href="http://localhost:5173/mypage/edit" target="_blank">http://localhost:5173/mypage/edit</a></td>
         <td>2026-09-08</td>
         <td>2026-09-10</td>
-        <td class="done">2026-09-10</td>
+        <td class="done">2026-09-09</td>
         <td>70%</td>
       </tr>
       <tr>
@@ -193,9 +193,10 @@
               <b>백엔드 /api/auth</b>: 회원가입, 로그인, 관리자 로그인, DEV 자동로그인(사용자/관리자), 사업자등록증 OCR<br>
               <b>백엔드 /api/mypage</b>: 프로필 조회/수정(GET·PUT /profile), 사업자등록증 등록(POST /biz-cert)<br>
               <b>로그인 세션</b>: auth_sessions 토큰 발급/검증(opaque token, JWT 미사용) 배관 완료, MyPage/ProfileEdit도 세션의 user_id로 조회하도록 연결됨(2026-09-10)<br>
+              <b>찜하기(bookmarks)</b>: GET /api/mypage/bookmarks + POST·DELETE /api/matching/:id/bookmark 연동(2026-09-10) — MyPage "관심있는 지원사업" 섹션 실데이터로 교체됨<br>
               <b>아직 미구현</b>
               <ul style="margin:4px 0 0 20px; padding:0;">
-                <li>MyPage의 분석리포트/관심지원사업/채우기이용내역/지원내역/고객센터 5개 섹션 — 전부 TODO·더미데이터</li>
+                <li>MyPage의 분석리포트/채우기이용내역/지원내역/고객센터 4개 섹션 — 전부 TODO·더미데이터</li>
                 <li>ProfileEdit 프로필사진 변경</li>
                 <li>ProfileEdit 사업자등록증 재업로드</li>
                 <li>Signup 약관 실제 문구 (지금은 placeholder만 있음)</li>
@@ -296,6 +297,14 @@
         <td></td>
       </tr>
       <tr>
+        <td>[테스트] 사업자등록증 OCR</td>
+        <td><a href="./ocr-test.html" target="_blank">./ocr-test.html</a></td>
+        <td>2026-09-05</td>
+        <td>2026-09-06</td>
+        <td class="done">2026-09-06</td>
+        <td></td>
+      </tr>
+      <tr>
         <td>RAG 봇</td>
         <td><a href="#none" target="_blank">#none</a></td>
         <td>2026-09-03</td>
@@ -311,7 +320,7 @@
         <td><a href="http://localhost:5173/matching" target="_blank">http://localhost:5173/matching</a></td>
         <td>2026-09-08</td>
         <td>2026-09-10</td>
-        <td class="done">2026-09-10</td>
+        <td class="done">2026-09-09</td>
         <td>100%</td>
       </tr>
             <tr>
@@ -327,7 +336,7 @@
         <td><a href="http://localhost:5173/matching/a1" target="_blank">http://localhost:5173/matching/a1</a></td>
         <td>2026-09-08</td>
         <td>2026-09-10</td>
-        <td class="done">2026-09-10</td>
+        <td class="done">2026-09-09</td>
         <td>85%</td>
       </tr>
       <tr>
@@ -352,14 +361,13 @@
             <summary style="font-weight:bold; cursor:pointer;">[보고용, 확인 후 삭제 예정] 매칭 기능 완료 내역 (2026-09-10)</summary>
             <div style="margin-top:10px; line-height:1.6; font-weight:normal;">
               <b>프론트 화면 4개</b>: MatchingList(리스트+필터+정렬), FilterPage(업종/지역/기업유형/업력/지원분야/연령), MatchingDetail(상세), DocPreview(서류 미리보기)<br>
-              <b>백엔드 /api/matching</b>: 리스트 조회(6종 필터+정렬, 마감 자동 제외), 상세 조회, 신청서 자동채우기(HWPX)<br>
+              <b>백엔드 /api/matching</b>: 리스트 조회(6종 필터+정렬, 마감 자동 제외, fillable 여부), 상세 조회, 신청서 자동채우기(HWPX), 찜하기 토글(POST·DELETE .../bookmark)<br>
               <b>매칭 판정 로직</b>: KSIC 업종 자동분류(explicit_match/llm_match/decide_industry), 국세청 코드 매칭(nts_code_match), 지역 추출(시/도 단위)<br>
               <b>아직 미구현</b>
               <ul style="margin:4px 0 0 20px; padding:0;">
                 <li>매칭 재정렬 모델(ranker, 빈 스텁)</li>
                 <li>해시태그/개인화 AI 코멘트</li>
                 <li>신청서 자동채우기 대상자(로그인 전까지 DB 1건 고정)</li>
-                <li>찜하기 API/프론트 연동</li>
               </ul>
             </div>
           </details>
@@ -372,7 +380,7 @@
         <td>관리자 로그인</td>
         <td><a href="http://localhost:5173/admin/login" target="_blank">http://localhost:5173/admin/login</a></td>
         <td>2026-09-05</td>
-        <td>2026-09-10</td>
+        <td>2026-09-07</td>
         <td class="done">2026-09-07</td>
         <td>90%</td>
       </tr>
