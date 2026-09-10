@@ -126,6 +126,18 @@
   background: var(--color-light-teal-hover-strong);
 }
 
+.fillButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.fillErrorText {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: var(--font-size-caption);
+  color: var(--color-error-text);
+}
+
 /* ===== 다운로드 모달 ===== */
 .overlay {
   position: fixed;

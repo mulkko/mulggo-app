@@ -1,0 +1,132 @@
+/* SelectSheet.tsx 짝꿍 스타일. 값은 webTokens.css 토큰만 사용한다.
+   트리거는 profileEdit.module.css의 .select와 동일 스펙, 팝업(시트)은
+   matchingList.module.css의 지역/업종/정렬 시트와 동일 스펙 — 두 화면이 같은
+   값을 쓰던 걸 여기 하나로 정리했다. 새 화면에서도 이 컴포넌트를 쓰면 된다. */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.trigger {
+  position: relative;
+  width: 100%;
+  height: var(--input-height-form);
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  padding: 0 40px 0 14px;
+  box-sizing: border-box;
+  font-family: var(--font-family-base);
+  font-size: 14px;
+  text-align: left;
+  color: var(--color-ink-charcoal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.trigger:disabled {
+  color: var(--color-stone-gray);
+  cursor: default;
+}
+
+.chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  color: var(--color-stone-gray);
+}
+
+/* ===== 하단 시트 팝업 ===== */
+.sheetOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--color-scrim);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheetPanel {
+  width: 100%;
+  max-width: 640px;
+  max-height: 70vh;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-modal) var(--radius-modal) 0 0;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+}
+
+.sheetHead {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+.sheetTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-ink-charcoal);
+}
+
+.sheetCloseBtn {
+  border: none;
+  background: none;
+  padding: 4px;
+  font-size: 15px;
+  color: var(--color-stone-gray);
+  cursor: pointer;
+}
+
+.sheetList {
+  list-style: none;
+  margin: 0;
+  padding: 0 20px 20px;
+  overflow-y: auto;
+}
+
+.sheetOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 12px 4px;
+  font-family: var(--font-family-base);
+  font-size: 14px;
+  color: var(--color-ink-charcoal);
+  text-align: left;
+  cursor: pointer;
+}
+
+.radio {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border-dashed);
+  box-sizing: border-box;
+}
+
+.radioOn {
+  border-color: var(--color-teal-green);
+  border-width: 5px;
+}

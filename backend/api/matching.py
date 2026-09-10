@@ -207,28 +207,35 @@ def _fetch_docs(announcement_id: int, conn) -> list[dict]:
     ]
 
 
-def _build_biz_cert_from_db(conn):
-    """[2026-09-09, 임시] 로그인 세션이 아직 없어서 "누구의 사업자등록증으로
-    채울지"를 알 방법이 없다 - DB에 등록된 것 중 가장 먼저 저장된 1건(지금은
-    유일하게 있는 profile_id=15, 명현정공)을 채우기 기능 자체가 동작하는지
-    확인하는 용도로 쓴다. 로그인이 붙으면 여기를 "현재 로그인한 사용자의
-    profile_id" 기준 조회로 바꿔야 한다.
+def _build_biz_cert_for_user(conn, user_id: int):
+    """로그인한 user_id 본인의 사업자등록증 정보로 채운다.
+    [2026-09-10] 이전엔 로그인 세션이 없어서 DB에 등록된 아무 사업자등록증 1건
+    (profile_id=15, 명현정공)으로 고정 채우던 임시 코드였음 - 세션이 생겨서
+    본인 profile_id 기준 조회로 교체.
 
-    반환: (biz_cert dict, entity_type) 또는 등록된 사업자등록증이 없으면 None.
+    반환: (biz_cert dict, entity_type, profile_id) 또는 프로필/등록된 사업자등록증이
+    없으면 None. profile_id는 호출부가 채우기 이력(applications)을 남길 때 같이 씀.
     """
     cur = conn.cursor()
+    cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    if row is None:
+        return None
+    profile_id = row[0]
+
     cur.execute(
         """
-        SELECT profile_id, entity_type_code, biz_no, corp_no, company_name, ceo_name,
+        SELECT entity_type_code, biz_no, corp_no, company_name, ceo_name,
                open_date, birth_date, business_address, head_address
-        FROM biz_registration_docs ORDER BY document_id LIMIT 1
-        """
+        FROM biz_registration_docs WHERE profile_id = %s ORDER BY document_id DESC LIMIT 1
+        """,
+        (profile_id,),
     )
     row = cur.fetchone()
     if row is None:
         return None
 
-    (profile_id, entity_type_code, biz_no, corp_no, company_name, ceo_name,
+    (entity_type_code, biz_no, corp_no, company_name, ceo_name,
      open_date, birth_date, business_address, head_address) = row
 
     cur.execute(
@@ -252,14 +259,19 @@ def _build_biz_cert_from_db(conn):
         "biz_type": biz_type or "",
         "biz_item": biz_item or "",
     }
-    return biz_cert, entity_type
+    return biz_cert, entity_type, profile_id
 
 
 @router.get("/attachments/{attachment_id}/fill")
-def fill_attachment(attachment_id: int, background_tasks: BackgroundTasks):
-    """신청서류 원본을 받아서 사업자등록증 정보로 채운 결과를 파일로 돌려준다.
-    [임시] 로그인 연결 전까지는 DB에 등록된 사업자등록증 1건으로 채운다
-    (_build_biz_cert_from_db 참고) - 기능 자체가 동작하는지 확인하는 용도."""
+def fill_attachment(
+    attachment_id: int,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(get_current_user_id),
+):
+    """신청서류 원본을 받아서 로그인한 사용자 본인의 사업자등록증 정보로 채운 결과를
+    파일로 돌려준다. 성공하면 applications에 이력만 남긴다(파일 자체는 저장 안 함 -
+    마이페이지 "채우기 이용내역"에서 다시 누르면 이 엔드포인트를 재호출해 즉석
+    재생성한다 - 사용자 확인, 2026-09-10)."""
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -278,34 +290,62 @@ def fill_attachment(attachment_id: int, background_tasks: BackgroundTasks):
                 "error": {"message": "이 서류는 자동채우기를 지원하지 않습니다.", "code": "NOT_FILLABLE"},
             }
 
-        built = _build_biz_cert_from_db(conn)
+        built = _build_biz_cert_for_user(conn, user_id)
         if built is None:
             return {
                 "success": False,
                 "error": {"message": "등록된 사업자등록증 정보가 없습니다.", "code": "NO_BIZ_CERT"},
             }
-        biz_cert, entity_type = built
+        biz_cert, entity_type, profile_id = built
+
+        # [2026-09-10] 마감된 공고는 원본 첨부 URL이 언젠가 내려갈 수 있어서(실측:
+        # 마감 며칠 이내는 아직 정상 응답 확인했지만 장기적으론 보장 안 됨), 네트워크
+        # 예외를 그대로 500으로 터뜨리지 않고 깨끗한 에러로 감싼다.
+        try:
+            resp = requests.get(source_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
+            resp.raise_for_status()
+        except requests.RequestException:
+            return {
+                "success": False,
+                "error": {
+                    "message": "원본 첨부파일을 더 이상 받을 수 없어요. 공고 원문에서 직접 확인해주세요.",
+                    "code": "SOURCE_UNAVAILABLE",
+                },
+            }
+
+        fd, tmp_in = tempfile.mkstemp(suffix=".hwpx")
+        os.close(fd)
+        fd, tmp_out = tempfile.mkstemp(suffix=".hwpx")
+        os.close(fd)
+        try:
+            with open(tmp_in, "wb") as f:
+                f.write(resp.content)
+            rules = _load_mapping(MAPPING_XLSX)
+            fill_hwpx_all(tmp_in, tmp_out, rules, biz_cert, entity_type, models=None)
+        finally:
+            os.remove(tmp_in)
+
+        cur.execute(
+            "INSERT INTO applications (profile_id, attachment_id, exported_at, created_at) "
+            "VALUES (%s, %s, now(), now())",
+            (profile_id, attachment_id),
+        )
+        conn.commit()
     finally:
         conn.close()
 
-    resp = requests.get(source_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
-    resp.raise_for_status()
-
-    fd, tmp_in = tempfile.mkstemp(suffix=".hwpx")
-    os.close(fd)
-    fd, tmp_out = tempfile.mkstemp(suffix=".hwpx")
-    os.close(fd)
-    try:
-        with open(tmp_in, "wb") as f:
-            f.write(resp.content)
-        rules = _load_mapping(MAPPING_XLSX)
-        fill_hwpx_all(tmp_in, tmp_out, rules, biz_cert, entity_type, models=None)
-    finally:
-        os.remove(tmp_in)
-
     background_tasks.add_task(os.remove, tmp_out)
     out_name = os.path.splitext(file_name)[0] + "_채움.hwpx"
-    return FileResponse(tmp_out, filename=out_name, background=background_tasks)
+    # [2026-09-10] .hwpx는 파이썬 mimetypes가 모르는 확장자라 media_type 없이 두면
+    # application/octet-stream으로 내려가서 브라우저 "흔치 않은 파일" 경고에 더 잘 걸림.
+    # 한글이 쓰는 hwpx MIME을 명시해서 조금이라도 완화 - 매번 새로 채워지는 고유 파일이라
+    # 경고 자체(크롬의 "한 번도 못 본 파일" 휴리스틱)는 이걸로도 완전히는 안 없어짐.
+    return FileResponse(
+        tmp_out,
+        filename=out_name,
+        media_type="application/haansofthwpx",
+        background=background_tasks,
+    )
 
 
 @router.get("/{announcement_id}")

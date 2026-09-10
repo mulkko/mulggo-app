@@ -20,6 +20,12 @@ import DocPreview from "./pages/matching/DocPreview";
 import FilterPage from "./pages/matching/FilterPage";
 import MyPage from "./pages/mypage/MyPage";
 import ProfileEdit from "./pages/mypage/ProfileEdit";
+import CustomerSupport from "./pages/support/CustomerSupport";
+import DiagnosisSelect from "./pages/diagnosis/DiagnosisSelect";
+import DiagnosisStep1 from "./pages/diagnosis/DiagnosisStep1";
+import DiagnosisStep2 from "./pages/diagnosis/DiagnosisStep2";
+import DiagnosisStep3 from "./pages/diagnosis/DiagnosisStep3";
+import DiagnosisStep4 from "./pages/diagnosis/DiagnosisStep4";
 
 /**
  * [임시/디버그] 지금 로그인된 사람이 누구인지 확인용 - 확인 끝나면 지울 것.
@@ -96,6 +102,12 @@ function App() {
         <Route path="/matching/:id/doc-preview" element={<DocPreview />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/edit" element={<ProfileEdit />} />
+        <Route path="/support" element={<CustomerSupport />} />
+        <Route path="/diagnosis/select" element={<DiagnosisSelect />} />
+        <Route path="/diagnosis/1" element={<DiagnosisStep1 />} />
+        <Route path="/diagnosis/2" element={<DiagnosisStep2 />} />
+        <Route path="/diagnosis/3" element={<DiagnosisStep3 />} />
+        <Route path="/diagnosis/4" element={<DiagnosisStep4 />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />

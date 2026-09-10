@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "../../styles/docPreview.module.css";
 import type { RequiredDoc } from "./matchingDetailData";
+import { fetchFilledDocument, saveFilledBlob } from "../../utils/downloadFilledDoc";
 
 /**
  * 서류 미리보기 화면 (16-1).
@@ -15,9 +16,11 @@ import type { RequiredDoc } from "./matchingDetailData";
  * 하단 네비게이션(BottomNav) 없음 — 뒤로가기 헤더만 있는 구조(뒤로가기 → /matching/:id).
  *
  * 실제 동작으로 만든 것: 뒤로가기, "나의 정보로 채우기"
- *   → GET /api/matching/attachments/:id/fill 호출해서 실제로 채운 hwpx를 새 탭으로 다운로드.
- *   [2026-09-09, 임시] 로그인 세션이 없어서 백엔드가 DB에 등록된 사업자등록증 1건(임시)으로
- *   채운다 - 로그인 붙으면 그 사용자 정보로 자동 전환됨(백엔드 쪽 작업).
+ *   → GET /api/matching/attachments/:id/fill 호출해서 실제로 채운 hwpx를 받아옴
+ *   (utils/downloadFilledDoc.ts 공용 함수 - 로그인한 본인의 사업자등록증으로 채움).
+ *   [2026-09-10] 받아오자마자 바로 다운로드시키지 않고, "서류가 준비됐어요" 모달을
+ *   띄워서 "로컬저장"을 눌러야 그때 실제로 저장되도록 함(원래 의도된 흐름 - 예전엔
+ *   확인 없이 바로 다운로드됐음). 실패하면(원본 첨부 소실 등) 화면에 에러 메시지 표시.
  * TODO로만 남긴 것: 카카오톡 공유.
  */
 
@@ -52,17 +55,33 @@ function DocPreview() {
 
   // 다운로드 모달 open 여부 — 이 화면 안에서만 쓰는 로컬 UI 상태
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [fillError, setFillError] = useState("");
+  const [filling, setFilling] = useState(false);
+  // [2026-09-10] 채우기 성공 시 바로 다운로드하지 않고 여기 잠깐 들고 있다가,
+  // 모달에서 "로컬저장" 눌렀을 때만 실제로 저장한다(attachmentId 없는 더미 fallback
+  // 케이스는 채울 blob 자체가 없어서 null로 둠).
+  const [filledBlob, setFilledBlob] = useState<Blob | null>(null);
 
   const handleBack = () => {
     navigate(`/matching/${id}`);
   };
 
-  const handleFill = () => {
-    if (attachmentId) {
-      window.open(`${API_BASE_URL}/api/matching/attachments/${attachmentId}/fill`, "_blank");
+  const handleFill = async () => {
+    if (!attachmentId) {
+      // attachmentId 없이 들어온 경우(더미데이터 fallback) - 실제 실행할 대상이 없어 모달만 보여준다.
+      setFilledBlob(null);
+      setDownloadOpen(true);
       return;
     }
-    // attachmentId 없이 들어온 경우(더미데이터 fallback) - 실제 실행할 대상이 없어 모달만 보여준다.
+    setFillError("");
+    setFilling(true);
+    const result = await fetchFilledDocument(attachmentId);
+    setFilling(false);
+    if ("error" in result) {
+      setFillError(result.error);
+      return;
+    }
+    setFilledBlob(result.blob);
     setDownloadOpen(true);
   };
 
@@ -71,7 +90,7 @@ function DocPreview() {
   };
 
   const handleLocalSave = () => {
-    // TODO: 생성된 문서를 로컬 저장소로 다운로드 — 지금은 모달만 닫는다
+    if (filledBlob) saveFilledBlob(filledBlob, fileName);
     setDownloadOpen(false);
   };
 
@@ -131,8 +150,9 @@ function DocPreview() {
       </main>
 
       <div className={styles.ctaBar}>
-        <button type="button" className={styles.fillButton} onClick={handleFill}>
-          나의 정보로 채우기
+        {fillError && <p className={styles.fillErrorText}>{fillError}</p>}
+        <button type="button" className={styles.fillButton} onClick={handleFill} disabled={filling}>
+          {filling ? "채우는 중..." : "나의 정보로 채우기"}
         </button>
       </div>
 
