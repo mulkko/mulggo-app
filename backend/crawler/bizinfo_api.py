@@ -8,7 +8,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-from backend.db.connection import get_connection
+from backend.db.connection import get_connection, log_crawl_batch
 
 load_dotenv()
 
@@ -135,7 +135,15 @@ def save_to_db(items: list) -> int:
 
 
 if __name__ == "__main__":
-    items = fetch_all(PAGE_UNIT)
-    save_to_csv(items, OUTPUT_PATH)
-    inserted = save_to_db(items)
+    import sys
+
+    try:
+        items = fetch_all(PAGE_UNIT)
+        save_to_csv(items, OUTPUT_PATH)
+        inserted = save_to_db(items)
+    except Exception as e:
+        log_crawl_batch("bizinfo", 0, 0, "error")
+        print(f"[crawl] bizinfo 실패: {e}")
+        sys.exit(1)
+    log_crawl_batch("bizinfo", len(items), inserted, "success")
     print(f"{len(items)}건 수집 완료 -> {OUTPUT_PATH} / DB 신규 저장 {inserted}건")

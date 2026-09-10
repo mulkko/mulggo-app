@@ -20,7 +20,7 @@ from psycopg2.extras import execute_values
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from backend.db.connection import get_connection
+from backend.db.connection import get_connection, log_crawl_batch
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -71,7 +71,7 @@ TEXT_COLUMNS = [
 INSERT_COLUMNS = [
     "pbanc_sn",
     *TEXT_COLUMNS,
-    "aply_mthd_etc_istc",
+    "aply_mthd_etc_istc",  # API 키와 DB 컬럼명 동일
     "intg_pbanc_yn",       # "Y"/"N" -> boolean
     "rcrt_prgs_yn",        # "Y"/"N" 원문 그대로 (character(1))
     "pbanc_rcpt_bgng_dt",  # "YYYYMMDD" -> date
@@ -280,14 +280,22 @@ def save_to_db(items: list) -> dict:
 
 
 def main():
-    items = fetch_announcements_all()
+    import sys
 
-    print(f"\n=== 수신 건수: {len(items)} ===")
-    if items:
-        print("=== 첫 번째 항목 필드 ===")
-        print(list(items[0].keys()))
+    try:
+        items = fetch_announcements_all()
 
-    summary = save_to_db(items)
+        print(f"\n=== 수신 건수: {len(items)} ===")
+        if items:
+            print("=== 첫 번째 항목 필드 ===")
+            print(list(items[0].keys()))
+
+        summary = save_to_db(items)
+    except Exception as e:
+        log_crawl_batch("kstartup", 0, 0, "error")
+        print(f"[crawl] kstartup 실패: {e}")
+        sys.exit(1)
+    log_crawl_batch("kstartup", len(items), summary["inserted"], "success")
     print(
         "\n=== DB 저장 결과 (announcements_raw_kstartup) ===\n"
         f"  신규 저장: {summary['inserted']}건\n"
