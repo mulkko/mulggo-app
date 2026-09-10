@@ -2,6 +2,24 @@ import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import type { ChangeEvent } from "react";
 import styles from "./bizCertUpload.module.css";
 
+/** 법인/개인 필드 - 값 자체를 누르면 선택 팝업이 뜬다는 걸 알려주는 화살표. */
+function Chevron() {
+  return (
+    <svg
+      className={styles.chevron}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 // OCR 하이브리드 구조: 팀원 각자 자기 PC에서 localhost로 프론트를 띄우지만,
 // OCR(무거운 모델)만은 GPU가 있는 고정 PC로 보낸다.
 //   1) 브라우저에 저장해둔 주소가 있으면 그걸 우선 사용
@@ -113,6 +131,9 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
   const [justOpenedKey, setJustOpenedKey] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // 법인/개인은 값이 2개뿐이라 다른 필드(텍스트 입력)와 다르게 "수정" 누르면
+  // 선택 팝업이 뜨는 방식으로 처리 - state.
+  const [entityTypePopupOpen, setEntityTypePopupOpen] = useState(false);
 
   useEffect(() => {
     if (phase !== "uploading") return;
@@ -298,6 +319,55 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
     );
   }
 
+  const renderReviewRow = (key: string, label: string) => {
+    // [2026-09-10] 예: 법인등록번호는 개인일 때 그냥 안 보여준다(이전엔 "-" 회색
+    // 텍스트로 보여줬는데, 어차피 못 쓰는 필드를 굳이 노출할 이유가 없다는 사용자 확인).
+    const notApplicable = NOT_APPLICABLE_WHEN[key] === fields.entity_type;
+    if (notApplicable) return null;
+
+    const value = fields[key] ?? "";
+    const isOptional = OPTIONAL_FIELDS.has(key);
+    const isOpen = openFields.has(key);
+    const showWarnBadge = isOpen && !value && !isOptional; // 열려있는데 아직도 비어있으면 "확인 필요" 유지 (선택 항목 제외)
+
+    return (
+      <div key={key} className={styles.fieldRow}>
+        <label>
+          {label}
+          {showWarnBadge && <span className={styles.badgeWarn}> 확인 필요</span>}
+          {isOptional && <span className={styles.badgeMuted}> 선택 사항</span>}
+        </label>
+
+        {isOpen ? (
+          // 열림 여부(openFields)는 값이 바뀌어도 다시 계산 안 함 — 안 그러면 빈 필드에
+          // 타이핑해서 값이 생기는 순간 "이제 안 비었네?" 판단해서 스스로 닫혀버려
+          // 한 글자 치면 튕기는 것처럼 보이는 문제가 있었음. onBlur로 자동 종료도 안 함
+          // (한글 입력 중 브라우저가 순간적으로 blur를 발생시키는 경우가 있어서 동일 문제 재발 방지).
+          <input
+            type="text"
+            value={value}
+            autoFocus={justOpenedKey === key}
+            onChange={(e) => handleFieldChange(key, e.target.value)}
+            className={showWarnBadge ? styles.inputWarn : styles.input}
+          />
+        ) : (
+          // [2026-09-10] 별도 "수정" 버튼 없이, 값 영역 자체를 누르면 바로 입력창으로
+          // 전환되게 함(사용자 확인 - "input 누르면 수정" 방식으로).
+          <button
+            type="button"
+            className={styles.viewText}
+            onClick={() => {
+              setOpenFields((prev) => new Set(prev).add(key));
+              setJustOpenedKey(key);
+            }}
+          >
+            {value}
+          </button>
+        )}
+      </div>
+    );
+  };
+
   // phase === "review"
   return (
     <div className={styles.overlay}>
@@ -306,54 +376,24 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
           자동으로 인식된 정보예요. 틀린 부분이 있으면 고치고 확인을 눌러주세요.
         </p>
 
-        {REVIEW_FIELDS.map(({ key, label }) => {
-          const value = fields[key] ?? "";
-          const notApplicable = NOT_APPLICABLE_WHEN[key] === fields.entity_type;
-          const isOptional = OPTIONAL_FIELDS.has(key);
-          const isOpen = openFields.has(key);
-          const showWarnBadge = isOpen && !value && !isOptional; // 열려있는데 아직도 비어있으면 "확인 필요" 유지 (선택 항목 제외)
-
-          return (
-            <div key={key} className={styles.fieldRow}>
-              <label>
-                {label}
-                {showWarnBadge && <span className={styles.badgeWarn}> 확인 필요</span>}
-                {notApplicable && <span className={styles.badgeMuted}> 해당 없음</span>}
-                {isOptional && !notApplicable && <span className={styles.badgeMuted}> 선택 사항</span>}
-              </label>
-
-              {notApplicable ? (
-                <div className={styles.viewTextMuted}>-</div>
-              ) : isOpen ? (
-                // 열림 여부(openFields)는 값이 바뀌어도 다시 계산 안 함 — 안 그러면 빈 필드에
-                // 타이핑해서 값이 생기는 순간 "이제 안 비었네?" 판단해서 스스로 닫혀버려
-                // 한 글자 치면 튕기는 것처럼 보이는 문제가 있었음. onBlur로 자동 종료도 안 함
-                // (한글 입력 중 브라우저가 순간적으로 blur를 발생시키는 경우가 있어서 동일 문제 재발 방지).
-                <input
-                  type="text"
-                  value={value}
-                  autoFocus={justOpenedKey === key}
-                  onChange={(e) => handleFieldChange(key, e.target.value)}
-                  className={showWarnBadge ? styles.inputWarn : styles.input}
-                />
-              ) : (
-                <div className={styles.viewRow}>
-                  <span className={styles.viewText}>{value}</span>
-                  <button
-                    type="button"
-                    className={styles.editBtn}
-                    onClick={() => {
-                      setOpenFields((prev) => new Set(prev).add(key));
-                      setJustOpenedKey(key);
-                    }}
-                  >
-                    수정
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {REVIEW_FIELDS.map(({ key, label }) => (
+          <div key={key}>
+            {renderReviewRow(key, label)}
+            {key === "ceo_name" && (
+              <div className={styles.fieldRow}>
+                <label>법인/개인</label>
+                <button
+                  type="button"
+                  className={styles.entityValueBtn}
+                  onClick={() => setEntityTypePopupOpen(true)}
+                >
+                  {fields.entity_type ?? "개인"}
+                  <Chevron />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
 
         {confirmError && <p className={styles.errorText}>{confirmError}</p>}
 
@@ -361,6 +401,37 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
           확인
         </button>
       </div>
+
+      {entityTypePopupOpen && (
+        <div className={styles.entityPopupOverlay} onClick={() => setEntityTypePopupOpen(false)}>
+          <div
+            className={styles.entityPopupCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="법인/개인 선택"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className={styles.entityPopupTitle}>법인/개인 선택</p>
+            {["법인", "개인"].map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={styles.entityOption}
+                onClick={() => {
+                  handleFieldChange("entity_type", option);
+                  setEntityTypePopupOpen(false);
+                }}
+              >
+                <span
+                  className={`${styles.radio} ${(fields.entity_type ?? "개인") === option ? styles.radioOn : ""}`}
+                  aria-hidden="true"
+                />
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 });

@@ -129,12 +129,13 @@ function Home() {
         </p>
 
         {isLoggedIn ? (
-          // [임시] 정식 사업구체화 화면 나오기 전까지 홈에서 바로 갈 수 있게 둔 임시 버튼.
+          // [2026-09-10] pages/diagnosis/(진단방식선택+구체화진단1~4)로 연결됨. 업종코드
+          // 매칭/분석 리포트 연결은 그쪽이 아직 준비 중이라 질문 흐름까지만 동작함.
           <>
             <button
               type="button"
               className={styles.signupBtn}
-              // TODO: 정식 사업구체화 화면 나오면 그 경로로 연결
+              onClick={() => navigate("/diagnosis/select")}
             >
               아이디어 구체화하기 →
             </button>

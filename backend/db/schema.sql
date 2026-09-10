@@ -374,3 +374,18 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     bookmarked_at   TIMESTAMPTZ NOT NULL,
     CONSTRAINT uq_bookmarks_user_announcement UNIQUE (user_id, announcement_id)
 );
+
+-- 행정구역 계층(시/도 → 시/군/구 → 행정동), 3,924행. 실 DB엔 있었는데 이 파일에 문서화가
+-- 안 돼있었음(2026-09-10 확인) - backend/api/analysis.py::_load_administrative_dong()이
+-- 상권분석(GET /analysis/market)에서 지역 중심좌표 계산용으로 이미 쓰고 있었고,
+-- GET /analysis/regions(2026-09-10 신규, 사업구체화 진단4 지역 3단 셀렉트박스용)도
+-- 같은 테이블을 그대로 씀. level 컬럼으로 3단을 구분: '시도'행은 sido=sigungu=dong_name이
+-- 시/도명 자체, '시군구'행은 sigungu=dong_name이 시/군/구명, '행정동'행만 dong_name이
+-- 실제 행정동명이고 sido/sigungu는 상위값을 그대로 채워둔 형태(정규화 안 된 평면 구조).
+CREATE TABLE IF NOT EXISTS administrative_dong (
+    code      VARCHAR(10) PRIMARY KEY,
+    sido      VARCHAR(50) NOT NULL,
+    sigungu   VARCHAR(50),
+    dong_name VARCHAR(50),
+    level     VARCHAR(10) NOT NULL
+);

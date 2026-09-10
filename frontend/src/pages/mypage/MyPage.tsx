@@ -160,7 +160,7 @@ function MyPage() {
       setter((prev) => prev.filter((item) => item.id !== id));
 
   const handleContactClick = () => {
-    // TODO: 고객센터 화면/채널로 이동
+    navigate("/support");
   };
 
   const handleProfileClick = () => {

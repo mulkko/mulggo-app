@@ -251,15 +251,13 @@ def extract_biz_cert(image_path, model, processor):
         raise ValueError(f"OCR 결과에서 JSON을 파싱하지 못했습니다: {raw!r}")
 
     # ── 개인/법인 판별 (사업자등록번호 가운데 2자리 81~88 = 법인) ──
+    # 등록번호 OCR이 실패하면(5자리 미만) 규칙상 "개인"으로 기본 처리되는데, 그렇다고
+    # 실제로 읽힌 법인명/법인등록번호까지 여기서 지워버리면 사용자가 확인 화면에서
+    # 법인/개인을 나중에 바로잡아도 값 자체가 없어서 복구가 안 된다. 그래서 반대쪽
+    # 필드도 지우지 않고 그대로 둔다 - 상호/법인명 둘 다 있어도 되고, 어느 게
+    # 맞는지는 화면(REVIEW_FIELDS)에서 entity_type에 따라 감추기만 한다.
     digits = "".join(c for c in parsed.get("등록번호", "") if c.isdigit())
     biz_type = "법인" if (len(digits) >= 5 and 81 <= int(digits[3:5]) <= 88) else "개인"
-
-    if biz_type == "법인":
-        parsed.pop("상호", None)
-        parsed.pop("생년월일", None)
-    else:
-        parsed.pop("법인명", None)
-        parsed.pop("법인등록번호", None)
 
     biz_cert = {KEY_MAP.get(k, k): v for k, v in parsed.items()}
     _normalize_dates(biz_cert)

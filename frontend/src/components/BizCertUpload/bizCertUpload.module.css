@@ -211,14 +211,10 @@
   border-color: var(--color-error-text);
 }
 
-.viewRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+/* 값 표시 + "누르면 수정" 버튼을 겸한다(별도 수정 버튼 없음, 2026-09-10).
+   평소엔 흰 배경, 누르는 순간(:active)만 회색으로 바뀌어서 "눌렀다"는 반응을 줌. */
 .viewText {
-  flex: 1;
+  width: 100%;
   box-sizing: border-box;
   height: var(--input-height-min);
   display: flex;
@@ -226,29 +222,16 @@
   padding: var(--input-padding-y-min) var(--input-padding-x-min);
   border: 1px solid var(--color-border-web);
   border-radius: var(--radius-check);
-  font-size: var(--font-size-body);
-  color: var(--color-ink-charcoal);
-}
-
-.viewTextMuted {
-  box-sizing: border-box;
-  height: var(--input-height-min);
-  display: flex;
-  align-items: center;
-  padding: var(--input-padding-y-min) var(--input-padding-x-min);
-  font-size: var(--font-size-body);
-  color: var(--color-stone-gray);
-}
-
-.editBtn {
-  flex-shrink: 0;
-  padding: 6px 12px;
-  border: 1px solid var(--color-stone-gray);
-  border-radius: var(--radius-check);
   background: var(--color-white);
-  font-size: var(--font-size-caption);
+  font-family: inherit;
+  font-size: var(--font-size-body);
   color: var(--color-ink-charcoal);
+  text-align: left;
   cursor: pointer;
+}
+
+.viewText:active {
+  background: var(--color-stone-mist);
 }
 
 .confirmBtn {
@@ -263,6 +246,95 @@
   font-size: var(--font-size-body);
   font-weight: 700;
   cursor: pointer;
+}
+
+/* 법인/개인 — 진짜 <select>가 아니라 누르면 팝업이 뜨는 버튼이라, 오른쪽 화살표
+   아이콘과 텍스트 사이에 여백을 넉넉히 둬서 select처럼 보이게 함. */
+.entityValueBtn {
+  width: 100%;
+  box-sizing: border-box;
+  height: var(--input-height-min);
+  padding: var(--input-padding-y-min) 20px var(--input-padding-y-min) var(--input-padding-x-min);
+  border: 1px solid var(--color-stone-gray);
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.entityValueBtn:active {
+  background: var(--color-stone-mist);
+}
+
+.chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--color-stone-gray);
+}
+
+/* ===== 법인/개인 선택 팝업 — .overlay(확인/수정 팝업) 위에 뜨므로 z-index 더 높임 ===== */
+.entityPopupOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-outer);
+  box-sizing: border-box;
+  background: var(--color-scrim);
+}
+
+.entityPopupCard {
+  width: 100%;
+  max-width: 260px;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-input);
+  padding: 16px;
+  box-shadow: var(--shadow-app);
+}
+
+.entityPopupTitle {
+  margin: 0 0 10px;
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-h2);
+  color: var(--color-ink-charcoal);
+}
+
+.entityOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 12px 4px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+  text-align: left;
+  cursor: pointer;
+}
+
+.radio {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border-web);
+  box-sizing: border-box;
+}
+
+.radioOn {
+  border-color: var(--color-navy-sphere);
+  border-width: 5px;
 }
 
 /* 인식 중 / 에러 단계의 보조 버튼 (다시 시도 · 나중에 하기) */

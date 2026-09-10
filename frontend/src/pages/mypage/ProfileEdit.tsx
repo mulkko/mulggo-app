@@ -248,6 +248,10 @@ function ProfileEdit() {
       /* 저장 실패해도 일단 정적 표시로 전환 (에러 UI는 이번 범위 아님) */
     }
     setHasBizCert(true);
+    // backend/auth/signup.py::save_biz_cert_data()가 이 시점에 business_profiles.
+    // profile_type을 "기존사업자"로 바꿔주므로, 화면도 같이 맞춰야 업력/직원수/
+    // 연매출 입력창이 새로고침 없이 바로 나타난다.
+    setProfileType("기존사업자");
     if (fields.company_name) {
       setForm((prev) => ({ ...prev, bizName: fields.company_name }));
     }
@@ -270,7 +274,21 @@ function ProfileEdit() {
   };
 
   const handleBizCertClick = () => {
-    // TODO: 사업자등록증 재업로드 + OCR 재추출 연동 — 이번 범위 아님
+    // TODO: 사업자등록증 재업로드 + OCR 재추출 연동 — 이번 범위 아님.
+    //
+    // [2026-09-10] 실제로 필요해질 수 있는 시나리오(사용자 확인, 우선순위 낮음으로
+    // 보류만 함 - 구현 안 함):
+    //  - 개인사업자 -> 법인 전환: entity_type_code가 바뀌는 케이스, 흔함
+    //  - 상호명/대표자/주소 변경(정정 신청 후 재발급)
+    //  - 최초 가입 때 OCR 오인식이나 사용자 확인 실수로 잘못 저장된 값 정정
+    //
+    // 구현하려면 단순 "파일 교체"가 아니라 아래를 다 같이 고려해야 함:
+    //  1. 최초 등록 플로우(BizCertUpload, OCR+확인 팝업)를 이 화면에서도 재사용
+    //  2. biz_registration_docs에 새 행을 추가할지, 기존 행을 UPDATE할지
+    //     (이력을 남길지 여부 - 팀 확인 필요, 지금 테이블엔 이력 개념 자체가 없음)
+    //  3. business_profiles(business_name, entity_type_code)도 같이 갱신
+    //     (backend/auth/signup.py::save_biz_cert_data()가 최초 등록 때 하는 것과 동일)
+    //  4. 개인->법인 전환이면 profile_business_types(업태/종목)도 재확인 필요할 수 있음
   };
 
   const handleSave = async () => {

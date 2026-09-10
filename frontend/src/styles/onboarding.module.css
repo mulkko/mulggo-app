@@ -212,6 +212,14 @@
 }
 
 /* ===== 사업자등록증 첨부 팝업 (step3) ===== */
+/* OCR 인식 중(uploading/review)엔 이 팝업 자체의 배경/카드 박스를 아예 없애고
+   BizCertUpload 자신의 전체화면 오버레이만 보이게 한다 - display:none은 안 쓴다
+   (그러면 그 안의 BizCertUpload 오버레이까지 같이 사라짐), display:contents로
+   박스만 지우고 자식(BizCertUpload)은 그대로 렌더링시킨다. */
+.bizPopupBare {
+  display: contents;
+}
+
 .bizPopupOverlay {
   position: fixed;
   inset: 0;
