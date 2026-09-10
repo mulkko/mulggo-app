@@ -100,7 +100,10 @@ function Signup() {
 
       if (data.success) {
         setShowToast(true);
-        setTimeout(() => navigate("/onboarding"), 1400);
+        // [2026-09-10] 온보딩 "바로 지원사업 매칭" 팝업(사업자등록증 첨부)이
+        // user_id를 필요로 해서 같이 넘긴다 - 로그인 세션은 가입 직후엔 아직 없음.
+        const userId = data.data?.user_id;
+        setTimeout(() => navigate("/onboarding", { state: { userId } }), 1400);
       } else {
         setErrorMessage(data.error?.message ?? "회원가입에 실패했습니다.");
       }

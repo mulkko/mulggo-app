@@ -210,3 +210,95 @@
 .cta:hover {
   background: var(--color-light-teal-hover-strong);
 }
+
+/* ===== 사업자등록증 첨부 팝업 (step3) ===== */
+.bizPopupOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--color-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.bizPopupCard {
+  width: 100%;
+  max-width: 360px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-modal);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bizPopupTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-ink-charcoal);
+}
+
+.bizPopupSub {
+  margin-top: -10px;
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+  line-height: 1.5;
+}
+
+.bizPopupDone {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+}
+
+.bizPopupError {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-error-text);
+}
+
+.bizPopupButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.bizPopupCancelBtn {
+  flex: 1;
+  height: 46px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-inset-gray);
+  color: var(--color-ink-charcoal);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bizPopupProceedBtn {
+  flex: 1;
+  height: 46px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-light-teal);
+  color: var(--color-white);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bizPopupProceedBtn:hover {
+  background: var(--color-light-teal-hover-strong);
+}
+
+.bizPopupProceedBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

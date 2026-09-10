@@ -26,7 +26,13 @@ import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
  * 매핑하면 값이 깨짐 - 어느 컬럼/옵션 목록으로 갈지 팀 확인 필요.
  *
  * 실제 동작: 뒤로가기(→ /mypage), 저장하기(→ API PUT 후 /mypage).
- * TODO로만 남긴 것: 프로필 사진 변경, 사업자등록증 재업로드/OCR, 이름(users.name) 저장.
+ * [2026-09-10] 이름 저장도 연동함 - business_profiles가 아니라 users.name이라
+ * backend/api/mypage.py에서 fields에서 따로 빼서 별도 UPDATE users 문으로 처리.
+ * [2026-09-10] 예비창업자는 상호명/업력/직원수/연매출 입력창을 숨기고 안내 문구로
+ * 대체함(profile_type 기준) - 실측 확인 결과 예비창업자 8명 전원 이 4개 필드가
+ * NULL이었음(사업자등록증이 없으니 당연). 저장 시에도 이 필드들은 요청 본문에서
+ * 아예 빼서 보이지 않는 값이 조용히 덮어써지는 일이 없게 함.
+ * TODO로만 남긴 것: 프로필 사진 변경, 사업자등록증 재업로드/OCR.
  * (사업자등록증 행은 기존 BizCertUpload 컴포넌트를 재사용하지 않고 이 화면에선 정적 표시만 한다.)
  */
 
@@ -187,8 +193,14 @@ function ProfileEdit() {
   const [email, setEmail] = useState(DEFAULT_READONLY_EMAIL);
   // null = 아직 조회 전(깜빡임 방지용 - 조회 끝나기 전엔 업로드/정적표시 둘 다 안 보임)
   const [hasBizCert, setHasBizCert] = useState<boolean | null>(null);
+  // null = 아직 조회 전. [2026-09-10] 예비창업자(사업자등록증 없음)는 상호명/업력/
+  // 직원수/연매출을 알 수도, 입력할 수도 없는 값이라 - 실측으로도 예비창업자 8명
+  // 전원 이 4개 필드가 NULL이었음(사용자 확인) - profile_type 기준으로 그 4개
+  // 필드를 숨기고 안내 문구로 대체한다.
+  const [profileType, setProfileType] = useState<string | null>(null);
 
   const userId = getUserId() ?? FALLBACK_USER_ID;
+  const isProspective = profileType === "예비창업자";
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${userId}`)
@@ -198,15 +210,20 @@ function ProfileEdit() {
         const d = res.data;
         setEmail(d.email);
         setHasBizCert(d.has_biz_cert);
+        setProfileType(d.profile_type);
         setForm((prev) => ({
           ...prev,
           name: d.name ?? prev.name,
-          bizName: d.business_name ?? prev.bizName,
+          // [2026-09-10] 값이 없을 때 더미값(prev)으로 남겨두면 예비창업자 화면에
+          // "물꼬 커피" 같은 가짜 상호명이 실제 값인 것처럼 보이는 버그가 있었음
+          // (실측 확인) - 빈 문자열로 고침. 어차피 예비창업자는 이 필드 자체를
+          // 아래에서 숨기지만, 안전하게 데이터도 맞춰둔다.
+          bizName: d.business_name ?? "",
           industryDesc: d.industry_text ?? prev.industryDesc,
           region: d.region ?? prev.region,
-          monthsInBusiness: d.business_age_months != null ? String(d.business_age_months) : prev.monthsInBusiness,
-          employees: d.employee_count != null ? String(d.employee_count) : prev.employees,
-          annualRevenue: d.annual_revenue != null ? String(d.annual_revenue) : prev.annualRevenue,
+          monthsInBusiness: d.business_age_months != null ? String(d.business_age_months) : "",
+          employees: d.employee_count != null ? String(d.employee_count) : "",
+          annualRevenue: d.annual_revenue != null ? String(d.annual_revenue) : "",
           ownerAgeGroup: d.founder_age_group ?? prev.ownerAgeGroup,
         }));
       })
@@ -257,19 +274,27 @@ function ProfileEdit() {
   };
 
   const handleSave = async () => {
+    // 예비창업자는 상호명/업력/직원수/연매출 입력창 자체를 안 보여주므로, 저장 요청에도
+    // 안 실어보낸다(키를 아예 빼면 백엔드가 exclude_unset으로 그 컬럼은 안 건드림) -
+    // 안 그러면 화면에 안 보이는 필드의 빈 값(""→null)이 조용히 덮어써질 수 있음.
+    const body: Record<string, string | number | null> = {
+      name: form.name || null,
+      industry_text: form.industryDesc || null,
+      region: form.region || null,
+      founder_age_group: form.ownerAgeGroup || null,
+    };
+    if (!isProspective) {
+      body.business_name = form.bizName || null;
+      body.business_age_months = form.monthsInBusiness ? Number(form.monthsInBusiness) : null;
+      body.annual_revenue = form.annualRevenue ? Number(form.annualRevenue) : null;
+      body.employee_count = form.employees ? Number(form.employees) : null;
+    }
+
     try {
       await fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${getUserId() ?? FALLBACK_USER_ID}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          business_name: form.bizName || null,
-          industry_text: form.industryDesc || null,
-          region: form.region || null,
-          business_age_months: form.monthsInBusiness ? Number(form.monthsInBusiness) : null,
-          annual_revenue: form.annualRevenue ? Number(form.annualRevenue) : null,
-          employee_count: form.employees ? Number(form.employees) : null,
-          founder_age_group: form.ownerAgeGroup || null,
-        }),
+        body: JSON.stringify(body),
       });
     } catch {
       /* 저장 실패해도 일단 마이페이지로 이동 (에러 UI는 이번 범위 아님) */
@@ -384,12 +409,14 @@ function ProfileEdit() {
             </button>
           ) : null}
 
-          <TextField
-            label="상호명"
-            name="bizName"
-            value={form.bizName}
-            onChange={handleChange}
-          />
+          {!isProspective && (
+            <TextField
+              label="상호명"
+              name="bizName"
+              value={form.bizName}
+              onChange={handleChange}
+            />
+          )}
           <TextField
             label="업종 설명(원문)"
             name="industryDesc"
@@ -405,30 +432,38 @@ function ProfileEdit() {
             onChange={handleChange}
           />
 
-          <div className={styles.row}>
-            <TextField
-              label="업력(개월)"
-              name="monthsInBusiness"
-              value={form.monthsInBusiness}
-              onChange={handleChange}
-              inter
-            />
-            <TextField
-              label="직원수"
-              name="employees"
-              value={form.employees}
-              onChange={handleChange}
-              inter
-            />
-          </div>
+          {isProspective ? (
+            <p className={styles.groupSub}>
+              업력·직원수·연매출은 사업자등록증을 등록하면 자동으로 채워져요.
+            </p>
+          ) : (
+            <>
+              <div className={styles.row}>
+                <TextField
+                  label="업력(개월)"
+                  name="monthsInBusiness"
+                  value={form.monthsInBusiness}
+                  onChange={handleChange}
+                  inter
+                />
+                <TextField
+                  label="직원수"
+                  name="employees"
+                  value={form.employees}
+                  onChange={handleChange}
+                  inter
+                />
+              </div>
 
-          <TextField
-            label="연매출"
-            name="annualRevenue"
-            value={form.annualRevenue}
-            onChange={handleChange}
-            inter
-          />
+              <TextField
+                label="연매출"
+                name="annualRevenue"
+                value={form.annualRevenue}
+                onChange={handleChange}
+                inter
+              />
+            </>
+          )}
 
           <SelectField
             label="대표자 연령대"
