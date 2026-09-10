@@ -2,13 +2,14 @@ import { useState, type SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../styles/login.module.css";
 import { ADMIN_AUTH_KEY } from "../pages/admin/AdminRoute";
+import { getAuthToken, setSession } from "../auth/session";
 import logo from "../assets/logo.svg";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface AuthResponse {
   success: boolean;
-  data: { user_id: number; email: string; name: string } | null;
+  data: { user_id: number; email: string; name: string; token?: string } | null;
   error: { message: string; code: string } | null;
 }
 
@@ -20,26 +21,27 @@ const VARIANT_CONFIG = {
   user: {
     title: "로그인",
     endpoint: "/api/auth/login",
+    devAutoLoginEndpoint: "/api/auth/dev-auto-login",
   },
   admin: {
     title: "관리자 로그인",
     endpoint: "/api/auth/admin-login",
+    devAutoLoginEndpoint: "/api/auth/dev-auto-login-admin",
   },
 } as const;
 
 function LoginForm({ variant }: LoginFormProps) {
   const navigate = useNavigate();
-  const { title, endpoint } = VARIANT_CONFIG[variant];
+  const { title, endpoint, devAutoLoginEndpoint } = VARIANT_CONFIG[variant];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [success, setSuccess] = useState(false);
+  const isLoggedIn = Boolean(getAuthToken());
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
     setErrorMessage("");
-    setSuccess(false);
 
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -54,11 +56,41 @@ function LoginForm({ variant }: LoginFormProps) {
         return;
       }
 
+      if (data.data?.token) {
+        setSession(data.data.token, data.data.user_id, data.data.email);
+      }
+
       if (variant === "admin") {
         localStorage.setItem(ADMIN_AUTH_KEY, "true");
         navigate("/admin");
       } else {
-        setSuccess(true);
+        navigate("/home");
+      }
+    } catch {
+      setErrorMessage("서버에 연결할 수 없습니다.");
+    }
+  };
+
+  // [임시/개발용] 테스트 계정으로 바로 로그인 - .env에 DEV_(ADMIN_)AUTO_LOGIN_*이 없으면
+  // 서버가 404를 주므로 그 경우엔 에러 메시지만 뜨고 아무 일도 안 일어남.
+  const handleDevAutoLogin = async () => {
+    setErrorMessage("");
+    try {
+      const response = await fetch(`${API_BASE_URL}${devAutoLoginEndpoint}`, { method: "POST" });
+      const data: AuthResponse = await response.json();
+
+      if (!data.success || !data.data?.token) {
+        setErrorMessage(data.error?.message ?? "자동 로그인에 실패했습니다.");
+        return;
+      }
+
+      setSession(data.data.token, data.data.user_id, data.data.email);
+
+      if (variant === "admin") {
+        localStorage.setItem(ADMIN_AUTH_KEY, "true");
+        navigate("/admin");
+      } else {
+        navigate("/home");
       }
     } catch {
       setErrorMessage("서버에 연결할 수 없습니다.");
@@ -114,13 +146,16 @@ function LoginForm({ variant }: LoginFormProps) {
           <button type="submit" className={styles.submitBtn}>로그인</button>
         </form>
 
-        {variant === "user" && (
+        {variant === "user" && !isLoggedIn && (
           <p className={styles.signupPrompt}>
             아직 계정이 없으신가요? <Link to="/signup">회원가입</Link>
           </p>
         )}
 
-        {success && <p className={styles.success}>로그인 성공</p>}
+        <button type="button" className={styles.devAutoLoginBtn} onClick={handleDevAutoLogin}>
+          [DEV] 테스트 계정으로 바로 로그인
+        </button>
+
         {errorMessage && <p className={styles.error}>{errorMessage}</p>}
       </div>
     </div>

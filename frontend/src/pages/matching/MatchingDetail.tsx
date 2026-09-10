@@ -66,7 +66,9 @@ function MatchingDetail() {
   }, [id]);
 
   const handleBack = () => {
-    navigate("/matching");
+    // [2026-09-10] bare navigate("/matching")로 가면 목록에서 걸어둔 필터(URL 쿼리)가
+    // 다 날아가서, 브라우저 history를 한 칸 되돌려 원래 있던 필터 붙은 URL로 복귀한다.
+    navigate(-1);
   };
 
   const handleToggleSave = () => {

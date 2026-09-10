@@ -13,8 +13,7 @@ import AnnouncementCard, {
  * 필터바가 있고, 하단에는 공통 BottomNav("매칭" 탭 활성).
  *
  * 목록은 GET /api/matching에서 가져온다. 지역/업종 드롭다운, "필터" 팝업
- * (기업유형/업력)까지 실제 필터링이 반영됨 - 지원분야/연령은 아직 실제
- * 카테고리 미확정이라 FilterPage.tsx에서 제외.
+ * (기업유형/지원분야/업력/연령) 전부 실제 필터링이 반영됨.
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -79,18 +78,39 @@ function MatchingList() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  const [ksic, setKsic] = useState("");
-  const [region, setRegion] = useState("");
-  const [sort, setSort] = useState("recent");
-  // FilterPage("전체 필터" 팝업)의 "적용하기"가 /matching?company=...&biz_age=... 형태로 넘겨준다.
+  // [2026-09-10] region/ksic/sort도 로컬 state가 아니라 URL 쿼리로 옮김 - 로컬 state였을 땐
+  // "필터" 팝업(다른 라우트)에 갔다 오면 MatchingList가 언마운트/리마운트되면서 초기화돼서,
+  // 지역/업종/정렬 골라둔 게 필터 팝업 갔다오면 풀리는 버그가 있었음.
+  const ksic = searchParams.get("ksic") ?? "";
+  const region = searchParams.get("region") ?? "";
+  const sort = searchParams.get("sort") ?? "recent";
+  // FilterPage("전체 필터" 팝업)의 "적용하기"가
+  // /matching?company=...&field=...&biz_age=...&age=... 형태로 넘겨준다.
   const company = searchParams.get("company") ?? "";
+  const field = searchParams.get("field") ?? "";
   const bizAge = searchParams.get("biz_age") ?? "";
+  const age = searchParams.get("age") ?? "";
+
+  // 지역/업종/정렬 드롭다운 값 변경 - 다른 쿼리 파라미터(필터 팝업 값 등)는 그대로 두고
+  // 이 키 하나만 갱신(없으면 삭제)한다.
+  const updateParam = (key: string, value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value) {
+        next.set(key, value);
+      } else {
+        next.delete(key);
+      }
+      return next;
+    });
+  };
 
   const fetchPage = (offset: number, onDone: (body: MatchingListResponse) => void) =>
     fetch(
       `${API_BASE_URL}/api/matching?offset=${offset}&limit=${PAGE_SIZE}&ksic=${ksic}` +
         `&region=${encodeURIComponent(region)}&company=${encodeURIComponent(company)}` +
-        `&biz_age=${encodeURIComponent(bizAge)}&sort=${sort}`,
+        `&field=${encodeURIComponent(field)}&biz_age=${encodeURIComponent(bizAge)}` +
+        `&age=${encodeURIComponent(age)}&sort=${sort}`,
     )
       .then((res) => res.json())
       .then((body: MatchingListResponse) => {
@@ -113,7 +133,7 @@ function MatchingList() {
       setTotal(body.total ?? 0);
     }).finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ksic, region, company, bizAge, sort]);
+  }, [ksic, region, company, field, bizAge, age, sort]);
 
   const handleClearFilters = () => {
     setSearchParams({});
@@ -132,7 +152,9 @@ function MatchingList() {
   };
 
   const handleFilterClick = () => {
-    navigate("/matching/filter");
+    // 지금 적용 중인 필터(company/field/biz_age/age)를 그대로 들고 들어가서,
+    // FilterPage가 열릴 때 칩 선택 상태를 복원할 수 있게 한다.
+    navigate(`/matching/filter?${searchParams.toString()}`);
   };
 
   const handleCardClick = (item: AnnouncementCardData) => {
@@ -170,7 +192,7 @@ function MatchingList() {
         <select
           className={styles.dropdownChip}
           value={region}
-          onChange={(e) => setRegion(e.target.value === "지역 전체" ? "" : e.target.value)}
+          onChange={(e) => updateParam("region", e.target.value === "지역 전체" ? "" : e.target.value)}
         >
           {REGION_OPTIONS.map((r) => (
             <option key={r} value={r}>
@@ -181,7 +203,7 @@ function MatchingList() {
         <select
           className={styles.dropdownChip}
           value={ksic}
-          onChange={(e) => setKsic(e.target.value)}
+          onChange={(e) => updateParam("ksic", e.target.value)}
         >
           {KSIC_OPTIONS.map((opt) => (
             <option key={opt.code} value={opt.code}>
@@ -192,7 +214,7 @@ function MatchingList() {
         <select
           className={styles.dropdownChip}
           value={sort}
-          onChange={(e) => setSort(e.target.value)}
+          onChange={(e) => updateParam("sort", e.target.value)}
         >
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>

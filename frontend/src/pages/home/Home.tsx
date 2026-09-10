@@ -1,5 +1,11 @@
+// ===== [START: 보류] 햄버거 메뉴 드로어 - 사용 여부 미정, 검토 후 주석 처리함 =====
+// import { useState } from "react";
+// ===== [END: 보류] 햄버거 메뉴 드로어 import(useState) =====
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/home.module.css";
+// import { clearSession } from "../../auth/session"; // [보류] 햄버거 메뉴 드로어용 - 위 블록과 세트
+import { getAuthToken } from "../../auth/session";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 /**
  * 홈 화면(/home).
@@ -33,6 +39,16 @@ const HOW_IT_WORKS = [
 
 function Home() {
   const navigate = useNavigate();
+  const isLoggedIn = Boolean(getAuthToken());
+
+  // ===== [START: 보류] 햄버거 메뉴 드로어 - state/핸들러 =====
+  // const [menuOpen, setMenuOpen] = useState(false);
+  // const handleLogout = () => {
+  //   clearSession();
+  //   setMenuOpen(false);
+  //   navigate("/login");
+  // };
+  // ===== [END: 보류] 햄버거 메뉴 드로어 - state/핸들러 =====
 
   return (
     <div className={`pageContainer ${styles.page}`}>
@@ -46,13 +62,52 @@ function Home() {
           type="button"
           className={styles.menuBtn}
           aria-label="메뉴 열기"
-          // TODO: 사이드 메뉴/드로어 열기
+          // TODO: [보류] 햄버거 메뉴 드로어 쓰기로 결정되면 onClick={() => setMenuOpen(true)} 연결
+          // (state는 위 "state/핸들러" 블록, 드로어 내용은 아래 JSX 블록 주석 참고)
         >
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M4 7h16M4 12h16M4 17h16" />
           </svg>
         </button>
       </header>
+
+      {/* ===== [START: 보류] 햄버거 메뉴 드로어 - JSX (검토 완료, 사용 여부만 미정) =====
+      {menuOpen && (
+        <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)}>
+          <nav
+            className={styles.menuDrawer}
+            aria-label="전체 메뉴"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className={styles.menuCloseBtn}
+              aria-label="메뉴 닫기"
+              onClick={() => setMenuOpen(false)}
+            >
+              ✕
+            </button>
+            <button type="button" className={styles.menuItem} onClick={() => { setMenuOpen(false); navigate("/home"); }}>
+              홈
+            </button>
+            <button type="button" className={styles.menuItem} onClick={() => setMenuOpen(false)}>
+              아이디어 구체화하기
+            </button>
+            <button type="button" className={styles.menuItem} onClick={() => { setMenuOpen(false); navigate("/matching"); }}>
+              매칭공고 보기
+            </button>
+            <button type="button" className={styles.menuItem} onClick={() => { setMenuOpen(false); navigate("/mypage"); }}>
+              마이페이지
+            </button>
+            {isLoggedIn && (
+              <button type="button" className={styles.menuItem} onClick={handleLogout}>
+                로그아웃
+              </button>
+            )}
+          </nav>
+        </div>
+      )}
+      ===== [END: 보류] 햄버거 메뉴 드로어 - JSX ===== */}
 
       {/* ===== 본문 (실측: padding 10px 22px 32px, 세로 gap 22) ===== */}
       <div className={styles.body}>
@@ -73,24 +128,46 @@ function Home() {
           지원사업까지 이어드려요.
         </p>
 
-        <button
-          type="button"
-          className={styles.signupBtn}
-          onClick={() => navigate("/signup")}
-        >
-          회원가입하기 →
-        </button>
+        {isLoggedIn ? (
+          // [임시] 정식 사업구체화 화면 나오기 전까지 홈에서 바로 갈 수 있게 둔 임시 버튼.
+          <>
+            <button
+              type="button"
+              className={styles.signupBtn}
+              // TODO: 정식 사업구체화 화면 나오면 그 경로로 연결
+            >
+              아이디어 구체화하기 →
+            </button>
+            <button
+              type="button"
+              className={styles.signupBtn}
+              onClick={() => navigate("/matching")}
+            >
+              매칭공고 보기 →
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className={styles.signupBtn}
+              onClick={() => navigate("/signup")}
+            >
+              회원가입하기 →
+            </button>
 
-        <p className={styles.loginPrompt}>
-          이미 계정이 있으신가요?{" "}
-          <button
-            type="button"
-            className={styles.loginLink}
-            onClick={() => navigate("/login")}
-          >
-            로그인
-          </button>
-        </p>
+            <p className={styles.loginPrompt}>
+              이미 계정이 있으신가요?{" "}
+              <button
+                type="button"
+                className={styles.loginLink}
+                onClick={() => navigate("/login")}
+              >
+                로그인
+              </button>
+            </p>
+          </>
+        )}
 
         {/* ===== HOW IT WORKS (레이아웃만 교체, 문구는 원본 유지) ===== */}
         <section className={styles.howBox}>
@@ -112,6 +189,9 @@ function Home() {
           </ol>
         </section>
       </div>
+
+      {/* 로그인 상태에서만 하단 네비게이션 표시 ("홈" 탭 활성) */}
+      {isLoggedIn && <BottomNav active="home" />}
     </div>
   );
 }

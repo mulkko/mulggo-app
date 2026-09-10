@@ -1,6 +1,5 @@
 # 공고 매칭 리스트 조회 API.
-# 지금은 필터 없이 전체 목록만 반환한다 - FilterPage(기업유형/지원분야/업력/연령)
-# 연동은 이 API가 먼저 자리잡은 뒤 쿼리 파라미터로 이어붙일 예정.
+# FilterPage(기업유형/지원분야/업력/연령) 4개 그룹 전부 쿼리 파라미터로 연동됨.
 
 import os
 import tempfile
@@ -48,6 +47,8 @@ def list_announcements(
     region: str = "",
     company: str = "",
     biz_age: str = "",
+    field: str = "",
+    age: str = "",
     sort: str = "recent",
 ) -> dict:
     """"더보기" 버튼 방식 페이지네이션. limit+1건을 조회해서, limit보다 많이
@@ -73,11 +74,23 @@ def list_announcements(
     선택해도 "예비창업자~3년미만" 같은 공고가 같이 잡히게 하려는 의도(docs/filter_options_
     review_2026-09-09.xlsx 참고). bizinfo는 이 컬럼 자체가 항상 NULL이라 대상이 아님.
 
+    field: 콤마로 구분된 지원분야 목록 (예: "사업화,정책자금"). announcements.category에
+    이 값들 중 하나라도 부분 문자열로 포함되면 매칭(ILIKE ANY). kstartup은 category가
+    "사업화"처럼 깨끗한 단일 값이라 그대로 매칭되고, bizinfo는 "창업 > 사업화지원"처럼
+    "대분류 > 중분류" 합친 문자열이라 부분 매칭으로 대분류만 선택해도 잡히게 한다
+    (docs/filter_options_review_2026-09-09.xlsx "지원분야" 시트 참고).
+
+    age: 사업대상연령 값 하나 (예: "만 40세 이상", "전연령"). announcements.target_age_groups
+    (배열, kstartup만 값 있음)와 겹치면 매칭. 실제 distinct 값 그대로 씀(가공된 버킷 없음)
+    - docs/filter_options_review_2026-09-09.xlsx "target_age_groups" 시트 참고.
+
     sort: "recent"(기본, 최근 등록순) 또는 "deadline"(마감임박순)."""
     ksic_codes = [c.strip() for c in ksic.split(",") if c.strip()]
     regions = [r.strip() for r in region.split(",") if r.strip()]
     companies = [c.strip() for c in company.split(",") if c.strip()]
+    fields = [f.strip() for f in field.split(",") if f.strip()]
     biz_age = biz_age.strip()
+    age = age.strip()
     order_sql = SORT_OPTIONS.get(sort, SORT_OPTIONS["recent"])
 
     # [2026-09-09] 이미 마감 지난 공고는 리스트에서 아예 뺀다. announcements 원본
@@ -97,6 +110,12 @@ def list_announcements(
     if biz_age:
         conditions.append("business_age_condition LIKE %s")
         params.append(f"%{biz_age}%")
+    if fields:
+        conditions.append("category ILIKE ANY(%s)")
+        params.append([f"%{f}%" for f in fields])
+    if age:
+        conditions.append("target_age_groups && %s")
+        params.append([age])
     where_sql = "WHERE " + " AND ".join(conditions) if conditions else ""
 
     conn = get_connection()

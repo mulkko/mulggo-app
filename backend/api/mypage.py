@@ -9,10 +9,15 @@
 # idea_refinement_sessions는 실제 DB에 0건이라(연동해도 항상 빈 목록) 지금
 # 범위에서 제외함(사용자 확인, 2026-09-09).
 
-from fastapi import APIRouter
+import json
+import os
+
+from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from backend.api.auth import UPLOAD_DIR, _validate_biz_cert_file
+from backend.auth.signup import save_biz_cert_data
 from backend.db.connection import get_connection
 
 router = APIRouter(prefix="/api/mypage", tags=["mypage"])
@@ -31,7 +36,11 @@ def get_profile(user_id: int) -> JSONResponse:
             """
             SELECT u.name, u.email, bp.profile_type, bp.entity_type_code, et.name,
                    bp.business_name, bp.industry_text, bp.region, bp.business_age_months,
-                   bp.annual_revenue, bp.employee_count, bp.founder_age_group
+                   bp.annual_revenue, bp.employee_count, bp.founder_age_group,
+                   EXISTS (
+                       SELECT 1 FROM biz_registration_docs d
+                       WHERE d.profile_id = bp.profile_id
+                   ) AS has_biz_cert
             FROM users u
             LEFT JOIN business_profiles bp ON bp.user_id = u.user_id
             LEFT JOIN entity_types et ON et.code = bp.entity_type_code
@@ -48,7 +57,7 @@ def get_profile(user_id: int) -> JSONResponse:
 
     (name, email, profile_type, entity_type_code, entity_type_name, business_name,
      industry_text, region, business_age_months, annual_revenue, employee_count,
-     founder_age_group) = row
+     founder_age_group, has_biz_cert) = row
 
     return JSONResponse(content={
         "success": True,
@@ -65,6 +74,7 @@ def get_profile(user_id: int) -> JSONResponse:
             "annual_revenue": annual_revenue,
             "employee_count": employee_count,
             "founder_age_group": founder_age_group,
+            "has_biz_cert": bool(has_biz_cert),
         },
     })
 
@@ -104,5 +114,32 @@ def update_profile(user_id: int, payload: ProfileUpdateRequest) -> JSONResponse:
         conn.commit()
     finally:
         conn.close()
+
+    return JSONResponse(content={"success": True, "data": {"user_id": user_id}})
+
+
+@router.post("/biz-cert")
+def add_biz_cert(user_id: int, file: UploadFile = File(...), biz_cert_data: str = Form(...)) -> JSONResponse:
+    """
+    등록된 사업자등록증이 없는 사용자가 마이페이지에서 처음 첨부할 때 씀.
+    OCR(/api/auth/biz-cert-ocr)로 이미 확인/수정된 값(biz_cert_data)을 그대로 저장만 한다 -
+    signup_endpoint(backend/api/auth.py)의 biz_cert_data 처리와 동일한 패턴, 재OCR 없음.
+    """
+    content = file.file.read()
+    validation_error = _validate_biz_cert_file(file.filename or "", content)
+    if validation_error:
+        return _error(400, validation_error, "FILE_ERROR")
+
+    try:
+        fields = json.loads(biz_cert_data)
+    except (json.JSONDecodeError, TypeError):
+        return _error(400, "잘못된 사업자등록증 데이터입니다.", "INVALID_FIELDS")
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    save_path = os.path.join(UPLOAD_DIR, f"{user_id}_{file.filename}")
+    with open(save_path, "wb") as f:
+        f.write(content)
+
+    save_biz_cert_data(user_id, save_path, file.filename or "", fields)
 
     return JSONResponse(content={"success": True, "data": {"user_id": user_id}})

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/profileEdit.module.css";
+import { getUserId } from "../../auth/session";
+import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
 
 /**
  * 프로필 수정 화면 (17-1).
@@ -14,10 +16,9 @@ import styles from "../../styles/profileEdit.module.css";
  * 상수(READONLY_EMAIL)를 readOnly input으로 흐리게 표시한다.
  *
  * [2026-09-09] backend/api/mypage.py의 GET/PUT /api/mypage/profile 연동함
- * (business_profiles 테이블 - 실제 로그인 사용자 6명 데이터 있음). 로그인 시
- * user_id를 저장하는 세션 처리가 아직 없어서(LoginForm.tsx가 로그인 성공해도
- * user_id를 버림) TEMP_USER_ID로 고정해뒀다 - 로그인 세션이 붙으면 이 상수를
- * 그 값으로 교체하면 됨.
+ * (business_profiles 테이블 - 실제 로그인 사용자 6명 데이터 있음).
+ * [2026-09-10] user_id를 로그인 세션(auth/session.ts::getUserId)에서 가져오도록 교체,
+ * 세션 없으면(자동로그인 미설정 등) FALLBACK_USER_ID로 동작.
  *
  * "기업유형"(companyType) 필드는 연동 안 함 - DB엔 이 화면 드롭다운(예비창업자/
  * 중소/소상공인/창업벤처)에 대응하는 컬럼이 없고, business_profiles.profile_type
@@ -31,9 +32,8 @@ import styles from "../../styles/profileEdit.module.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// TODO: 로그인 세션에 user_id 저장하는 기능 붙으면 그 값으로 교체.
-// 지금은 business_profiles에 실데이터가 있는 계정(user_id=27)으로 고정.
-const TEMP_USER_ID = 27;
+// 로그인 세션(getUserId)이 없을 때만 쓰는 폴백 - business_profiles에 실데이터가 있는 계정.
+const FALLBACK_USER_ID = 27;
 
 /** 계정 이메일 — 읽기전용(이 화면에서 수정 불가). API 응답의 email로 갱신됨. */
 const DEFAULT_READONLY_EMAIL = "startup@email.com";
@@ -51,6 +51,7 @@ interface ProfileApiData {
   annual_revenue: number | null;
   employee_count: number | null;
   founder_age_group: string | null;
+  has_biz_cert: boolean;
 }
 
 interface ProfileForm {
@@ -184,14 +185,19 @@ function ProfileEdit() {
   const navigate = useNavigate();
   const [form, setForm] = useState<ProfileForm>(INITIAL_FORM);
   const [email, setEmail] = useState(DEFAULT_READONLY_EMAIL);
+  // null = 아직 조회 전(깜빡임 방지용 - 조회 끝나기 전엔 업로드/정적표시 둘 다 안 보임)
+  const [hasBizCert, setHasBizCert] = useState<boolean | null>(null);
+
+  const userId = getUserId() ?? FALLBACK_USER_ID;
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${TEMP_USER_ID}`)
+    fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${userId}`)
       .then((res) => res.json())
       .then((res: { success: boolean; data?: ProfileApiData }) => {
         if (!res.success || !res.data) return;
         const d = res.data;
         setEmail(d.email);
+        setHasBizCert(d.has_biz_cert);
         setForm((prev) => ({
           ...prev,
           name: d.name ?? prev.name,
@@ -207,7 +213,28 @@ function ProfileEdit() {
       .catch(() => {
         /* 조회 실패 시 더미값 그대로 유지 */
       });
-  }, []);
+  }, [userId]);
+
+  // BizCertUpload가 OCR 확인/수정까지 끝낸 값을 넘겨주면, 재OCR 없이 그대로 저장만 한다
+  // (signup.tsx의 biz_cert_file/biz_cert_data 전송 패턴과 동일).
+  const handleBizCertConfirm = async (fields: Record<string, string>, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("biz_cert_data", JSON.stringify(fields));
+
+    try {
+      await fetch(`${API_BASE_URL}/api/mypage/biz-cert?user_id=${userId}`, {
+        method: "POST",
+        body: formData,
+      });
+    } catch {
+      /* 저장 실패해도 일단 정적 표시로 전환 (에러 UI는 이번 범위 아님) */
+    }
+    setHasBizCert(true);
+    if (fields.company_name) {
+      setForm((prev) => ({ ...prev, bizName: fields.company_name }));
+    }
+  };
 
   // input/select 공통 핸들러 — name 속성으로 어떤 필드인지 구분한다.
   const handleChange = (
@@ -231,7 +258,7 @@ function ProfileEdit() {
 
   const handleSave = async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${TEMP_USER_ID}`, {
+      await fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${getUserId() ?? FALLBACK_USER_ID}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -323,31 +350,39 @@ function ProfileEdit() {
             </span>
           </div>
 
-          {/* 사업자등록증 업로드 행 (정적 표시 — 클릭은 TODO) */}
-          <button
-            type="button"
-            className={styles.bizUpload}
-            onClick={handleBizCertClick}
-          >
-            <span className={styles.bizThumb} aria-hidden="true">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="3" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="M21 15l-5-5L5 21" />
-              </svg>
-            </span>
-            <span className={styles.bizUploadText}>
-              <span className={styles.bizUploadTitle}>사업자등록증 업로드</span>
-              <span className={styles.bizUploadSub}>사진 또는 PDF</span>
-            </span>
-          </button>
+          {/* 사업자등록증 — 등록된 게 없으면(hasBizCert===false) 실제 첨부 컴포넌트,
+              있으면(true) 기존 정적 표시 행(클릭은 재업로드 TODO), 조회 전(null)엔 아무 것도 안 보임. */}
+          {hasBizCert === false ? (
+            <div className={styles.field}>
+              <span className={styles.label}>사업자등록증 (등록된 사업자등록증이 없어요)</span>
+              <BizCertUpload onConfirm={handleBizCertConfirm} onSkip={() => {}} />
+            </div>
+          ) : hasBizCert === true ? (
+            <button
+              type="button"
+              className={styles.bizUpload}
+              onClick={handleBizCertClick}
+            >
+              <span className={styles.bizThumb} aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="3" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+              </span>
+              <span className={styles.bizUploadText}>
+                <span className={styles.bizUploadTitle}>사업자등록증 업로드</span>
+                <span className={styles.bizUploadSub}>사진 또는 PDF</span>
+              </span>
+            </button>
+          ) : null}
 
           <TextField
             label="상호명"

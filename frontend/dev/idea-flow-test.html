@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>[테스트] 업종매칭/아이디어 구체화 분기 흐름</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%F0%9F%94%80%3C/text%3E%3C/svg%3E">
+  <title>[테스트] 슬롯필링 (업종코드 매칭 + 아이디어 브레인스토밍)</title>
   <style>
     .spinner {
       display: inline-block;
@@ -18,28 +19,29 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    .startCard {
+    .pickBtn {
       display: block;
       width: 100%;
       max-width: 480px;
       text-align: left;
-      padding: 16px;
-      margin-bottom: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
       border: 1px solid #ddd;
       border-radius: 10px;
       background: #fff;
       cursor: pointer;
+      font-size: 14px;
     }
-    .startCard:hover { border-color: #999; background: #fafafa; }
-    .startCard b { display: block; font-size: 15px; margin-bottom: 4px; }
-    .startCard span { font-size: 13px; color: #666; }
+    .pickBtn:hover { border-color: #999; background: #fafafa; }
+    .pickBtn.selected { border-color: #2b6; background: #eafff2; }
   </style>
 </head>
 <body>
-  <h1>업종매칭 / 아이디어 구체화 - 분기 테스트</h1>
+  <h1>슬롯필링 테스트 — 업종코드 매칭 + 아이디어 브레인스토밍</h1>
   <p>
-    시작 화면에서 경로를 고르면, 그 경로에 맞는 질문만 순서대로 진행됩니다.<br>
-    DB에는 아무것도 저장하지 않습니다. 정식 화면이 나오기 전 흐름 검증용 페이지입니다.
+    슬롯 0~5(출발점 분기 포함)는 업종코드·분석리포트용 필수 질문, 6~9(타깃/차별점/수익모델/보유역량)는
+    아이디어 카드용 선택 질문입니다 (건너뛰기 가능). DB에는 아무것도 저장하지 않습니다.<br>
+    근거 문서: <code>슬롯필링_기능_설계_260905.pdf</code>, <code>슬롯필링_260909.xlsx</code>
   </p>
 
   <p>
@@ -48,30 +50,32 @@
     <button id="apiBaseSaveBtn" type="button">저장</button>
   </p>
 
-  <div id="startScreen">
-    <button type="button" class="startCard" data-flow="industry">
-      <b>🏷 업종만 매칭</b>
-      <span>지금 하는(또는 하려는) 사업을 짧게 설명하면 업종코드만 바로 알려드려요.</span>
-    </button>
-    <button type="button" class="startCard" data-flow="idea">
-      <b>💡 아이디어 구체화</b>
-      <span>질문 4개에 답하면 아이디어 카드 + 업종코드까지 같이 만들어드려요.</span>
-    </button>
-  </div>
+  <div id="chatLog" style="max-width:480px;"></div>
 
-  <div id="chatLog" style="max-width:480px; display:none;"></div>
-
-  <div id="inputArea" style="max-width:480px; margin-top:12px; display:none;">
+  <div id="inputArea" style="max-width:480px; margin-top:12px;">
     <p id="questionText" style="font-weight:bold;"></p>
-    <textarea id="answerInput" rows="2" style="width:100%; box-sizing:border-box;"></textarea>
-    <p id="lengthWarning" style="color:#c0392b; font-size:13px; display:none;">
-      10글자 이상 입력해주세요.
-    </p>
-    <button id="answerBtn" type="button" style="margin-top:8px;" disabled>답변</button>
+    <p id="questionSub" style="color:#666; font-size:13px; margin-top:-8px;"></p>
+
+    <div id="textInputWrap">
+      <textarea id="answerInput" rows="2" style="width:100%; box-sizing:border-box;"></textarea>
+      <p id="lengthWarning" style="color:#c0392b; font-size:13px; display:none;">
+        10글자 이상 입력해주세요.
+      </p>
+      <button id="answerBtn" type="button" style="margin-top:8px;" disabled>답변</button>
+      <button id="skipBtn" type="button" style="margin-top:8px;">건너뛰기</button>
+    </div>
+
+    <div id="pickInputWrap" style="display:none;"></div>
+
+    <div id="regionInputWrap" style="display:none;">
+      <input type="text" id="sidoInput" placeholder="시/도 (예: 서울특별시)" style="width:100%; box-sizing:border-box; margin-bottom:6px;">
+      <input type="text" id="sigunguInput" placeholder="시/군/구 (예: 마포구)" style="width:100%; box-sizing:border-box; margin-bottom:6px;">
+      <input type="text" id="dongInput" placeholder="동 (예: 합정동)" style="width:100%; box-sizing:border-box; margin-bottom:6px;">
+      <button id="regionBtn" type="button" disabled>답변</button>
+    </div>
   </div>
 
   <script>
-    // ocr-test.html / idea-card-test.html과 동일한 서버 주소 자동 인식/저장 방식.
     function resolveApiBaseUrl() {
       const saved = localStorage.getItem("idea_card_api_base_url");
       if (saved) return saved;
@@ -94,41 +98,76 @@
     });
 
     const MIN_ANSWER_LENGTH = 10;
-    const MAX_CARDS = 3; // idea_card_generator.py가 만드는 고정 축 수
+    const MAX_CARDS = 3;
 
-    // 경로별 질문 세트 + API 연결 방법. "업종만 매칭"은 질문 1개 -> /industry-match,
-    // "아이디어 구체화"는 기존 질문 4개 -> /idea-cards 그대로 재사용.
-    const FLOWS = {
-      industry: {
-        questions: [
-          { key: "description", label: "지금 하시는(또는 하려는) 사업을 자유롭게 설명해주세요." },
-        ],
-        endpoint: "/api/test/industry-match",
-        buildPayload: (answers) => ({ description: answers.description }),
+    // 슬롯 문구는 출발점(origin) 분기에 따라 달라짐 (슬롯필링_260909.xlsx 시트 2개 기준).
+    // 데이터 처리엔 영향 없고(PDF 4장) 프론트 표시 문구만 바뀜 - 그래서 origin은 백엔드로 안 보냄.
+    const QUESTIONS = {
+      problem: {
+        seed_interest: { title: "구상 중인 사업 아이디어를 편하게 적어주세요.", sub: "아직 막연한 관심사나 문제의식 단계여도 괜찮아요." },
+        problem_to_solve: { title: "고객이 겪고 있는 문제는 구체적으로 무엇인가요?", sub: "" },
+        solution_approach: { title: "이 문제를 어떤 제품이나 서비스로 해결하실 건가요?", sub: "" },
+        target: { title: "이 문제를 가장 크게 겪는 사람은 누구인가요? (선택)", sub: "" },
       },
-      idea: {
-        questions: [
-          { key: "target", label: "어떤 대상을 타깃으로 하시나요?" },
-          { key: "differentiator", label: "다른 곳과 비교했을 때 차별점이 뭔가요?" },
-          { key: "revenue_model", label: "수익모델은 어떻게 되나요?" },
-          { key: "core_skill", label: "보유하고 계신 역량이나 경험이 있다면요?" },
-        ],
-        endpoint: "/api/test/idea-cards",
-        buildPayload: (answers) => ({ ...answers }),
+      opportunity: {
+        seed_interest: { title: "구상 중인 사업 아이디어를 편하게 적어주세요.", sub: "아직 막연한 관심사나 문제의식 단계여도 괜찮아요." },
+        problem_to_solve: { title: "시장에 아직 없어서 아쉬운 점은 무엇인가요?", sub: "" },
+        solution_approach: { title: "이 아이디어를 어떤 제품이나 서비스로 구현하실 건가요?", sub: "" },
+        target: { title: "이런 아이디어를 가장 반가워할 사람은 누구인가요? (선택)", sub: "" },
       },
     };
 
-    let currentFlow = null;
+    // 슬롯 순서. kind: text(자유서술) / pick(버튼 선택) / region(지역 3단)
+    const STEPS = [
+      { key: "seed_interest", kind: "text", required: true },
+      { key: "origin", kind: "pick", required: true,
+        title: "이 아이디어는 어디서 출발했나요?", sub: "두 갈래 중 가까운 쪽을 골라주세요.",
+        options: [
+          { value: "problem", label: "불편했던 경험에서 (문제 해결형)" },
+          { value: "opportunity", label: "\"이런 게 있으면 좋겠다\"는 바람에서 (기회 추구형)" },
+        ] },
+      { key: "problem_to_solve", kind: "text", required: true },
+      { key: "solution_approach", kind: "text", required: true },
+      { key: "has_store", kind: "pick", required: true,
+        title: "고객이 직접 방문하는 매장이나 공간을 운영하시나요?",
+        sub: "예: 카페, 식당, 매장, 학원처럼 손님이 찾아오는 공간이 있다면 '예'",
+        options: [
+          { value: "true", label: "① 예" },
+          { value: "false", label: "② 아니오" },
+        ] },
+      { key: "region", kind: "region", required: true,
+        title: "어디서, 어느 정도 규모로 시작하실 계획인가요?", sub: "시/도 → 시/군/구 → 동 순서로 입력해주세요." },
+      { key: "target", kind: "text", required: false },
+      { key: "differentiator", kind: "text", required: false,
+        title: "기존 대안과 비교했을 때, 구체적으로 어떤 점이 다른가요? (선택)", sub: "" },
+      { key: "revenue_model", kind: "text", required: false,
+        title: "어떤 방식으로 수익을 만드실 건가요? (선택)", sub: "" },
+      { key: "core_skill", kind: "text", required: false,
+        title: "이 문제를 해결할 수 있는 나만의 강점이나 경험이 있으신가요? (선택)", sub: "" },
+    ];
+
     const answers = {};
     let step = 0;
+    let origin = "problem";
 
-    const startScreen = document.getElementById("startScreen");
     const chatLog = document.getElementById("chatLog");
     const questionText = document.getElementById("questionText");
-    const answerInput = document.getElementById("answerInput");
+    const questionSub = document.getElementById("questionSub");
     const inputArea = document.getElementById("inputArea");
+
+    const textInputWrap = document.getElementById("textInputWrap");
+    const answerInput = document.getElementById("answerInput");
     const lengthWarning = document.getElementById("lengthWarning");
     const answerBtn = document.getElementById("answerBtn");
+    const skipBtn = document.getElementById("skipBtn");
+
+    const pickInputWrap = document.getElementById("pickInputWrap");
+
+    const regionInputWrap = document.getElementById("regionInputWrap");
+    const sidoInput = document.getElementById("sidoInput");
+    const sigunguInput = document.getElementById("sigunguInput");
+    const dongInput = document.getElementById("dongInput");
+    const regionBtn = document.getElementById("regionBtn");
 
     answerInput.addEventListener("input", () => {
       const tooShort = answerInput.value.trim().length < MIN_ANSWER_LENGTH;
@@ -136,20 +175,11 @@
       answerBtn.disabled = tooShort;
     });
 
-    document.querySelectorAll(".startCard").forEach((btn) => {
-      btn.addEventListener("click", () => startFlow(btn.dataset.flow));
+    [sidoInput, sigunguInput, dongInput].forEach((el) => {
+      el.addEventListener("input", () => {
+        regionBtn.disabled = ![sidoInput, sigunguInput, dongInput].every((i) => i.value.trim());
+      });
     });
-
-    function startFlow(flowKey) {
-      currentFlow = flowKey;
-      Object.keys(answers).forEach((k) => delete answers[k]);
-      step = 0;
-      startScreen.style.display = "none";
-      chatLog.style.display = "block";
-      chatLog.innerHTML = "";
-      inputArea.style.display = "block";
-      showQuestion();
-    }
 
     function appendBubble(text, isQuestion) {
       const div = document.createElement("div");
@@ -157,6 +187,7 @@
       div.style.padding = "8px 12px";
       div.style.borderRadius = "8px";
       div.style.whiteSpace = "pre-wrap";
+      div.style.maxWidth = "480px";
       if (isQuestion) {
         div.style.background = "#f0f0f0";
       } else {
@@ -165,67 +196,138 @@
       }
       div.textContent = text;
       chatLog.appendChild(div);
+      div.scrollIntoView({ block: "nearest" });
       return div;
     }
 
-    function showQuestion() {
-      const questions = FLOWS[currentFlow].questions;
-      if (step >= questions.length) {
+    function questionMeta(s) {
+      if (s.title) return { title: s.title, sub: s.sub || "" };
+      return QUESTIONS[origin][s.key];
+    }
+
+    function showStep() {
+      if (step >= STEPS.length) {
         inputArea.style.display = "none";
         const bubble = appendBubble("", true);
         bubble.innerHTML = '<span class="spinner"></span>결과를 만들고 있어요... (몇 초 걸릴 수 있어요)';
-        submitFlow(bubble);
+        submitAll(bubble);
         return;
       }
-      const q = questions[step];
-      appendBubble(q.label, true);
-      questionText.textContent = q.label;
-      answerInput.value = "";
-      lengthWarning.style.display = "none";
-      answerBtn.disabled = true;
-      answerInput.focus();
+
+      const s = STEPS[step];
+      const meta = questionMeta(s);
+      appendBubble(meta.title, true);
+      questionText.textContent = meta.title;
+      questionSub.textContent = meta.sub || "";
+
+      textInputWrap.style.display = "none";
+      pickInputWrap.style.display = "none";
+      regionInputWrap.style.display = "none";
+
+      if (s.kind === "text") {
+        textInputWrap.style.display = "block";
+        answerInput.value = "";
+        lengthWarning.style.display = "none";
+        answerBtn.disabled = true;
+        skipBtn.style.display = s.required ? "none" : "inline-block";
+        answerInput.focus();
+      } else if (s.kind === "pick") {
+        pickInputWrap.style.display = "block";
+        pickInputWrap.innerHTML = "";
+        s.options.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "pickBtn";
+          btn.textContent = opt.label;
+          btn.addEventListener("click", () => choosePick(s.key, opt.value, opt.label));
+          pickInputWrap.appendChild(btn);
+        });
+      } else if (s.kind === "region") {
+        regionInputWrap.style.display = "block";
+        sidoInput.value = "";
+        sigunguInput.value = "";
+        dongInput.value = "";
+        regionBtn.disabled = true;
+        sidoInput.focus();
+      }
+    }
+
+    function choosePick(key, value, label) {
+      answers[key] = value;
+      appendBubble(label, false);
+      if (key === "origin") origin = value;
+      step += 1;
+      showStep();
     }
 
     answerBtn.addEventListener("click", () => {
       const val = answerInput.value.trim();
       if (val.length < MIN_ANSWER_LENGTH) return;
-
-      const q = FLOWS[currentFlow].questions[step];
-      answers[q.key] = val;
+      const s = STEPS[step];
+      answers[s.key] = val;
       appendBubble(val, false);
       step += 1;
-      showQuestion();
+      showStep();
+    });
+
+    skipBtn.addEventListener("click", () => {
+      const s = STEPS[step];
+      answers[s.key] = "";
+      appendBubble("(건너뜀)", false);
+      step += 1;
+      showStep();
+    });
+
+    regionBtn.addEventListener("click", () => {
+      const sido = sidoInput.value.trim();
+      const sigungu = sigunguInput.value.trim();
+      const dong = dongInput.value.trim();
+      if (!sido || !sigungu || !dong) return;
+      answers.sido = sido;
+      answers.sigungu = sigungu;
+      answers.dong = dong;
+      appendBubble(`${sido} ${sigungu} ${dong}`, false);
+      step += 1;
+      showStep();
     });
 
     function showRestartButton() {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.textContent = "처음(경로 선택)으로 돌아가기";
+      btn.textContent = "처음부터 다시";
       btn.style.marginTop = "8px";
       btn.addEventListener("click", () => {
-        currentFlow = null;
-        chatLog.style.display = "none";
-        inputArea.style.display = "none";
-        startScreen.style.display = "block";
+        Object.keys(answers).forEach((k) => delete answers[k]);
+        step = 0;
+        origin = "problem";
+        chatLog.innerHTML = "";
+        inputArea.style.display = "block";
+        showStep();
       });
       chatLog.appendChild(btn);
     }
 
-    function showTechStartupButton(code) {
+    function showReportButton(data) {
+      if (!data.report_type || !data.ksic || !data.ksic.codes || data.ksic.codes.length === 0) return;
+      const code = data.ksic.codes[0];
+      const isMarket = data.report_type === "market";
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.textContent = `업종코드 ${code}로 기술창업 분석 보기`;
+      btn.textContent = isMarket ? "상권분석 리포트 보기" : "기술창업분석 리포트 보기";
       btn.style.margin = "8px 0";
       btn.addEventListener("click", async () => {
         btn.disabled = true;
         const bubble = appendBubble("", true);
-        bubble.innerHTML = '<span class="spinner"></span>기술창업 분석 조회 중...';
+        bubble.innerHTML = '<span class="spinner"></span>리포트 조회 중...';
         try {
-          const res = await fetch(`${API_BASE_URL}/analysis/tech-startup?ksic_code=${encodeURIComponent(code)}`);
-          const analysisData = await res.json();
-          bubble.textContent = JSON.stringify(analysisData, null, 2);
+          const url = isMarket
+            ? `${API_BASE_URL}/analysis/market?sido=${encodeURIComponent(data.region.sido)}&sigungu=${encodeURIComponent(data.region.sigungu)}&dong=${encodeURIComponent(data.region.dong)}&ksic_code=${encodeURIComponent(code)}`
+            : `${API_BASE_URL}/analysis/tech-startup?ksic_code=${encodeURIComponent(code)}`;
+          const res = await fetch(url);
+          const reportData = await res.json();
+          bubble.textContent = JSON.stringify(reportData, null, 2);
         } catch (err) {
-          bubble.textContent = "기술창업 분석 요청 실패: " + err;
+          bubble.textContent = "리포트 요청 실패: " + err;
         } finally {
           btn.disabled = false;
         }
@@ -233,30 +335,29 @@
       chatLog.appendChild(btn);
     }
 
-    // ksic/에러 표시는 두 경로(업종매칭/아이디어 구체화) 공통이라 여기서 같이 처리.
-    function renderKsicAndCommon(data) {
-      if (data.ksic && data.ksic.codes && data.ksic.codes.length > 0) {
-        appendBubble(`🏷 판정된 업종코드: ${data.ksic.codes.join(", ")} (${data.ksic.names.join(", ")})`, true);
-        showTechStartupButton(data.ksic.codes[0]);
-      } else if (data.ksic !== undefined) {
-        appendBubble("🏷 업종코드를 판정하지 못했어요 (특정불가).", true);
-      }
-    }
+    async function submitAll(spinnerBubble) {
+      const payload = {
+        seed_interest: answers.seed_interest || "",
+        problem_to_solve: answers.problem_to_solve || "",
+        solution_approach: answers.solution_approach || "",
+        has_store: answers.has_store === undefined ? null : answers.has_store === "true",
+        sido: answers.sido || "",
+        sigungu: answers.sigungu || "",
+        dong: answers.dong || "",
+        target: answers.target || "",
+        differentiator: answers.differentiator || "",
+        revenue_model: answers.revenue_model || "",
+        core_skill: answers.core_skill || "",
+      };
 
-    async function submitFlow(spinnerBubble) {
-      const flow = FLOWS[currentFlow];
       try {
-        const response = await fetch(`${API_BASE_URL}${flow.endpoint}`, {
+        const response = await fetch(`${API_BASE_URL}/api/test/slot-filling`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(flow.buildPayload(answers)),
+          body: JSON.stringify(payload),
         });
         const data = await response.json();
         spinnerBubble.remove();
-
-        if (currentFlow === "idea" && data.weak_slots && data.weak_slots.length > 0) {
-          appendBubble(`⚠ 답변이 10글자 미만이라 근거로 안 쓰인 항목: ${data.weak_slots.join(", ")}`, true);
-        }
 
         if (!data.success) {
           appendBubble("실패: " + data.error, true);
@@ -264,21 +365,25 @@
           return;
         }
 
-        renderKsicAndCommon(data);
+        if (data.ksic && data.ksic.codes && data.ksic.codes.length > 0) {
+          appendBubble(`🏷 판정된 업종코드: ${data.ksic.codes.join(", ")} (${data.ksic.names.join(", ")}) — 신뢰도 ${data.ksic.confidence}`, true);
+          showReportButton(data);
+        } else {
+          appendBubble("🏷 업종코드를 판정하지 못했어요 (특정불가).", true);
+        }
 
-        if (currentFlow === "idea") {
-          if (!data.cards || data.cards.length === 0) {
-            appendBubble("아이디어 카드가 생성되지 않았어요.", true);
-          } else {
-            data.cards.forEach((card) => {
-              appendBubble(`[${card.axis}] ${card.title}\n${card.description}`, true);
-            });
-            if (data.cards.length < MAX_CARDS) {
-              appendBubble(
-                `카드가 ${data.cards.length}/${MAX_CARDS}개만 나왔어요 - 일부 답변이 근거로 쓰기엔 부실하다고 AI가 판단한 것 같아요.`,
-                true
-              );
-            }
+        if (data.weak_slots && data.weak_slots.length > 0) {
+          appendBubble(`⚠ 답변이 10글자 미만/미입력이라 근거로 안 쓰인 항목: ${data.weak_slots.join(", ")}`, true);
+        }
+
+        if (!data.cards || data.cards.length === 0) {
+          appendBubble("아이디어 카드가 생성되지 않았어요 (선택 항목을 안 채우면 정상이에요).", true);
+        } else {
+          data.cards.forEach((card) => {
+            appendBubble(`[${card.axis}] ${card.title}\n${card.description}`, true);
+          });
+          if (data.cards.length < MAX_CARDS) {
+            appendBubble(`카드가 ${data.cards.length}/${MAX_CARDS}개만 나왔어요.`, true);
           }
         }
 
@@ -289,6 +394,8 @@
         showRestartButton();
       }
     }
+
+    showStep();
   </script>
 </body>
 </html>

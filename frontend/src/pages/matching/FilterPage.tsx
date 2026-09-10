@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "../../styles/filterPage.module.css";
 
 /**
@@ -87,10 +87,25 @@ const FILTER_GROUPS: FilterGroup[] = [
     options: ["전체", "예비창업자", "1년미만", "3년미만", "5년미만", "7년미만", "10년미만", "업력무관"],
   },
   {
+    // [2026-09-10] announcements.target_age_groups(kstartup만 값 있음) 실제 distinct
+    // 값 그대로 교체 - 가공된 버킷 없이 원본 10개 값 그대로 노출(docs/filter_options_
+    // review_2026-09-09.xlsx "target_age_groups" 시트 참고).
     key: "age",
     title: "사업대상연령",
     mode: "single",
-    options: ["전체", "만 20세 미만", "만 20~39세", "만 40세 이상"],
+    options: [
+      "전체",
+      "만 15세 이상",
+      "만 19세 이상",
+      "만 19세~39세",
+      "만 20세 이상",
+      "만 20세 이상 ~ 만 39세 이하",
+      "만 34세 이하",
+      "만 39세 이하",
+      "만 40세 이상",
+      "만 45세 이하",
+      "전연령",
+    ],
   },
 ];
 
@@ -108,6 +123,12 @@ const INITIAL_STATE: FilterState = {
   age: 0,
 };
 
+// [2026-09-10] "예비창업자"는 화면 표시만 "예비창업자 포함"으로 바꾸기로 결정(2축 분리는
+// 안 함). 실제 값(DB LIKE 매칭에 쓰이는 값)은 그대로 "예비창업자" 유지 - 여기 라벨만 교체.
+const CHIP_LABEL_OVERRIDES: Record<string, string> = {
+  예비창업자: "예비창업자 포함",
+};
+
 /** 복수선택 그룹 토글 — 프로토타입 원본 로직. */
 function toggleMulti(current: number[], index: number): number[] {
   if (index === 0) return [0];
@@ -118,12 +139,38 @@ function toggleMulti(current: number[], index: number): number[] {
   return next.length === 0 ? [0] : next;
 }
 
+/** MatchingList가 handleFilterClick에서 넘겨준 현재 URL 쿼리로 칩 선택 상태를 복원한다.
+ * 없거나 못 찾는 값은 INITIAL_STATE와 동일하게 "전체"로 둔다. */
+function parseInitialState(searchParams: URLSearchParams): FilterState {
+  const multiIndexes = (group: FilterGroup, param: string): number[] => {
+    const labels = (searchParams.get(param) ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+    const indexes = labels.map((label) => group.options.indexOf(label)).filter((i) => i > 0);
+    return indexes.length > 0 ? indexes : [0];
+  };
+
+  const singleIndex = (group: FilterGroup, param: string): number => {
+    const label = searchParams.get(param) ?? "";
+    const index = group.options.indexOf(label);
+    return index > 0 ? index : 0;
+  };
+
+  return {
+    company: multiIndexes(FILTER_GROUPS.find((g) => g.key === "company")!, "company"),
+    field: multiIndexes(FILTER_GROUPS.find((g) => g.key === "field")!, "field"),
+    bizAge: singleIndex(FILTER_GROUPS.find((g) => g.key === "bizAge")!, "biz_age"),
+    age: singleIndex(FILTER_GROUPS.find((g) => g.key === "age")!, "age"),
+  };
+}
+
 function FilterPage() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<FilterState>(INITIAL_STATE);
+  const [searchParams] = useSearchParams();
+  const [filters, setFilters] = useState<FilterState>(() => parseInitialState(searchParams));
 
   const handleBack = () => {
-    navigate("/matching");
+    // "적용하기" 없이 그냥 나가는 거라, 들어올 때 있던 필터를 그대로 유지한 채 돌아간다
+    // (여기서 bare "/matching"으로 가면 이미 적용돼있던 필터가 사라짐).
+    navigate(`/matching${searchParams.toString() ? `?${searchParams.toString()}` : ""}`);
   };
 
   const handleReset = () => {
@@ -151,23 +198,41 @@ function FilterPage() {
   };
 
   const handleApply = () => {
-    // [2026-09-09] 기업유형/업력은 실제 데이터 기준 값이라 넘긴다. 지원분야/연령은
-    // 아직 실제 카테고리가 안 정해져서(팀원 검토 대기, docs/filter_options_review_
-    // 2026-09-09.xlsx) 보내봐야 매칭 안 되므로 제외.
+    // [2026-09-10] 4개 그룹 전부 실제 데이터 기준 값이라 그대로 넘긴다.
     const companyGroup = FILTER_GROUPS.find((g) => g.key === "company")!;
     const selectedCompanies = filters.company
       .filter((i) => i !== 0) // 0 = "전체" - 필터 없음
       .map((i) => companyGroup.options[i]);
 
+    const fieldGroup = FILTER_GROUPS.find((g) => g.key === "field")!;
+    const selectedFields = filters.field
+      .filter((i) => i !== 0) // 0 = "전체" - 필터 없음
+      .map((i) => fieldGroup.options[i]);
+
     const bizAgeGroup = FILTER_GROUPS.find((g) => g.key === "bizAge")!;
     const selectedBizAge = filters.bizAge !== 0 ? bizAgeGroup.options[filters.bizAge] : "";
 
-    const params = new URLSearchParams();
+    const ageGroup = FILTER_GROUPS.find((g) => g.key === "age")!;
+    const selectedAge = filters.age !== 0 ? ageGroup.options[filters.age] : "";
+
+    // 지역/업종/정렬(region/ksic/sort) 등 이 화면이 모르는 다른 쿼리 파라미터는
+    // 그대로 유지하고, 여기서 다루는 4개 값만 새로 덮어쓴다.
+    const params = new URLSearchParams(searchParams);
+    params.delete("company");
+    params.delete("field");
+    params.delete("biz_age");
+    params.delete("age");
     if (selectedCompanies.length > 0) {
       params.set("company", selectedCompanies.join(","));
     }
+    if (selectedFields.length > 0) {
+      params.set("field", selectedFields.join(","));
+    }
     if (selectedBizAge) {
       params.set("biz_age", selectedBizAge);
+    }
+    if (selectedAge) {
+      params.set("age", selectedAge);
     }
     navigate(`/matching${params.toString() ? `?${params.toString()}` : ""}`);
   };
@@ -222,7 +287,7 @@ function FilterPage() {
                     aria-pressed={selected}
                     onClick={() => handleChipClick(group, index)}
                   >
-                    {option}
+                    {CHIP_LABEL_OVERRIDES[option] ?? option}
                   </button>
                 );
               })}
