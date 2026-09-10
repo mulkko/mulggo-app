@@ -1,0 +1,158 @@
+/**
+ * 05-1 진단 방식 선택 화면 (`/idea/choice`, is.ideaChoice) 전용 스타일.
+ * 값 출처: 프로토타입 실측. 색상/radius/shadow는 webTokens.css 토큰만 사용.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-white);
+}
+
+/* ===== 헤더 (52px) ===== */
+.header {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 22px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-ink-charcoal);
+  cursor: pointer;
+}
+
+.backButton svg {
+  width: 20px;
+  height: 20px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brandName {
+  font-family: var(--font-family-logo);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  color: var(--color-deep-navy);
+}
+
+.logoMark {
+  width: 28px;
+  height: auto;
+  display: block;
+}
+
+/* ===== 본문 ===== */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 8px 22px 28px;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  margin: 0;
+  font-weight: 900;
+  font-size: 19px;
+  color: var(--color-ink-charcoal);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+}
+
+/* ===== 카드 (2개 공통) ===== */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border: none;
+  border-radius: var(--radius-onboarding-card);
+  background: var(--color-white);
+  box-shadow: var(--shadow-onboarding-card);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-onboarding-card-hover);
+}
+
+.cardNavy {
+  box-shadow: var(--shadow-idea-card-navy);
+}
+
+.cardNavy:hover {
+  box-shadow: var(--shadow-idea-card-navy-hover);
+}
+
+.cardHead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cardTitle {
+  font-weight: 800;
+  font-size: 15.5px;
+  color: var(--color-ink-charcoal);
+}
+
+.inlineBadge {
+  font-weight: 700;
+  font-size: 10.5px;
+}
+
+.inlineBadgeTeal {
+  color: var(--color-teal-green);
+}
+
+.inlineBadgeNavy {
+  color: var(--color-deep-navy);
+}
+
+.cardDesc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-stone-gray);
+}
+
+.pill {
+  align-self: flex-start;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.pillTeal {
+  background: var(--color-teal-mist);
+  color: var(--color-teal-green);
+}
+
+.pillNavy {
+  background: var(--color-navy-mist);
+  color: var(--color-deep-navy);
+}

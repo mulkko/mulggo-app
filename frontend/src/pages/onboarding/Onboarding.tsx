@@ -64,7 +64,7 @@ function Onboarding() {
   };
 
   const handleSkip = () => {
-    // TODO: /home 라우트가 아직 없음 — 추가되면 navigate("/home")로 연결
+    navigate("/home");
   };
 
   const handleNext = () => {
@@ -72,7 +72,7 @@ function Onboarding() {
   };
 
   const handleIdeaCard = () => {
-    // TODO: 05-1 진단 방식 선택 화면 라우트가 아직 없음 — 추가되면 연결
+    navigate("/idea/choice");
   };
 
   const handleMatchingCard = () => {

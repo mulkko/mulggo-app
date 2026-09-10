@@ -134,7 +134,7 @@ function Home() {
             <button
               type="button"
               className={styles.signupBtn}
-              // TODO: 정식 사업구체화 화면 나오면 그 경로로 연결
+              onClick={() => navigate("/idea/choice")}
             >
               아이디어 구체화하기 →
             </button>

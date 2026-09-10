@@ -77,6 +77,11 @@ const ONBOARDING_COLORS = [
   { name: "Dot Inactive", hex: "rgba(139,141,147,0.3)", usage: "페이지 인디케이터 비활성 점 배경", varName: "--color-dot-inactive" },
 ];
 
+// 진단 방식 선택 화면(05-1)에서 추가된 색상 토큰
+const IDEACHOICE_COLORS = [
+  { name: "Navy Mist", hex: "#E7ECF8", usage: '"정밀 구체화" 카드 pill 배경 (Teal Mist의 네이비 버전)', varName: "--color-navy-mist" },
+];
+
 function WebStyleGuide() {
   return (
     <div className={styles.page}>
@@ -601,6 +606,38 @@ function WebStyleGuide() {
               <span className={styles.codeLabel}>CTA · 높이 46px · --radius-input · --shadow-onboarding-cta</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>12. 진단 방식 선택 (05-1)</h2>
+        </div>
+
+        <p className={styles.subheading}>추가 색상 토큰</p>
+        <div className={styles.colorGrid}>
+          {IDEACHOICE_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.subheading}>
+          카드 radius는 --radius-onboarding-card(16px), pill radius는 --radius-pill, "빠른 매칭"
+          카드 그림자는 --shadow-onboarding-card / -hover, 텍스트·뱃지 색은 --color-ink-charcoal /
+          --color-stone-gray / --color-teal-green / --color-deep-navy, "빠른 매칭" pill은
+          --color-teal-mist + --color-teal-green, 헤더 워드마크 폰트는 --font-family-logo 재사용.
+        </p>
+
+        <p className={styles.subheading}>추가 shadow 토큰</p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--shadow-idea-card-navy</span><span>0 0 0 1.5px rgba(21,50,140,.4), 0 10px 26px -18px rgba(21,50,140,.35) ("정밀 구체화" 카드)</span></div>
+          <div className={styles.specRow}><span>--shadow-idea-card-navy-hover</span><span>0 0 0 1.5px rgba(21,50,140,.7), 0 14px 30px -16px rgba(21,50,140,.4) ("정밀 구체화" 카드 hover)</span></div>
         </div>
       </section>
     </div>
