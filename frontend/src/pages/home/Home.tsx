@@ -129,17 +129,13 @@ function Home() {
         </p>
 
         {isLoggedIn ? (
-          // [2026-09-10] pages/diagnosis/(진단방식선택+구체화진단1~4)로 연결됨. 업종코드
-          // 매칭/분석 리포트 연결은 그쪽이 아직 준비 중이라 질문 흐름까지만 동작함.
+          // [2026-09-10] 진단 진입점 /idea/choice(빠른매칭 vs 정밀구체화) → /diagnosis/select →
+          // /diagnosis/1~4. 업종코드 매칭/분석 리포트 연결은 아직 준비 중이라 질문 흐름까지만 동작함.
           <>
             <button
               type="button"
               className={styles.signupBtn}
-<<<<<<< HEAD
               onClick={() => navigate("/idea/choice")}
-=======
-              onClick={() => navigate("/diagnosis/select")}
->>>>>>> f937900dc4d0bd3273a7dbdc6051d94321975a52
             >
               아이디어 구체화하기 →
             </button>

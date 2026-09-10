@@ -13,7 +13,8 @@ function DiagnosisSelect() {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    navigate("/home");
+    // 진단 진입점은 /idea/choice(빠른매칭 vs 정밀구체화) — 그쪽으로 되돌린다.
+    navigate("/idea/choice");
   };
 
   const choose = (origin: Origin) => {
