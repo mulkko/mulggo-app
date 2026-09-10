@@ -1,14 +1,14 @@
 name: crawl-daily
 
 # 매일 원본 공고 수집: 기업마당(bizinfo) / 창업진흥원(K-Startup) API -> announcements_raw_* 테이블.
-# raw 적재만 한다. raw -> announcements 통합 가공(backend/preprocessing/sync_*)은 이 워크플로에 없음
-#   - kstartup 전처리: 넣을 수 있으나 팀 결정 보류(가벼움, OCR 없음)
-#   - bizinfo 전처리: 첨부 OCR로 수 시간 걸려서 GPU PC 자체 스케줄러(KST 04:00)로 별도 실행
+# raw 적재만 한다. raw -> announcements 통합 가공(backend/preprocessing/sync_*)은 이 워크플로에 없음 (다른 담당자 몫, 이 자동화 범위 밖)
+#   - kstartup 전처리: 포함하지 않음 (최종 확정)
+#   - bizinfo 전처리: 첨부 OCR로 수 시간 걸려서 GPU PC 자체 스케줄러로 별도 실행 (시각 미정, 이 워크플로와 무관)
 
 on:
   schedule:
-    # KST 03:00 = UTC 18:00 (한국은 서머타임 없음). GPU PC의 bizinfo 전처리(KST 04:00)보다 먼저 끝나도록 앞에 둔다.
-    - cron: "0 18 * * *"
+    # KST 04:00 = UTC 19:00 (한국은 서머타임 없음)
+    - cron: "0 19 * * *"
   workflow_dispatch: {}
 
 concurrency:
