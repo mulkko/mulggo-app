@@ -104,8 +104,8 @@ function Onboarding() {
   };
 
   const handleIdeaCard = () => {
-    // [2026-09-10] 진단 진입점은 /idea/choice(빠른매칭 vs 정밀구체화) → 이후 /diagnosis/select로 이어짐.
-    navigate("/idea/choice");
+    // [2026-09-11] 진단 진입점은 /diagnosis/choice(빠른매칭 vs 정밀구체화) → 이후 /diagnosis/1(Q1)로 이어짐.
+    navigate("/diagnosis/choice");
   };
 
   const handleMatchingCard = () => {

@@ -14,43 +14,94 @@
   color: var(--color-ink-charcoal);
 }
 
+/* ===== 헤더 (진행바 + 단계뱃지) — ideaQuestions.module.css .header 그대로 포팅 ===== */
 .header {
   flex-shrink: 0;
-  height: 50px;
+  height: 52px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 20px;
+  gap: 14px;
+  padding: 0 24px;
   box-sizing: border-box;
 }
 
 .backButton {
   flex-shrink: 0;
-  border: none;
-  background: none;
-  padding: 0;
   display: flex;
   align-items: center;
-  cursor: pointer;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
   color: var(--color-ink-charcoal);
+  cursor: pointer;
 }
 
 .backButton svg {
-  width: 20px;
-  height: 20px;
-  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.headerTitle {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-ink-charcoal);
+.progressTrack {
+  flex: 1;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-dot-inactive);
+  overflow: hidden;
 }
 
-.stepLabel {
-  margin-left: auto;
-  font-size: 12px;
+.progressFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-navy-sphere);
+  transition: width 0.2s ease;
+}
+
+.stepBadge {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-stone-mist);
   color: var(--color-stone-gray);
+  font-size: 11px;
+}
+
+/* 상단 토픽뱃지 (Q1 · 사업 아이템 구상 등) — ideaQuestions.module.css .topicBadge 그대로 포팅 */
+.topicBadge {
+  align-self: flex-start;
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  background: var(--color-teal-mist);
+  color: var(--color-teal-green);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* 참고문구 힌트박스 (선택 질문 Q7~Q9의 anchor) — 프로토타입 qAnchor 실측값 */
+.qAnchor {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(21, 50, 140, 0.05);
+  box-shadow: var(--shadow-inset-ai-comment);
+}
+
+.qAnchorIcon {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+
+.qAnchorText {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--color-deep-navy);
 }
 
 .scrollArea {
@@ -100,7 +151,7 @@
   color: var(--color-error-text);
 }
 
-/* ===== 선택 카드 (출발점 분기 / 매장운영여부) — onboarding.module.css .choiceCard 동일 스펙 ===== */
+/* ===== 선택 카드 리스트 레이아웃 (라디오 카드 공용 래퍼) ===== */
 .cardList {
   display: flex;
   flex-direction: column;
@@ -108,39 +159,64 @@
   width: 100%;
 }
 
-.choiceCard {
+/* ===== 라디오 카드 (출발점 분기 Q2 / 매장 운영 형태 Q5) =====
+   Q2는 padding17/gap5/제목14.5px, Q5는 padding15/gap4/제목14px — 인라인 스타일로 오버라이드. */
+.radioCard {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
-  padding: 20px;
+  padding: 17px;
   border: none;
-  border-radius: var(--radius-onboarding-card);
+  border-radius: var(--radius-card);
   background: var(--color-white);
-  box-shadow: var(--shadow-onboarding-card);
+  box-shadow: var(--shadow-inset-gray-strong);
   text-align: left;
   cursor: pointer;
-  transition: box-shadow 0.15s ease;
 }
 
-.choiceCard:hover {
-  box-shadow: var(--shadow-onboarding-card-hover);
+.radioCard:hover {
+  box-shadow: var(--shadow-inset-teal-strong);
 }
 
-.choiceCardSelected {
-  background: var(--color-teal-mist);
-  box-shadow: 0 0 0 2px var(--color-light-teal) inset;
+.radioCardHead {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
-.choiceCardTitle {
-  font-size: 15px;
+.radioCardTitle {
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--color-ink-charcoal);
 }
 
-.choiceCardDesc {
-  font-size: 12.5px;
+.radioCardDesc {
+  font-size: 12px;
   color: var(--color-stone-gray);
+}
+
+.radioDot {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border-dashed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radioCard:hover .radioDot {
+  border-color: var(--color-light-teal);
+}
+
+.radioDotOn {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-deep-navy);
 }
 
 /* ===== 지역 3단 (구체화 진단4) ===== */
@@ -154,24 +230,55 @@
   gap: 8px;
 }
 
-/* ===== 하단 CTA ===== */
+/* ===== 하단 CTA =====
+   .footer(단일 버튼)는 이제 "제출 완료" 화면(홈으로 버튼)에서만 쓰고, 질문 화면들은
+   전부 아래 .bottom(이전+다음 2버튼)을 쓴다 — ideaQuestions.module.css 그대로 포팅. */
 .footer {
   flex-shrink: 0;
   padding: 12px 20px 26px;
   box-sizing: border-box;
 }
 
+.bottom {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 24px 18px;
+  box-sizing: border-box;
+}
+
+.prevButton {
+  height: 50px;
+  padding: 0 26px;
+  border: none;
+  border-radius: var(--radius-cta);
+  background: var(--color-white);
+  box-shadow: var(--shadow-inset-gray-strong);
+  color: var(--color-ink-charcoal);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.prevButton:hover {
+  box-shadow: var(--shadow-inset-gray-strong-hover);
+}
+
 .nextButton {
-  width: 100%;
-  height: var(--btn-height-save);
+  height: 50px;
+  padding: 0 26px;
   border: none;
   border-radius: var(--radius-cta);
   background: var(--color-light-teal);
   color: var(--color-white);
   font-family: var(--font-family-base);
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .nextButton:hover {

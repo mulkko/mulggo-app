@@ -6,7 +6,7 @@ import DiagnosisTextQuestion from "./DiagnosisTextQuestion";
 import { DIAGNOSIS_QUESTIONS, getDiagnosisAnswers, saveDiagnosisAnswers, type Origin } from "./diagnosisAnswers";
 
 /**
- * 사업구체화 진단 4/5 — "구체화 진단3" (dev_links.html 목업 이름).
+ * 사업구체화 진단 4/5 — "구체화 진단3" = Q4 (dev_links.html 목업 이름).
  * 슬롯 5(사업화 방식). 질문 문구는 origin에 따라 갈린다(구체화 진단2와 동일 이유).
  */
 function DiagnosisStep3() {
@@ -37,11 +37,13 @@ function DiagnosisStep3() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      <DiagnosisHeader onBack={handleBack} stepLabel="3 / 4" />
+      <DiagnosisHeader onBack={handleBack} pct="67%" stepLabel="AI 제안 · 4/6" />
       <DiagnosisTextQuestion
+        topicBadge="Q4 · 해결 방식"
         title={DIAGNOSIS_QUESTIONS[origin].solutionApproach}
         initialValue={initialValue}
         onSubmit={handleSubmit}
+        onBack={handleBack}
       />
     </div>
   );

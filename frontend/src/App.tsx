@@ -5,8 +5,7 @@ import Splash from "./pages/splash/Splash";
 import Signup from "./pages/auth/Signup";
 import Home from "./pages/home/Home";
 import Onboarding from "./pages/onboarding/Onboarding";
-import IdeaChoice from "./pages/idea/IdeaChoice";
-import IdeaQuestions from "./pages/idea/IdeaQuestions";
+import DiagnosisChoice from "./pages/diagnosis/DiagnosisChoice";
 import LoginForm from "./components/LoginForm";
 import AdminHome from "./pages/admin/AdminHome";
 import AdminMembers from "./pages/admin/AdminMembers";
@@ -27,6 +26,11 @@ import DiagnosisStep1 from "./pages/diagnosis/DiagnosisStep1";
 import DiagnosisStep2 from "./pages/diagnosis/DiagnosisStep2";
 import DiagnosisStep3 from "./pages/diagnosis/DiagnosisStep3";
 import DiagnosisStep4 from "./pages/diagnosis/DiagnosisStep4";
+import DiagnosisStep5 from "./pages/diagnosis/DiagnosisStep5";
+import DiagnosisStep6 from "./pages/diagnosis/DiagnosisStep6";
+import DiagnosisStep7 from "./pages/diagnosis/DiagnosisStep7";
+import DiagnosisStep8 from "./pages/diagnosis/DiagnosisStep8";
+import DiagnosisStep9 from "./pages/diagnosis/DiagnosisStep9";
 
 /**
  * [임시/디버그] 지금 로그인된 사람이 누구인지 확인용 - 확인 끝나면 지울 것.
@@ -96,8 +100,7 @@ function App() {
         <Route path="/login" element={<LoginForm variant="user" />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/idea/choice" element={<IdeaChoice />} />
-        <Route path="/idea/questions" element={<IdeaQuestions />} />
+        <Route path="/diagnosis/choice" element={<DiagnosisChoice />} />
         <Route path="/matching" element={<MatchingList />} />
         <Route path="/matching/filter" element={<FilterPage />} />
         <Route path="/matching/:id" element={<MatchingDetail />} />
@@ -110,6 +113,11 @@ function App() {
         <Route path="/diagnosis/2" element={<DiagnosisStep2 />} />
         <Route path="/diagnosis/3" element={<DiagnosisStep3 />} />
         <Route path="/diagnosis/4" element={<DiagnosisStep4 />} />
+        <Route path="/diagnosis/5" element={<DiagnosisStep5 />} />
+        <Route path="/diagnosis/6" element={<DiagnosisStep6 />} />
+        <Route path="/diagnosis/7" element={<DiagnosisStep7 />} />
+        <Route path="/diagnosis/8" element={<DiagnosisStep8 />} />
+        <Route path="/diagnosis/9" element={<DiagnosisStep9 />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />
