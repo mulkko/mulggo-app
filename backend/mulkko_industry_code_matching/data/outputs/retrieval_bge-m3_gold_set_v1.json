@@ -1,0 +1,540 @@
+{
+  "summary": {
+    "model": "bge-m3",
+    "gold": "business_matching\\gold_set_v1.csv",
+    "n": 45,
+    "top1": 62.2,
+    "recall@3": 82.2,
+    "recall@10": 86.7,
+    "recall@20": 86.7,
+    "mrr@20": 0.7161
+  },
+  "cases": [
+    {
+      "id": "G01",
+      "targets": [
+        "154901"
+      ],
+      "rank": null,
+      "top1": false,
+      "r3": false,
+      "r10": false,
+      "r20": false
+    },
+    {
+      "id": "G02",
+      "targets": [
+        "552303"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G03",
+      "targets": [
+        "552301",
+        "154104"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G04",
+      "targets": [
+        "242401",
+        "242402"
+      ],
+      "rank": null,
+      "top1": false,
+      "r3": false,
+      "r10": false,
+      "r20": false
+    },
+    {
+      "id": "G05",
+      "targets": [
+        "525101"
+      ],
+      "rank": null,
+      "top1": false,
+      "r3": false,
+      "r10": false,
+      "r20": false
+    },
+    {
+      "id": "G06",
+      "targets": [
+        "722000",
+        "721000"
+      ],
+      "rank": 3,
+      "top1": false,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G07",
+      "targets": [
+        "809013",
+        "809002"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G08",
+      "targets": [
+        "749914"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G09",
+      "targets": [
+        "930203"
+      ],
+      "rank": 2,
+      "top1": false,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G10",
+      "targets": [
+        "512212",
+        "512215"
+      ],
+      "rank": 2,
+      "top1": false,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G11",
+      "targets": [
+        "153104",
+        "153300"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G12",
+      "targets": [
+        "749902"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G13",
+      "targets": [
+        "930100"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G14",
+      "targets": [
+        "749400",
+        "930904"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G15",
+      "targets": [
+        "151301"
+      ],
+      "rank": null,
+      "top1": false,
+      "r3": false,
+      "r10": false,
+      "r20": false
+    },
+    {
+      "id": "G16",
+      "targets": [
+        "242403"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G17",
+      "targets": [
+        "369101",
+        "369501"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G18",
+      "targets": [
+        "181208",
+        "181211"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G19",
+      "targets": [
+        "155201",
+        "155202"
+      ],
+      "rank": 2,
+      "top1": false,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G20",
+      "targets": [
+        "512231",
+        "512232",
+        "512234"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G21",
+      "targets": [
+        "513311",
+        "513312"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G22",
+      "targets": [
+        "523541"
+      ],
+      "rank": 4,
+      "top1": false,
+      "r3": false,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G23",
+      "targets": [
+        "522020"
+      ],
+      "rank": 3,
+      "top1": false,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G24",
+      "targets": [
+        "525101",
+        "525102"
+      ],
+      "rank": null,
+      "top1": false,
+      "r3": false,
+      "r10": false,
+      "r20": false
+    },
+    {
+      "id": "G25",
+      "targets": [
+        "523987",
+        "523988"
+      ],
+      "rank": null,
+      "top1": false,
+      "r3": false,
+      "r10": false,
+      "r20": false
+    },
+    {
+      "id": "G26",
+      "targets": [
+        "552107"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G27",
+      "targets": [
+        "552108",
+        "552119"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G28",
+      "targets": [
+        "552205"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G29",
+      "targets": [
+        "552105"
+      ],
+      "rank": 2,
+      "top1": false,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G30",
+      "targets": [
+        "452105",
+        "452106",
+        "452107"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G31",
+      "targets": [
+        "452125",
+        "452126"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G32",
+      "targets": [
+        "451400",
+        "749303"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G33",
+      "targets": [
+        "722002",
+        "722000"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G34",
+      "targets": [
+        "721000",
+        "722000"
+      ],
+      "rank": 3,
+      "top1": false,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G35",
+      "targets": [
+        "921505",
+        "921502",
+        "921503"
+      ],
+      "rank": 2,
+      "top1": false,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G36",
+      "targets": [
+        "809017",
+        "809007"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G37",
+      "targets": [
+        "809014"
+      ],
+      "rank": 3,
+      "top1": false,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G38",
+      "targets": [
+        "741201",
+        "741203"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G39",
+      "targets": [
+        "743002",
+        "743003"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G40",
+      "targets": [
+        "702001"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G41",
+      "targets": [
+        "924305"
+      ],
+      "rank": 7,
+      "top1": false,
+      "r3": false,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "G42",
+      "targets": [
+        "922201",
+        "922202"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "M01",
+      "targets": [
+        "154901",
+        "552303"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "M02",
+      "targets": [
+        "011004",
+        "151304"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    },
+    {
+      "id": "M03",
+      "targets": [
+        "361002",
+        "361003"
+      ],
+      "rank": 1,
+      "top1": true,
+      "r3": true,
+      "r10": true,
+      "r20": true
+    }
+  ]
+}
