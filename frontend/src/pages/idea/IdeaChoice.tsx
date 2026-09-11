@@ -18,13 +18,13 @@ function IdeaChoice() {
   const navigate = useNavigate();
 
   const startFast = () => {
-    // TODO: "빠른 매칭"(질문 6개) 트랙 분기는 추후 반영 — 지금은 공통 진단 플로우로 진입
-    navigate("/diagnosis/select");
+    // TODO: "빠른 매칭"(질문 6개) 트랙 분기는 추후 반영 — 지금은 공통 질문 플로우로 진입
+    navigate("/idea/questions");
   };
 
   const startPrecise = () => {
-    // TODO: "정밀 구체화"(질문 10개) 트랙 분기는 추후 반영 — 지금은 공통 진단 플로우로 진입
-    navigate("/diagnosis/select");
+    // TODO: "정밀 구체화"(질문 10개) 트랙 분기는 추후 반영 — 지금은 공통 질문 플로우로 진입
+    navigate("/idea/questions");
   };
 
   return (

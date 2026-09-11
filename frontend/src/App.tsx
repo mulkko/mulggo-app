@@ -6,6 +6,7 @@ import Signup from "./pages/auth/Signup";
 import Home from "./pages/home/Home";
 import Onboarding from "./pages/onboarding/Onboarding";
 import IdeaChoice from "./pages/idea/IdeaChoice";
+import IdeaQuestions from "./pages/idea/IdeaQuestions";
 import LoginForm from "./components/LoginForm";
 import AdminHome from "./pages/admin/AdminHome";
 import AdminMembers from "./pages/admin/AdminMembers";
@@ -96,6 +97,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/idea/choice" element={<IdeaChoice />} />
+        <Route path="/idea/questions" element={<IdeaQuestions />} />
         <Route path="/matching" element={<MatchingList />} />
         <Route path="/matching/filter" element={<FilterPage />} />
         <Route path="/matching/:id" element={<MatchingDetail />} />

@@ -640,6 +640,27 @@ function WebStyleGuide() {
           <div className={styles.specRow}><span>--shadow-idea-card-navy-hover</span><span>0 0 0 1.5px rgba(21,50,140,.7), 0 14px 30px -16px rgba(21,50,140,.4) ("정밀 구체화" 카드 hover)</span></div>
         </div>
       </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>13. 사업구체화 질문 (06~10-4, isQ)</h2>
+        </div>
+
+        <p className={styles.subheading}>
+          진행바 배경은 --color-dot-inactive, 채움은 --color-navy-sphere, 스텝뱃지는
+          --color-stone-gray + --color-stone-mist, 토픽뱃지는 --color-teal-green +
+          --color-teal-mist, 제목은 --color-ink-charcoal, 설명은 --color-stone-gray,
+          textarea 배경은 --color-stone-mist(radius --radius-card), "다음" 버튼은
+          --color-light-teal + hover --color-light-teal-hover-strong(radius --radius-cta),
+          "이전" 버튼 테두리는 --shadow-inset-gray-strong 재사용.
+        </p>
+
+        <p className={styles.subheading}>추가 shadow 토큰</p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--shadow-inset-gray-strong-hover</span><span>inset 0 0 0 1.5px #8B8D93 ("이전" 버튼 hover)</span></div>
+        </div>
+      </section>
     </div>
   );
 }
