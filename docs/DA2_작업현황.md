@@ -3,6 +3,85 @@
 > 이 문서는 원래 **2026-09-08 세션 기준**으로 작성됐고, **2026-09-11에 TA1_rh
 > 세션에서 DB/코드 상태를 직접 대조해 갱신**했습니다(완료 항목 반영, 행 수
 > 최신화). 정리되면 이 파일은 삭제해도 됩니다 (`git rm docs/DA2_작업현황.md`).
+>
+> **[2026-09-11 추가 갱신]** 사용자 요청으로 이 문서는 **사업자등록증 OCR
+> 관련 내용만** 남기기로 함. 원래 있던 KSIC 업종코드 매칭 관련 내용은 OCR과
+> 무관해서 삭제 대신 문서 하단에 주석(HTML 주석) 처리해뒀음 — 필요하면
+> 주석만 풀면 원상복구 가능.
+
+## 사업자등록증 OCR 현황 (2026-09-11 코드 대조)
+
+### 사용 모델
+
+- **기본정보** (상호/법인명/대표자/등록번호/법인등록번호/생년월일/개업연월일/
+  사업장소재지): **Qwen2.5-VL-3B-Instruct** (`Qwen/Qwen2.5-VL-3B-Instruct`,
+  VLM, GPU 권장) — `backend/assistant/biz_cert_ocr.py`
+- **사업의 종류** (업태/종목 표): **EasyOCR**(`ko`,`en`) + 좌표 기반 규칙 —
+  `backend/assistant/category_ocr.py`. Qwen VLM이 이 표에서 행을 빠뜨리거나
+  라벨/값을 헷갈려서 별도 파이프라인으로 분리한 것 (파일 상단 주석 참고).
+- **업로드 직후 품질 게이트**: EasyOCR로 빠르게 훑어 인식 가능한 사진인지만
+  먼저 판정(문서 종류/사업자번호 패턴/신뢰도) — `backend/assistant/biz_cert_quality.py`.
+  실패하면 무거운 Qwen 파이프라인을 돌리기 전에 재업로드 안내.
+
+### 튜닝 이력 (biz_cert_ocr.py 코드 주석 기준)
+
+- `torch_dtype`: float16 → **bfloat16**로 변경 (2026-09-06). VRAM 부족(8GB)으로
+  일부 레이어가 CPU 오프로딩될 때 float16 혼합연산이 불안정해서 확률이 깨지는
+  문제(`"!!!"` 반복 출력 등) 확인, bfloat16은 표현범위가 fp32와 같아 덜 취약.
+- `do_sample=False`(greedy)로 고정 — VRAM 부족 상황에서 확률이 전부 0이 되며
+  샘플링 단계 CUDA assert 발생 확인(2026-09-06). OCR은 정답이 정해진 작업이라
+  샘플링 불필요, greedy가 크래시 회피 + 결과 일관성 둘 다 유리.
+- `MAX_OCR_PIXELS = 1600*1600`: 이미지 리사이즈 실험. 직접 PIL로 리사이즈하면
+  qwen_vl_utils의 patch/병합 단위와 안 맞아 CUDA assert 발생 → `max_pixels`만
+  넘겨서 qwen_vl_utils가 자체 규칙으로 리사이즈하게 함. 1280×1280에서는 작은
+  글씨(대표자 이름 등)가 뭉개지는 사례 있어 해상도를 올린 상태 — VRAM(8GB)
+  한계로 더 크게는 못 올림.
+- `load_image()`에 `autocontrast` 추가(2026-09-06) — 어두운 사진 OCR 실패 이슈 대응.
+- 법인/개인 판별용 VLM 호출을 없애고 기본정보 전체를 1회 호출로 통합 —
+  이미지 prefill 비용 때문에 지연시간이 컸던 걸 절반 가까이 줄임. 법인/개인은
+  같은 응답의 등록번호(가운데 2자리 81~88)로 사후 계산.
+
+### 연동 지점
+
+- `POST /api/auth/biz-cert-ocr` (`backend/api/auth.py`) — **회원가입용**.
+  업로드 → OCR → 사용자 확인/수정 화면에 결과만 반환, 이 시점엔 DB/디스크
+  저장 안 함. `/signup` 제출 시 확정값+파일을 같이 보내야 그때 1회 저장
+  (`save_biz_cert_data`, 재OCR 없음).
+- `POST /api/mypage/biz-cert` (`backend/api/mypage.py`, 2026-09-10 추가) —
+  **등록된 사업자등록증이 없는 기존 사용자**가 마이페이지에서 처음 첨부할 때.
+  회원가입용과 동일 패턴(이미 OCR/확인된 값만 저장, 재OCR 없음).
+- `POST /api/test/*` (`backend/api/test_ocr.py`) — **테스트 전용**. 정식
+  회원가입 플로우와 무관, DB엔 저장 안 하고 결과를 CSV 한 줄로 남김. OCR
+  파싱 자체가 잘 되는지 확인하는 용도.
+- 프론트: `frontend/src/components/BizCertUpload/BizCertUpload.tsx` (회원가입에서 사용 중).
+
+### 미착수 / TODO
+
+- **온보딩(Onboarding.tsx) step3에 OCR 추가 예정** — 아직 미착수. 회원가입 때
+  쓰는 `BizCertUpload.tsx` 재사용 우선 검토, 저장은 `mypage.py::POST /biz-cert`
+  패턴 참고 예정 (자세한 배경은 memory `onboarding-bizcert-ocr-plan` 참고).
+  정확히 step3을 교체할지 / step3 안에 추가할지 / 카드 선택 후 이어지는
+  스텝으로 넣을지는 미정 — 작업 시작할 때 다시 확인 필요.
+- 업태/종목(EasyOCR) 실패 시 기본정보(Qwen)는 그대로 보여주는 것까지는 처리됨
+  (`auth.py::biz_cert_ocr_endpoint`, try/except로 분리) — 실패율 자체를
+  낮추는 개선은 별도로 남아있음.
+
+### 관련 파일
+
+| | |
+|---|---|
+| 기본정보 OCR + HWPX 채우기 | `backend/assistant/biz_cert_ocr.py` |
+| 업태/종목 OCR (EasyOCR) | `backend/assistant/category_ocr.py` |
+| 업로드 품질 게이트 (EasyOCR) | `backend/assistant/biz_cert_quality.py` |
+| 회원가입 OCR 엔드포인트 | `backend/api/auth.py` (`POST /api/auth/biz-cert-ocr`), `backend/auth/signup.py` |
+| 마이페이지 사후 등록 엔드포인트 | `backend/api/mypage.py` (`POST /api/mypage/biz-cert`) |
+| 테스트 전용 엔드포인트 | `backend/api/test_ocr.py` |
+| 프론트 업로드 컴포넌트 | `frontend/src/components/BizCertUpload/BizCertUpload.tsx` |
+
+<!--
+[2026-09-11 주석 처리] 아래는 OCR/사업자등록증과 무관한 내용(KSIC 업종코드
+매칭 작업 현황)이라 사용자 요청으로 주석 처리함 — 삭제는 아님, 필요하면
+이 블록을 감싼 HTML 주석 기호만 지우면 그대로 복구됨.
 
 ## 지금 DB 상태 (Supabase, 2026-09-11 확인)
 
@@ -92,3 +171,4 @@
 | nts_ksic_mapping 시드 로더 | `backend/db/load_nts_ksic_mapping.py` |
 | 관리자 API | `backend/api/admin.py` (`/admin/crawl`, `/admin/sync`, `/admin/sync-status`, `/admin/export`, `*-count`) |
 | 관리자 화면 | `frontend/src/pages/admin/{AdminHome,AnnouncementsSync}.tsx` |
+-->

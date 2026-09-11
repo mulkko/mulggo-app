@@ -35,6 +35,10 @@ function resolveOcrApiBaseUrl(): string {
 
 const OCR_API_BASE_URL = resolveOcrApiBaseUrl();
 
+// KSIC 업종 목록(GET /api/ksic/options)은 GPU 없이도 되는 일반 DB 조회라, OCR 전용인
+// OCR_API_BASE_URL이 아니라 프론트가 원래 쓰는 메인 백엔드 주소를 그대로 쓴다.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".pdf"];
 const MAX_FILE_SIZE_MB = 10;
 
@@ -47,8 +51,8 @@ const REVIEW_FIELDS: { key: string; label: string }[] = [
   { key: "open_date", label: "개업연월일" },
   { key: "birth_date", label: "생년월일" },
   { key: "business_address", label: "사업장 소재지" },
-  { key: "business_category", label: "업태" },
-  { key: "business_item", label: "종목" },
+  { key: "business_category", label: "업태 (OCR 인식값 - 참고용)" },
+  { key: "business_item", label: "종목 (OCR 인식값 - 참고용)" },
 ];
 
 // 법인/개인 구분에 따라 애초에 존재하지 않는 필드 (법인등록번호는 법인만, 생년월일은 개인만).
@@ -57,14 +61,192 @@ const NOT_APPLICABLE_WHEN: Record<string, string> = {
   birth_date: "법인",
 };
 
-// DB(biz_registration_docs)가 NOT NULL로 요구하는 필드 — 확인 버튼 누르기 전에 채워져 있어야 함.
-const REQUIRED_FIELDS = ["company_name", "ceo_name", "biz_no", "open_date", "business_address"];
+// DB(biz_registration_docs)가 NOT NULL로 요구하는 필드 + [2026-09-11] ksic_code도 추가 -
+// OCR이 업태/종목 글자를 읽어도 우리 KSIC 참고표에 없는 표현이면 업종코드를 알 방법이
+// 없어서(사용자 확인), 업종코드만큼은 항상 확정(자동매칭 또는 직접 선택)돼 있어야 한다.
+const REQUIRED_FIELDS = ["company_name", "ceo_name", "biz_no", "open_date", "business_address", "ksic_code"];
 
 // 업태/종목 - 표준 목록이 없는 자유 기재 항목이라 비어 있어도 경고(빨간 테두리) 없이
-// "선택 사항"으로만 안내한다.
+// "선택 사항"으로만 안내한다. 실제 매칭에 쓰이는 값은 이제 ksic_code(아래 KSIC 셀렉트).
 const OPTIONAL_FIELDS = new Set(["business_category", "business_item"]);
 
 const ERROR_FALLBACK = "알 수 없는 오류가 발생했습니다.";
+
+// ══════════════════════════════════════════════════════
+// [2026-09-11] KSIC(업종) 선택 — OCR로 업태/종목을 못 읽거나, 읽었어도 우리 KSIC
+// 참고표(ksic_codes, 1,202건)에 없는 표현이면 decide_industry()가 자동으로 코드를
+// 못 정해준다(백엔드 biz-cert-ocr 응답의 ksic_code가 빈 문자열로 옴). 그 경우
+// 사용자가 대분류→중분류→세세분류 3단계로 직접 골라서 ksic_code를 확정한다.
+// ══════════════════════════════════════════════════════
+interface KsicOption {
+  code: string;
+  name: string;
+  largeCode: string;
+  largeName: string;
+  mediumCode: string;
+  mediumName: string;
+}
+
+// 모든 BizCertUpload 인스턴스가 공유하는 캐시 - 팝업을 한 번도 안 열면 요청 자체가 안 간다.
+let cachedKsicOptions: KsicOption[] | null = null;
+let ksicOptionsPromise: Promise<KsicOption[]> | null = null;
+
+function loadKsicOptions(): Promise<KsicOption[]> {
+  if (cachedKsicOptions) return Promise.resolve(cachedKsicOptions);
+  if (!ksicOptionsPromise) {
+    ksicOptionsPromise = fetch(`${API_BASE_URL}/api/ksic/options`)
+      .then((res) => res.json())
+      .then((res: { success: boolean; data?: KsicOption[] }) => {
+        const options = res.success && res.data ? res.data : [];
+        cachedKsicOptions = options;
+        return options;
+      })
+      .catch(() => {
+        ksicOptionsPromise = null; // 실패하면 다음에 다시 시도할 수 있게
+        return [];
+      });
+  }
+  return ksicOptionsPromise;
+}
+
+type KsicStep = "large" | "medium" | "detail";
+
+function KsicSelectPopup({
+  onSelect,
+  onClose,
+}: {
+  onSelect: (code: string, name: string) => void;
+  onClose: () => void;
+}) {
+  const [options, setOptions] = useState<KsicOption[] | null>(cachedKsicOptions);
+  const [step, setStep] = useState<KsicStep>("large");
+  const [large, setLarge] = useState<{ code: string; name: string } | null>(null);
+  const [medium, setMedium] = useState<{ code: string; name: string } | null>(null);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (!options) loadKsicOptions().then(setOptions);
+  }, [options]);
+
+  const dedupe = <T,>(items: T[], keyOf: (item: T) => string): T[] => {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+      const key = keyOf(item);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  const largeOptions = options
+    ? dedupe(options, (o) => o.largeCode).map((o) => ({ code: o.largeCode, name: o.largeName }))
+    : [];
+  const mediumOptions = options
+    ? dedupe(
+        options.filter((o) => o.largeCode === large?.code),
+        (o) => o.mediumCode,
+      ).map((o) => ({ code: o.mediumCode, name: o.mediumName }))
+    : [];
+  const detailOptions = (options ?? [])
+    .filter((o) => o.mediumCode === medium?.code)
+    .filter((o) => !query.trim() || o.name.includes(query.trim()));
+
+  const title =
+    step === "large" ? "업종 선택 (1/3) · 대분류" : step === "medium" ? "업종 선택 (2/3) · 중분류" : "업종 선택 (3/3) · 세부업종";
+
+  return (
+    <div className={styles.entityPopupOverlay} onClick={onClose}>
+      <div
+        className={styles.ksicPopupCard}
+        role="dialog"
+        aria-modal="true"
+        aria-label="업종 선택"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.ksicPopupHead}>
+          {step !== "large" && (
+            <button
+              type="button"
+              className={styles.ksicBackBtn}
+              onClick={() => setStep(step === "detail" ? "medium" : "large")}
+              aria-label="이전"
+            >
+              ←
+            </button>
+          )}
+          <p className={styles.entityPopupTitle}>{title}</p>
+        </div>
+
+        {(large || medium) && (
+          <p className={styles.ksicBreadcrumb}>
+            {[large?.name, medium?.name].filter(Boolean).join(" > ")}
+          </p>
+        )}
+
+        {step === "detail" && (
+          <input
+            type="text"
+            className={styles.ksicSearchInput}
+            placeholder="업종명 검색"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        )}
+
+        {!options ? (
+          <p className={styles.ksicLoading}>업종 목록을 불러오는 중...</p>
+        ) : (
+          <ul className={styles.ksicOptionList}>
+            {step === "large" &&
+              largeOptions.map((o) => (
+                <li key={o.code}>
+                  <button
+                    type="button"
+                    className={styles.ksicOptionBtn}
+                    onClick={() => {
+                      setLarge(o);
+                      setMedium(null);
+                      setStep("medium");
+                    }}
+                  >
+                    {o.name}
+                  </button>
+                </li>
+              ))}
+            {step === "medium" &&
+              mediumOptions.map((o) => (
+                <li key={o.code}>
+                  <button
+                    type="button"
+                    className={styles.ksicOptionBtn}
+                    onClick={() => {
+                      setMedium(o);
+                      setQuery("");
+                      setStep("detail");
+                    }}
+                  >
+                    {o.name}
+                  </button>
+                </li>
+              ))}
+            {step === "detail" &&
+              (detailOptions.length === 0 ? (
+                <p className={styles.ksicLoading}>검색 결과가 없어요.</p>
+              ) : (
+                detailOptions.map((o) => (
+                  <li key={o.code}>
+                    <button type="button" className={styles.ksicOptionBtn} onClick={() => onSelect(o.code, o.name)}>
+                      {o.name}
+                    </button>
+                  </li>
+                ))
+              ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface OcrResponse {
   ocr_success: boolean;
@@ -134,6 +316,8 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
   // 법인/개인은 값이 2개뿐이라 다른 필드(텍스트 입력)와 다르게 "수정" 누르면
   // 선택 팝업이 뜨는 방식으로 처리 - state.
   const [entityTypePopupOpen, setEntityTypePopupOpen] = useState(false);
+  // [2026-09-11] 업종(KSIC) 선택 팝업 - 위와 동일한 패턴(값 버튼 누르면 팝업).
+  const [ksicPopupOpen, setKsicPopupOpen] = useState(false);
 
   useEffect(() => {
     if (phase !== "uploading") return;
@@ -349,6 +533,10 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
             autoFocus={justOpenedKey === key}
             onChange={(e) => handleFieldChange(key, e.target.value)}
             className={showWarnBadge ? styles.inputWarn : styles.input}
+            // [2026-09-11] 빈 칸만 덩그러니 보이면 "이게 왜 비었지?"가 안 보여서, OCR이
+            // 못 읽은 이유를 placeholder로 알려준다 - 필수/선택 문구를 다르게 둬서
+            // 바로 아래 필수인 "업종" 셀렉트와 헷갈리지 않게(선택 항목은 "선택 입력"이라 명시).
+            placeholder={isOptional ? "OCR로 인식하지 못했어요 (선택 입력)" : "OCR로 인식하지 못했어요 - 직접 입력해주세요"}
           />
         ) : (
           // [2026-09-10] 별도 "수정" 버튼 없이, 값 영역 자체를 누르면 바로 입력창으로
@@ -392,6 +580,22 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
                 </button>
               </div>
             )}
+            {key === "business_item" && (
+              <div className={styles.fieldRow}>
+                <label>
+                  업종
+                  {!fields.ksic_code && <span className={styles.badgeWarn}> 선택 필요</span>}
+                </label>
+                <button
+                  type="button"
+                  className={fields.ksic_code ? styles.entityValueBtn : styles.entityValueBtnWarn}
+                  onClick={() => setKsicPopupOpen(true)}
+                >
+                  {fields.ksic_name || "업종을 선택해주세요"}
+                  <Chevron />
+                </button>
+              </div>
+            )}
           </div>
         ))}
 
@@ -431,6 +635,17 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
             ))}
           </div>
         </div>
+      )}
+
+      {ksicPopupOpen && (
+        <KsicSelectPopup
+          onSelect={(code, name) => {
+            handleFieldChange("ksic_code", code);
+            handleFieldChange("ksic_name", name);
+            setKsicPopupOpen(false);
+          }}
+          onClose={() => setKsicPopupOpen(false)}
+        />
       )}
     </div>
   );

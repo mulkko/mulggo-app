@@ -223,14 +223,18 @@ def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fie
         # 넣어준 fields.business_category/business_item을 그대로 저장만 한다.
         business_category = fields.get("business_category") or None
         business_item = fields.get("business_item") or None
-        if business_category or business_item:
+        # [2026-09-11] ksic_code: OCR 텍스트가 decide_industry()로 확신 있게 자동매칭됐거나,
+        # 그게 안 돼서 사용자가 셀렉트박스로 직접 고른 값 - 둘 다 fields.ksic_code로 같은
+        # 모양으로 들어온다(/api/auth/biz-cert-ocr 응답 또는 BizCertUpload 확인 팝업 수정값).
+        ksic_code = fields.get("ksic_code") or None
+        if business_category or business_item or ksic_code:
             cursor.execute(
                 """
                 INSERT INTO profile_business_types
-                    (profile_id, business_category, business_item, is_primary)
-                VALUES (%s, %s, %s, %s)
+                    (profile_id, business_category, business_item, ksic_code, is_primary)
+                VALUES (%s, %s, %s, %s, %s)
                 """,
-                (profile_id, business_category, business_item, True),
+                (profile_id, business_category, business_item, ksic_code, True),
             )
 
         connection.commit()

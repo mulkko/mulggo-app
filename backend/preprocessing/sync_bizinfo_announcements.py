@@ -71,12 +71,17 @@ RAW_COLUMNS = [
 ]
 
 
-def load_raw_bizinfo_from_postgres(only_unprocessed: bool = False, limit: int | None = None) -> pd.DataFrame:
+def load_raw_bizinfo_from_postgres(
+    only_unprocessed: bool = False, limit: int | None = None, offset: int | None = None
+) -> pd.DataFrame:
     """announcements_raw_bizinfo 전체(또는 아직 announcements에 없는 것만)를
     DataFrame으로 읽어온다. pandas.read_sql이 psycopg2 커넥션을 그대로 받는다.
     limit: 1,500여 건 전체를 매번 다 돌리면 테스트 한 번에 너무 오래 걸려서
     (첨부 다운로드+OCR 포함) 소량만 먼저 확인하거나 여러 번에 나눠 돌릴 때 씀.
-    ORDER BY로 순서를 고정해야 limit 호출을 반복할 때 매번 같은/다음 구간이 잡힌다."""
+    ORDER BY로 순서를 고정해야 limit 호출을 반복할 때 매번 같은/다음 구간이 잡힌다.
+    offset: only_unprocessed=False(전체 재검증)일 때 배치로 나눠 돌리는 용도 -
+    only_unprocessed=True면 처리된 건이 계속 빠지므로 offset 없이도 다음 구간이
+    자동으로 잡히지만, False에서는 매번 같은 앞부분만 잡히는 걸 막아야 해서 필요."""
     conn = get_connection()
     try:
         if only_unprocessed:
@@ -91,6 +96,8 @@ def load_raw_bizinfo_from_postgres(only_unprocessed: bool = False, limit: int | 
             query = "SELECT * FROM announcements_raw_bizinfo ORDER BY raw_bizinfo_id"
         if limit:
             query += f" LIMIT {int(limit)}"
+        if offset:
+            query += f" OFFSET {int(offset)}"
         return pd.read_sql(query, conn)
     finally:
         conn.close()
@@ -253,6 +260,8 @@ def transform_bizinfo_to_common(clean_df: pd.DataFrame) -> pd.DataFrame:
             "_bsns_sumry_cn": r.get("bsns_sumry_cn"),
             "_jrsd_instt_nm": r.get("jrsd_instt_nm"),
             "_print_flpth_nm": r.get("print_flpth_nm"),
+            "_flpth_nm": r.get("flpth_nm"),  # map_ksic 첨부 추출 폴백용 - 전체 첨부파일 URL 목록("@" 구분)
+            "_file_nm": r.get("file_nm"),  # map_ksic 로그(실행 결과 화면)에만 씀 - 원본 첨부파일명(확장자 포함)
             "_hashtags": r.get("hashtags"),
 
             "title": r.get("pblanc_nm"),
@@ -337,6 +346,29 @@ def map_regions(common_df: pd.DataFrame) -> pd.DataFrame:
 # 7. KSIC 업종코드 매핑 (기존 decide_industry() 재사용 - 새로 안 만듦)
 # ==================================================================
 
+def _get_notice_full_text_with_fallback(print_flpth_nm: str | None, flpth_nm: str | None):
+    """대표 첨부(print_flpth_nm) 하나만 쓰면, 그게 하필 깨진 파일(서버가 0바이트로
+    응답)일 때 나머지 첨부(flpth_nm, 전체 첨부 URL 목록)에 실제로 읽을 수 있는
+    파일이 있어도 그냥 실패 처리됐다. [2026-09-11 raw_bizinfo_id=92 실측] print_flpth_nm
+    쪽 첨부 4개 중 1개만 정상인데 대표로 지정된 게 하필 나머지였고, flpth_nm 쪽은
+    4개 다 정상이었음. 대표 파일이 비거나 실패하면 flpth_nm의 첨부를 순서대로
+    시도해서 처음 성공하는 걸 쓴다."""
+    candidates = []
+    if print_flpth_nm:
+        candidates.append(print_flpth_nm)
+    if flpth_nm:
+        candidates += [u for u in flpth_nm.split("@") if u and u not in candidates]
+
+    if not candidates:
+        return None, "no_url"
+
+    last_text, last_status = None, "no_url"
+    for url in candidates:
+        last_text, last_status = get_notice_full_text(url)
+        if last_status.startswith("success"):
+            return last_text, last_status
+    return last_text, last_status
+
 def map_ksic(common_df: pd.DataFrame, use_llm_fallback: bool = False) -> pd.DataFrame:
     df = common_df.copy()
     codes_col, names_col, excluded_col, status_col, content_col = [], [], [], [], []
@@ -363,7 +395,9 @@ def map_ksic(common_df: pd.DataFrame, use_llm_fallback: bool = False) -> pd.Data
                 full_text = cached[0] or ""
                 extract_status = "success(cache)"
             else:
-                full_text, extract_status = get_notice_full_text(r.get("_print_flpth_nm") or "")
+                full_text, extract_status = _get_notice_full_text_with_fallback(
+                    r.get("_print_flpth_nm"), r.get("_flpth_nm")
+                )
                 # 첨부원문(OCR/pdfplumber/pyhwp)에 간혹 NUL(0x00)이 섞여 들어오는데,
                 # PostgreSQL text 컬럼은 NUL을 저장 못 해서 캐시 INSERT 자체가
                 # 죽는다(upsert_announcements()가 이미 _strip_nul로 겪은 것과 동일
@@ -393,8 +427,13 @@ def map_ksic(common_df: pd.DataFrame, use_llm_fallback: bool = False) -> pd.Data
             # 성공/실패 요약 한 줄만 항상 남긴다.
             extract_ok = extract_status.startswith("success")
             ksic_ok = ksic_stage != "특정불가"
+            # [2026-09-11] raw_bizinfo_id는 우리 DB 내부 번호라 기업마당 원문 사이트에서
+            # 못 찾는다 - 실패 건 수정작업하려면 실제 공고번호(pblanc_id)가 필요해서 추가.
+            # 첨부파일명(file_nm, 확장자 포함 - 여러 개면 "@"로 이어붙어 있음)도 같이 찍어서
+            # 어떤 파일 형식에서 실패하는지 바로 보이게 한다.
             print(
-                f"[{i}/{total}] raw_bizinfo_id={raw_id} | "
+                f"[{i}/{total}] raw_bizinfo_id={raw_id} pblanc_id={r.get('_pblanc_id')} | "
+                f"첨부파일={r.get('_file_nm') or '-'} | "
                 f"본문추출 {'성공' if extract_ok else '실패'}({extract_status}) | "
                 f"업종분류 {'성공' if ksic_ok else '실패'}({ksic_stage})"
             )
@@ -642,8 +681,13 @@ def upsert_announcements(final_df: pd.DataFrame, attachments_by_raw_id: dict | N
 # 실행
 # ==================================================================
 
-def run(only_unprocessed: bool = True, use_llm_fallback: bool = False, limit: int | None = None):
-    raw_df = load_raw_bizinfo_from_postgres(only_unprocessed=only_unprocessed, limit=limit)
+def run(
+    only_unprocessed: bool = True,
+    use_llm_fallback: bool = False,
+    limit: int | None = None,
+    offset: int | None = None,
+):
+    raw_df = load_raw_bizinfo_from_postgres(only_unprocessed=only_unprocessed, limit=limit, offset=offset)
     print(f"RAW 조회: {len(raw_df)}건")
     if raw_df.empty:
         return
@@ -670,5 +714,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=None, help="테스트/분할 실행용: 이번 실행에서 처리할 최대 건수")
+    parser.add_argument("--offset", type=int, default=None, help="--all과 같이 배치 나눠 돌릴 때 시작 위치")
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="이미 announcements에 반영된 공고도 포함해 전부 다시 처리(재검증/로그 확인용). "
+        "기본은 아직 반영 안 된 것만 처리",
+    )
     args = parser.parse_args()
-    run(limit=args.limit)
+    run(only_unprocessed=not args.all, limit=args.limit, offset=args.offset)
