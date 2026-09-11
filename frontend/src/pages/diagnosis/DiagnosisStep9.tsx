@@ -39,14 +39,14 @@ function DiagnosisStep9() {
   useEffect(() => {
     const answers = getDiagnosisAnswers();
     if (!answers.sido || !answers.sigungu || !answers.dong) {
-      navigate("/diagnosis/5", { replace: true });
+      navigate("/diagnosis/6", { replace: true });
       return;
     }
     setInitialValue(answers.coreSkill ?? "");
     setReady(true);
   }, [navigate]);
 
-  const handleBack = () => navigate("/diagnosis/8");
+  const handleBack = () => navigate("/diagnosis/9");
   const handleFinish = () => navigate("/home");
 
   const handleSubmit = async (value: string) => {

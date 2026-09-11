@@ -36,7 +36,7 @@ function DiagnosisStep5() {
   useEffect(() => {
     const answers = getDiagnosisAnswers();
     if (!answers.storeType) {
-      navigate("/diagnosis/4", { replace: true });
+      navigate("/diagnosis/5", { replace: true });
       return;
     }
     setSido(answers.sido ?? "");
@@ -78,14 +78,14 @@ function DiagnosisStep5() {
     setDong("");
   };
 
-  const handleBack = () => navigate("/diagnosis/4");
+  const handleBack = () => navigate("/diagnosis/5");
 
   const canSubmit = sido.trim() !== "" && sigungu.trim() !== "" && dong.trim() !== "";
 
   const handleNext = () => {
     if (!canSubmit) return;
     saveDiagnosisAnswers({ sido, sigungu, dong });
-    navigate("/diagnosis/6");
+    navigate("/diagnosis/7");
   };
 
   if (!ready) return null;

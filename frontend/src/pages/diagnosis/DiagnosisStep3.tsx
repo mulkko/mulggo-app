@@ -26,11 +26,11 @@ function DiagnosisStep3() {
     setReady(true);
   }, [navigate]);
 
-  const handleBack = () => navigate("/diagnosis/2");
+  const handleBack = () => navigate("/diagnosis/3");
 
   const handleSubmit = (value: string) => {
     saveDiagnosisAnswers({ solutionApproach: value });
-    navigate("/diagnosis/4");
+    navigate("/diagnosis/5");
   };
 
   if (!ready) return null;

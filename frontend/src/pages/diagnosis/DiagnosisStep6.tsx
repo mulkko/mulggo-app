@@ -19,18 +19,18 @@ function DiagnosisStep6() {
   useEffect(() => {
     const answers = getDiagnosisAnswers();
     if (!answers.sido || !answers.sigungu || !answers.dong) {
-      navigate("/diagnosis/5", { replace: true });
+      navigate("/diagnosis/6", { replace: true });
       return;
     }
     setInitialValue(answers.target ?? "");
     setReady(true);
   }, [navigate]);
 
-  const handleBack = () => navigate("/diagnosis/5");
+  const handleBack = () => navigate("/diagnosis/6");
 
   const handleSubmit = (value: string) => {
     saveDiagnosisAnswers({ target: value });
-    navigate("/diagnosis/7");
+    navigate("/diagnosis/8");
   };
 
   if (!ready) return null;
