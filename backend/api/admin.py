@@ -42,21 +42,61 @@ def _count_rows(table: str) -> int:
         connection.close()
 
 
+# [2026-09-11] 관리자 홈 "오늘 자동 수집 요약"/"오늘까지 누적 현황"이 기업마당
+# 건수만 쓰고(K-Startup 누락), "오늘 수집"/"누적" 두 차트가 똑같은 값(전체 누적)을
+# 보여주고, 마지막/다음 실행 시각도 하드코딩된 옛날 날짜였던 문제 수정(사용자 확인).
+# today_count는 KST 기준 "오늘"(collected_at을 Asia/Seoul로 변환한 날짜)로 계산 -
+# 크롤러가 매일 04:00(KST)에 도는데 서버가 UTC로 판단하면 자정 근처에서 날짜가
+# 어긋날 수 있어서, AdminMembers 쪽에서 이미 쓰던 KST 변환 방식을 그대로 재사용.
+def _source_summary(table: str) -> dict:
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT count(*), max(collected_at), min(collected_at) FROM {table}")
+        total, last_collected_at, first_collected_at = cursor.fetchone()
+        cursor.execute(
+            f"""
+            SELECT count(*) FROM {table}
+            WHERE (collected_at AT TIME ZONE 'Asia/Seoul')::date = (now() AT TIME ZONE 'Asia/Seoul')::date
+            """
+        )
+        today_count = cursor.fetchone()[0]
+    finally:
+        connection.close()
+    return {
+        "count": total,
+        "today_count": today_count,
+        "last_collected_at": last_collected_at.isoformat() if last_collected_at else None,
+        "first_collected_at": first_collected_at.isoformat() if first_collected_at else None,
+    }
+
+
 @router.get("/bizinfo-count")
 def get_bizinfo_count() -> dict:
-    return {"count": _count_rows(RAW_TABLES["bizinfo"])}
+    return _source_summary(RAW_TABLES["bizinfo"])
 
 
 @router.get("/kstartup-count")
 def get_kstartup_count() -> dict:
-    return {"count": _count_rows(RAW_TABLES["kstartup"])}
+    return _source_summary(RAW_TABLES["kstartup"])
 
 
-def _backlog(source: str, raw_table: str, raw_id_col: str) -> dict:
+def _backlog(source: str, raw_table: str, raw_id_col: str, eligible_where: str = "") -> dict:
     """raw 테이블엔 있는데 announcements(통합 테이블)엔 아직 없는 건수.
     [2026-09-09] 수집(raw)은 됐는데 통합 반영("실행" 버튼)만 안 됐거나
     전처리 중 조용히 실패한 경우를 관리자 메인 화면에서 놓치기 쉬워서 추가함
-    (이번 세션에서 겪은 날짜/OCR/컬럼명 버그들이 전부 이 유형)."""
+    (이번 세션에서 겪은 날짜/OCR/컬럼명 버그들이 전부 이 유형).
+
+    [2026-09-11] K-Startup은 마감된 공고를 sync 단계에서 원래부터 영구
+    제외한다(`sync_kstartup_announcements.py::clean_kstartup()` - 모집중 아니거나
+    마감일 지난 건 announcements에 절대 안 올림, 정책적으로 의도된 동작). "배치하기"를
+    눌러도 이런 raw 행은 "반영"으로 절대 안 바뀌는데, 예전 계산식(raw 전체 - done)은
+    이런 영구 제외 대상까지 계속 "미반영"으로 세서 "배치했는데 왜 안 없어지냐"는
+    혼란을 만들었음.
+    `raw`/`done`은 있는 그대로(전체 건수) 보여주되, `pending`만 "지금도 반영
+    대상인데 아직 안 된 것"(eligible_where AND NOT EXISTS)으로 따로 계산한다 -
+    단순히 `eligible_raw - done`으로 빼면 done엔 "합쳐질 당시엔 모집중이었지만
+    지금은 마감된" 행도 누적돼 있어서 음수가 나올 수 있음(실측 확인)."""
     connection = get_connection()
     try:
         cursor = connection.cursor()
@@ -67,9 +107,29 @@ def _backlog(source: str, raw_table: str, raw_id_col: str) -> dict:
             (source,),
         )
         done = cursor.fetchone()[0]
-        return {"source": source, "raw": raw, "done": done, "pending": raw - done}
+        cursor.execute(
+            f"""
+            SELECT count(*) FROM {raw_table} r
+            {eligible_where}{"AND" if eligible_where else "WHERE"} NOT EXISTS (
+                SELECT 1 FROM announcements a
+                WHERE a.source = %s AND a.{raw_id_col} = r.{raw_id_col}
+            )
+            """,
+            (source,),
+        )
+        pending = cursor.fetchone()[0]
+        return {"source": source, "raw": raw, "done": done, "pending": pending}
     finally:
         connection.close()
+
+
+# K-Startup만 해당 — clean_kstartup()과 동일한 "반영 대상" 조건(모집중 + 마감일
+# 안 지남). bizinfo는 raw 자체가 이미 진행 중인 공고 위주라 별도 필터 불필요
+# (실측: 지금 bizinfo pending=0으로 정상 수렴함). 뒤에 r.raw_kstartup_id 컬럼명이
+# raw_id_col과 겹치므로 별칭 r로 명시.
+_KSTARTUP_ELIGIBLE_WHERE = (
+    "WHERE r.rcrt_prgs_yn = 'Y' AND (r.pbanc_rcpt_end_dt IS NULL OR r.pbanc_rcpt_end_dt >= CURRENT_DATE) "
+)
 
 
 @router.get("/backlog")
@@ -78,7 +138,7 @@ def get_backlog() -> dict:
         "success": True,
         "data": [
             _backlog("bizinfo", RAW_TABLES["bizinfo"], "raw_bizinfo_id"),
-            _backlog("kstartup", RAW_TABLES["kstartup"], "raw_kstartup_id"),
+            _backlog("kstartup", RAW_TABLES["kstartup"], "raw_kstartup_id", _KSTARTUP_ELIGIBLE_WHERE),
         ],
     }
 

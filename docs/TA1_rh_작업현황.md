@@ -204,6 +204,11 @@
   API로 교체는 아직 안 함.
 - `Home.tsx` "아이디어 구체화하기", `Onboarding.tsx` "아이디어 카드로
   시작하기" 카드 둘 다 `/diagnosis/select`로 연결(기존엔 둘 다 빈 TODO 스텁).
+  **[세션 막바지, 다른 세션 추정]** `Onboarding.tsx`는 이후 `frontend/src/
+  pages/idea/IdeaChoice.tsx`(신규, `/idea/choice`)를 한 단계 거치도록
+  바뀜 — "빠른매칭 vs 정밀구체화" 선택 화면으로 보이는데 지금은 두 선택지
+  모두 그대로 `/diagnosis/select`로 이어짐(분기 로직 미착수로 보임, 이
+  세션에서 만든 건 아니라 내용은 확인만 하고 안 건드림).
 - **업종코드(KSIC) 매칭 결과는 화면에 안 띄움** — 위 "1. 슬롯필링 재설계"에서
   발견한 `decide_industry()` 게이트 문제(공고문 전용 분류기라 사용자
   아이디어 텍스트로는 항상 매칭 실패)가 아직 안 풀려서, 팀이 별도로
@@ -213,6 +218,13 @@
   테이블(3,924행) 전체를 한 번에 내려줌. 이 테이블은 실 DB엔 이미 있었는데
   `schema.sql`에 문서화가 안 돼있던 걸 발견해서 같이 정리함(상권분석
   `GET /analysis/market`도 내부적으로 이미 같은 테이블을 쓰고 있었음).
+- **[세션 막바지 추가]** 위 지역 3단은 처음엔 네이티브 `<select>`로 만들었다가,
+  사용자 요청으로 **`frontend/src/components/SelectSheet/`(칩 트리거 + 하단 시트)
+  로 다시 교체** — 아래 "다음 세션 우선순위"에 있던 "SelectSheet 미사용" 항목이
+  이걸로 해소됨. `placeholder`/`disabled` prop을 새로 추가해서 상위 미선택 시
+  트리거를 잠그도록 확장함. `DiagnosisStep4.tsx`의 "매장운영여부" 선택 카드도
+  선택 시 민트 배경(`--color-teal-mist`)이 채워지도록 `.choiceCardSelected`에
+  `background` 추가(기존엔 테두리만 강조).
 
 ## ⚠️ 환경/문서 불일치 발견 (수정 안 하고 사용자 확인만 받음)
 
@@ -254,10 +266,11 @@ diff`로 로컬 미커밋 변경사항부터 먼저 확인할 것** (이 문서�
    상태로 우회 중**. 게이트 프롬프트 우회 또는 전용 분류 경로 신설 필요 —
    미루면 미룰수록 "업종코드 없는 진단 결과"가 정식 기능인 것처럼 굳어질
    위험 있음.
-2. **`SelectSheet` 컴포넌트 — 만들어놓고 아직 아무 데서도 안 씀**
-   (`frontend/src/components/SelectSheet/`). `ProfileEdit.tsx`의 지역/
-   연령대/기업유형 select 3개를 매칭 리스트처럼 팝업으로 바꾸려던 작업으로
-   보이는데, 중간에 보류됨(사용자 확인) — 이어서 연결할지, 그대로 둘지 결정 필요.
+2. ~~`SelectSheet` 컴포넌트 — 만들어놓고 아직 아무 데서도 안 씀~~ **[해결됨]**
+   `DiagnosisStep4.tsx`(사업구체화 진단4)의 지역 3단 셀렉트에 적용됨(위 "12."
+   참고). 단, `ProfileEdit.tsx`의 지역/연령대/기업유형 select 3개는 여전히
+   네이티브 select로 남아있음 — "정보수정 화면은 예외"로 명시적으로 보류됨
+   (사용자 확인), 다시 논의 전까지 건드리지 말 것.
 3. **사업구체화 진단 제출을 정식 API로 교체** — 지금은
    `/api/test/slot-filling`(테스트용, DB 미저장) 재사용 중. 정식 저장
    경로 필요.
@@ -287,7 +300,7 @@ diff`로 로컬 미커밋 변경사항부터 먼저 확인할 것** (이 문서�
 | 매칭 필터/리스트/상세/서류 | `backend/api/matching.py`, `frontend/src/pages/matching/{MatchingList,FilterPage,MatchingDetail,DocPreview}.tsx`, `frontend/src/utils/downloadFilledDoc.ts` |
 | 고객센터 챗봇 | `backend/api/support.py`(기존), `frontend/src/pages/support/CustomerSupport.tsx`(신규) |
 | 홈/온보딩 | `frontend/src/pages/home/Home.tsx`, `frontend/src/pages/onboarding/Onboarding.tsx`, 각 `.module.css` |
-| 미사용/보류 컴포넌트 | `frontend/src/components/SelectSheet/`(만들어짐, 아직 어디서도 안 씀) |
+| 미사용/보류 컴포넌트 | `frontend/src/components/SelectSheet/`(`DiagnosisStep4.tsx` 지역 3단에서 사용 중 — `ProfileEdit.tsx`는 예외로 계속 네이티브 select 유지) |
 | 진행 현황 문서 | `frontend/dev/dev_links.html`, `dev_links_share.html` |
 | 설계 근거 문서 (팀 제공, 리포지토리 밖) | `E:\3차프로젝트\슬롯필링_기능_설계_260905.pdf`, `슬롯필링_260909.xlsx`, `물꼬_사업구체화_지표결합_설계안.docx` |
 

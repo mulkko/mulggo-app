@@ -34,6 +34,50 @@ function formatLogTime(isoString: string): string {
   return `${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+// [2026-09-11] "마지막/다음 실행", "집계 시작" 표시가 KST(한국시간) 기준이어야
+// 하는데(크롤러가 매일 KST 04:00에 도는 스케줄), 보는 사람 브라우저의 로컬
+// 타임존과 무관하게 항상 KST로 보이게 한다. Date의 UTC getter를 그대로 쓰되
+// +9시간 옮긴 시각을 넣어서 "UTC 기준으로 읽으면 곧 KST 벽시계 값"이 되게 하는
+// 트릭 - Intl.DateTimeFormat(timeZone) 없이도 브라우저 로케일에 안 흔들림.
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+function toKstShifted(ms: number): Date {
+  return new Date(ms + KST_OFFSET_MS);
+}
+
+function formatKstDateTime(isoString: string | null): string {
+  if (!isoString) return "-";
+  const d = toKstShifted(new Date(isoString).getTime());
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}.${pad(d.getUTCMonth() + 1)}.${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+}
+
+function formatKstDate(isoString: string | null): string {
+  if (!isoString) return "-";
+  const d = toKstShifted(new Date(isoString).getTime());
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}.${pad(d.getUTCMonth() + 1)}.${pad(d.getUTCDate())}`;
+}
+
+// 기업마당(로컬 스케줄러)/K-스타트업(GitHub Actions) 둘 다 매일 KST 04:00 실행
+// (scripts/README.md, .github/workflows/crawl-daily.yml 기준) - 다음 실행 시각을
+// "오늘 04:00이 아직 안 지났으면 오늘, 지났으면 내일"로 계산한다.
+const CRAWL_HOUR_KST = 4;
+
+function nextCrawlRunLabel(): string {
+  const nowKst = toKstShifted(Date.now());
+  const todayFourAmMs = Date.UTC(
+    nowKst.getUTCFullYear(),
+    nowKst.getUTCMonth(),
+    nowKst.getUTCDate(),
+    CRAWL_HOUR_KST,
+  );
+  const nextMs = nowKst.getTime() >= todayFourAmMs ? todayFourAmMs + 24 * 60 * 60 * 1000 : todayFourAmMs;
+  const next = new Date(nextMs);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${next.getUTCFullYear()}.${pad(next.getUTCMonth() + 1)}.${pad(next.getUTCDate())} 0${CRAWL_HOUR_KST}:00`;
+}
+
 // 수동호출 대상 소스. 새 소스가 붙으면 여기 한 줄만 추가하면 된다
 // (백엔드 CRAWLERS dict의 키와 일치해야 함).
 const CRAWL_SOURCES: { value: string; label: string }[] = [
@@ -46,10 +90,20 @@ const CRAWL_SOURCES: { value: string; label: string }[] = [
 const CRAWL_POLL_INTERVAL_MS = 5000;
 const CRAWL_POLL_TIMEOUT_MS = 20 * 60 * 1000;
 
+// [2026-09-11] /admin/bizinfo-count, /admin/kstartup-count가 누적 건수뿐 아니라
+// 오늘 신규 건수(today_count, KST 기준)/마지막·최초 수집 시각까지 같이 내려주도록
+// 백엔드가 바뀌어서, 프론트도 숫자 하나(count)가 아니라 이 요약 전체를 들고 있는다.
+type SourceSummary = {
+  count: number;
+  today_count: number;
+  last_collected_at: string | null;
+  first_collected_at: string | null;
+};
+
 function AdminHome() {
-  const [bizinfoCount, setBizinfoCount] = useState<number | null>(null);
+  const [bizinfoSummary, setBizinfoSummary] = useState<SourceSummary | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [kstartupCount, setKstartupCount] = useState<number | null>(null);
+  const [kstartupSummary, setKstartupSummary] = useState<SourceSummary | null>(null);
   const [kstartupError, setKstartupError] = useState(false);
   const [batchLogs, setBatchLogs] = useState<BatchLog[]>([]);
   const [backlog, setBacklog] = useState<Backlog[]>([]);
@@ -59,17 +113,20 @@ function AdminHome() {
   // "배치하기" 버튼으로 미반영분 통합 반영을 실행 중인지(진행 중엔 버튼 잠금).
   const [runningBatch, setRunningBatch] = useState(false);
 
+  const bizinfoCount = bizinfoSummary?.count ?? null;
+  const kstartupCount = kstartupSummary?.count ?? null;
+
   const fetchCount = () => {
     fetch(`${API_BASE_URL}/admin/bizinfo-count`)
       .then((res) => res.json())
-      .then((data: { count: number }) => setBizinfoCount(data.count))
+      .then((data: SourceSummary) => setBizinfoSummary(data))
       .catch(() => setLoadError(true));
   };
 
   const fetchKstartupCount = () => {
     fetch(`${API_BASE_URL}/admin/kstartup-count`)
       .then((res) => res.json())
-      .then((data: { count: number }) => setKstartupCount(data.count))
+      .then((data: SourceSummary) => setKstartupSummary(data))
       .catch(() => setKstartupError(true));
   };
 
@@ -194,22 +251,63 @@ function AdminHome() {
     a.remove();
   };
 
-  const countLabel = loadError ? "불러오기 실패" : bizinfoCount === null ? "확인 중..." : `${bizinfoCount.toLocaleString()}건`;
+  const cumulativeLabel = loadError ? "불러오기 실패" : bizinfoCount === null ? "확인 중..." : `${bizinfoCount.toLocaleString()}건`;
   const kstartupLabel = kstartupError
     ? "불러오기 실패"
     : kstartupCount === null
       ? "확인 중..."
       : `${kstartupCount.toLocaleString()}건`;
 
-  // 기관별 실제 건수 비율대로 막대 너비 계산 (제일 큰 값이 트랙을 꽉 채움)
-  const maxCount = Math.max(bizinfoCount ?? 0, kstartupCount ?? 0) || 1;
-  const bizinfoWidth = bizinfoCount ? Math.round((bizinfoCount / maxCount) * BAR_TRACK_WIDTH) : 0;
-  const kstartupWidth = kstartupCount ? Math.round((kstartupCount / maxCount) * BAR_TRACK_WIDTH) : 0;
+  // [2026-09-11] 기업마당만 반영되던 두 상단 큰 숫자("오늘 자동 수집 요약"/"오늘까지
+  // 누적 현황")를 K-스타트업까지 합산하도록 수정. 하나라도 아직 안 왔으면 "확인 중",
+  // 하나라도 에러면 그 이유를 보여준다(둘 다 정상일 때만 합산 숫자를 보여줌).
+  const bothLoaded = bizinfoSummary !== null && kstartupSummary !== null;
+  const anyError = loadError || kstartupError;
+  const totalTodayCount = (bizinfoSummary?.today_count ?? 0) + (kstartupSummary?.today_count ?? 0);
+  const totalCumulativeCount = (bizinfoCount ?? 0) + (kstartupCount ?? 0);
+  const todaySummaryLabel = anyError
+    ? "일부 소스 불러오기 실패"
+    : bothLoaded
+      ? `${totalTodayCount.toLocaleString()}건`
+      : "확인 중...";
+  const cumulativeSummaryLabel = anyError
+    ? "일부 소스 불러오기 실패"
+    : bothLoaded
+      ? `${totalCumulativeCount.toLocaleString()}건`
+      : "확인 중...";
 
-  const bizinfoRow = { name: "기업마당", count: countLabel, width: bizinfoWidth };
-  const kstartupRow = { name: "K-스타트업(창업진흥원)", count: kstartupLabel, width: kstartupWidth };
-  const todayChart = [bizinfoRow, kstartupRow, ...OTHER_CHART_BASE];
-  const cumulativeChart = [bizinfoRow, kstartupRow, ...OTHER_CHART_BASE];
+  // 마지막 수집 시각 = 두 소스 중 더 최근 것. 집계 시작 = 두 소스 중 더 오래된 것.
+  const lastCollectedAt = [bizinfoSummary?.last_collected_at, kstartupSummary?.last_collected_at]
+    .filter((v): v is string => !!v)
+    .sort()
+    .at(-1) ?? null;
+  const firstCollectedAt = [bizinfoSummary?.first_collected_at, kstartupSummary?.first_collected_at]
+    .filter((v): v is string => !!v)
+    .sort()
+    .at(0) ?? null;
+
+  // 기관별 실제 건수 비율대로 막대 너비 계산 (제일 큰 값이 트랙을 꽉 채움) - 오늘/누적
+  // 각각 자기 값들끼리 비교해야 막대 비율이 맞아서 스케일을 따로 계산한다.
+  const maxCumulativeCount = Math.max(bizinfoCount ?? 0, kstartupCount ?? 0) || 1;
+  const bizinfoCumulativeWidth = bizinfoCount ? Math.round((bizinfoCount / maxCumulativeCount) * BAR_TRACK_WIDTH) : 0;
+  const kstartupCumulativeWidth = kstartupCount ? Math.round((kstartupCount / maxCumulativeCount) * BAR_TRACK_WIDTH) : 0;
+
+  const bizinfoTodayCount = bizinfoSummary?.today_count ?? null;
+  const kstartupTodayCount = kstartupSummary?.today_count ?? null;
+  const maxTodayCount = Math.max(bizinfoTodayCount ?? 0, kstartupTodayCount ?? 0) || 1;
+  const bizinfoTodayWidth = bizinfoTodayCount ? Math.round((bizinfoTodayCount / maxTodayCount) * BAR_TRACK_WIDTH) : 0;
+  const kstartupTodayWidth = kstartupTodayCount ? Math.round((kstartupTodayCount / maxTodayCount) * BAR_TRACK_WIDTH) : 0;
+
+  const todayChart = [
+    { name: "기업마당", count: bizinfoTodayCount !== null ? `${bizinfoTodayCount.toLocaleString()}건` : cumulativeLabel, width: bizinfoTodayWidth },
+    { name: "K-스타트업(창업진흥원)", count: kstartupTodayCount !== null ? `${kstartupTodayCount.toLocaleString()}건` : kstartupLabel, width: kstartupTodayWidth },
+    ...OTHER_CHART_BASE,
+  ];
+  const cumulativeChart = [
+    { name: "기업마당", count: cumulativeLabel, width: bizinfoCumulativeWidth },
+    { name: "K-스타트업(창업진흥원)", count: kstartupLabel, width: kstartupCumulativeWidth },
+    ...OTHER_CHART_BASE,
+  ];
 
   return (
     <>
@@ -276,11 +374,11 @@ function AdminHome() {
           </div>
         </div>
         <div className={styles.countBlock}>
-          <p className={styles.countNum}>{countLabel}</p>
+          <p className={styles.countNum}>{todaySummaryLabel}</p>
           <p className={styles.countSuffixBold}>신규 추가</p>
         </div>
         <p className={styles.crawlerTimeInfo}>
-          마지막 실행 2026.08.26 06:00 · 다음 실행 2026.08.27 06:00 (매일 06:00 자동 수집)
+          마지막 실행 {formatKstDateTime(lastCollectedAt)} · 다음 실행 {nextCrawlRunLabel()} (매일 04:00 자동 수집)
         </p>
       </div>
 
@@ -289,11 +387,11 @@ function AdminHome() {
           <p className={styles.cardHeaderTitle}>오늘까지 누적 현황</p>
         </div>
         <div className={styles.countBlock}>
-          <p className={styles.countNum}>{countLabel}</p>
+          <p className={styles.countNum}>{cumulativeSummaryLabel}</p>
           <p className={styles.countSuffixMedium}>누적 현황</p>
         </div>
         <p className={styles.crawlerTimeInfo}>
-          집계 시작 2026.09.05 · 오늘 기준 2026.09.05 06:00 누적
+          집계 시작 {formatKstDate(firstCollectedAt)} · 오늘 기준 {formatKstDateTime(lastCollectedAt)} 누적
         </p>
       </div>
 
