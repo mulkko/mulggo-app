@@ -19,9 +19,9 @@ function DiagnosisStep6() {
   useEffect(() => {
     const answers = getDiagnosisAnswers();
     if (!answers.sido || !answers.sigungu || !answers.dong) {
-      // [2026-09-11] 원래 이전은 Q6(지역·규모)이지만, 그 사이에 13(상권분석 리포트)가
-      // 임시로 끼워졌다 - 11(PSST 확정)·12(업종코드 매칭)가 생기기 전까지의 배치.
-      // 리포트 화면도 같은 슬롯을 가드로 쓰므로, 값이 없으면 거기서 다시 Q6로 보낸다.
+      // Q6(지역·규모) 다음엔 11(PSST 확정)→12(업종코드 매칭)→13(상권분석 리포트)이
+      // 이어지는데, 그 화면들도 같은 슬롯(sido/sigungu/dong)을 가드로 쓰므로 여기서는
+      // 13으로만 보내도 없으면 알아서 Q6까지 되돌아간다.
       navigate("/diagnosis/market-report", { replace: true });
       return;
     }

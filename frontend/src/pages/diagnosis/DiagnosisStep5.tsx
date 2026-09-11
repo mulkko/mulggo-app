@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
-import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import { consumeDiagnosisReturnTo, getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -85,9 +85,8 @@ function DiagnosisStep5() {
   const handleNext = () => {
     if (!canSubmit) return;
     saveDiagnosisAnswers({ sido, sigungu, dong });
-    // [2026-09-11] 원래 다음은 Q7(타깃)이지만, 그 사이에 13(상권분석 리포트)가
-    // 임시로 끼워졌다 - 11(PSST 확정)·12(업종코드 매칭)가 생기기 전까지의 배치.
-    navigate("/diagnosis/market-report");
+    const returnTo = consumeDiagnosisReturnTo();
+    navigate(returnTo ?? "/diagnosis/psst-confirm");
   };
 
   if (!ready) return null;

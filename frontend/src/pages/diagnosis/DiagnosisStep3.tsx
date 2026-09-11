@@ -3,7 +3,13 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import DiagnosisTextQuestion from "./DiagnosisTextQuestion";
-import { DIAGNOSIS_QUESTIONS, getDiagnosisAnswers, saveDiagnosisAnswers, type Origin } from "./diagnosisAnswers";
+import {
+  consumeDiagnosisReturnTo,
+  DIAGNOSIS_QUESTIONS,
+  getDiagnosisAnswers,
+  saveDiagnosisAnswers,
+  type Origin,
+} from "./diagnosisAnswers";
 
 /**
  * 사업구체화 진단 4/5 — "구체화 진단3" = Q4 (dev_links.html 목업 이름).
@@ -30,7 +36,8 @@ function DiagnosisStep3() {
 
   const handleSubmit = (value: string) => {
     saveDiagnosisAnswers({ solutionApproach: value });
-    navigate("/diagnosis/5");
+    const returnTo = consumeDiagnosisReturnTo();
+    navigate(returnTo ?? "/diagnosis/5");
   };
 
   if (!ready) return null;

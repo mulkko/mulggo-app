@@ -28,11 +28,10 @@ interface ApiError {
 }
 
 /**
- * 13. 상권분석 리포트. 원래 목표 순서는 Q6(지역·규모) → 11(PSST 확정) → 12(업종코드 매칭)
- * → 이 화면이지만, 11·12가 아직 없어 Q6 다음에 바로 연결한 임시 배치다 (사용자 확인,
- * 2026-09-11). 나중에 11·12가 생기면 이 화면 앞에 끼워넣을 예정이므로 이전 화면에 대한
- * 가정은 "sido/sigungu/dong이 diagnosisAnswers에 이미 채워져 있다"는 것 하나뿐이다
- * (Q7~Q10이 쓰는 가드 패턴과 동일).
+ * 13. 상권분석 리포트. 순서: Q6(지역·규모) → 11(PSST 확정) → 12(업종코드 매칭) → 이 화면
+ * → Q7~Q10. 이전 화면에 대한 가정은 "sido/sigungu/dong이 diagnosisAnswers에 이미
+ * 채워져 있다"는 것 하나뿐이다 (Q7~Q10이 쓰는 가드 패턴과 동일) - 그래서 슬롯이
+ * 없을 때의 가드 리다이렉트는 그대로 /diagnosis/6(Q6)으로 보낸다.
  *
  * ksic_code(업종코드)는 아직 없는 시점이라 GET /analysis/market에 안 넘긴다 - 그래서
  * "반경 500m 동일 업종"/"매칭 지원사업 수"/밀집도 히트맵은 채울 데이터가 없는 게
@@ -72,7 +71,7 @@ function DiagnosisMarketReport() {
       .finally(() => setLoading(false));
   }, [navigate]);
 
-  const handleBack = () => navigate("/diagnosis/6");
+  const handleBack = () => navigate("/diagnosis/industry-code");
   const handleNext = () => navigate("/diagnosis/7");
 
   if (!ready) return null;

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
-import { getDiagnosisAnswers, saveDiagnosisAnswers, type StoreType } from "./diagnosisAnswers";
+import { consumeDiagnosisReturnTo, getDiagnosisAnswers, saveDiagnosisAnswers, type StoreType } from "./diagnosisAnswers";
 
 /**
  * 사업구체화 진단 - 필수 질문 5/6 (Q5 · 매장 운영 형태). 슬롯: storeType.
@@ -29,7 +29,8 @@ function DiagnosisStep4() {
   const handleNext = () => {
     if (storeType === null) return;
     saveDiagnosisAnswers({ storeType });
-    navigate("/diagnosis/6");
+    const returnTo = consumeDiagnosisReturnTo();
+    navigate(returnTo ?? "/diagnosis/6");
   };
 
   if (!ready) return null;

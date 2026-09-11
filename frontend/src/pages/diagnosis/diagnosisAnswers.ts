@@ -31,6 +31,8 @@ export interface DiagnosisAnswers {
   differentiator?: string;
   revenueModel?: string;
   coreSkill?: string;
+  ksicCode?: string;
+  ksicName?: string;
 }
 
 const STORAGE_KEY = "mulkko_diagnosis_answers";
@@ -59,6 +61,29 @@ export function clearDiagnosisAnswers(): void {
     sessionStorage.removeItem(STORAGE_KEY);
   } catch {
     // ignore
+  }
+}
+
+// 11(PSST 확정)에서 Q1~Q6 카드를 눌러 해당 진단 화면으로 돌아갔을 때, 그 화면에서
+// 수정을 마치고 원래 하던 다음 화면(Q7 등) 대신 다시 11로 돌아오게 하는 용도.
+// Step1~5/Select의 제출 핸들러가 이 값이 있으면 그리로, 없으면 평소 다음 화면으로 이동한다.
+const RETURN_TO_KEY = "mulkko_diagnosis_return_to";
+
+export function setDiagnosisReturnTo(path: string): void {
+  try {
+    sessionStorage.setItem(RETURN_TO_KEY, path);
+  } catch {
+    // ignore
+  }
+}
+
+export function consumeDiagnosisReturnTo(): string | null {
+  try {
+    const path = sessionStorage.getItem(RETURN_TO_KEY);
+    if (path) sessionStorage.removeItem(RETURN_TO_KEY);
+    return path;
+  } catch {
+    return null;
   }
 }
 
