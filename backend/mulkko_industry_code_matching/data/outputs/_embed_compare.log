@@ -1,0 +1,28 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+
+=== bge-m3 ===
+  [bge-m3] 인덱스 이미 있음 — 스킵
+Loading weights:   0%|          | 0/391 [00:00<?, ?it/s]Loading weights: 100%|##########| 391/391 [00:00<00:00, 33010.06it/s]
+
+=== kure-v1 ===
+Loading weights:   0%|          | 0/391 [00:00<?, ?it/s]Loading weights:   4%|3         | 14/391 [00:00<00:02, 133.94it/s]Loading weights:   7%|7         | 28/391 [00:00<00:08, 44.91it/s] Loading weights: 100%|##########| 391/391 [00:00<00:00, 612.98it/s]
+  [kure-v1] 재색인 14627건 / 1092s
+
+=== bge-m3-ko ===
+Loading weights:   0%|          | 0/391 [00:00<?, ?it/s]Loading weights:   2%|1         | 6/391 [00:00<00:07, 51.74it/s]Loading weights:   5%|5         | 21/391 [00:00<00:03, 101.16it/s]Loading weights:   8%|8         | 32/391 [00:00<00:07, 47.44it/s] Loading weights: 100%|##########| 391/391 [00:00<00:00, 623.45it/s]
+  [bge-m3-ko] 재색인 14627건 / 128s
+
+=== ko-sroberta ===
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights:   3%|3         | 6/199 [00:00<00:03, 59.42it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 1206.80it/s]
+  [ko-sroberta] 재색인 14627건 / 44s
+
+======================================================================
+임베딩 모델 비교  (원문→검색, LLM 0, gold=gold_set_v3.csv)
+======================================================================
+      model   n  top1  recall@3  recall@10  recall@20  mrr@20
+     bge-m3 158  33.5      51.9       70.3       77.8  0.4585
+    kure-v1 158  41.8      58.2       74.1       79.7  0.5215
+  bge-m3-ko 158  40.5      59.5       72.2       76.6  0.5153
+ko-sroberta 158  28.5      49.4       63.9       74.1  0.4125
+
+Recall@3 최고: bge-m3-ko (59.5%)

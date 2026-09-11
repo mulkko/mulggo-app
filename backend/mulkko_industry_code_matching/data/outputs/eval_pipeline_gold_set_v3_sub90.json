@@ -1,0 +1,1447 @@
+{
+  "summary": {
+    "gold": "business_matching\\gold_set_v3_sub90.csv",
+    "n_total": 90,
+    "n_real": 80,
+    "n_none": 10,
+    "embedding_model": "bge-m3",
+    "top1": 70.0,
+    "recall@3": 82.5,
+    "mrr@pool": 0.5721,
+    "state_distribution": {
+      "추천_가능": 21,
+      "사용자_확인_필요": 59,
+      "정보_추가_필요": 10
+    },
+    "auto(추천_가능)_share_pct": 26.2,
+    "auto(추천_가능)_accuracy_pct": 100.0,
+    "none_detection_pct": 100.0
+  },
+  "literature_targets": {
+    "추천_가능 비중 목표": "~55% (Census ACS 산업코딩)",
+    "추천_가능 정확도 목표": "≥90%",
+    "전체 Top-1 밴드": "65~80% (Schierholz 2021 + 사람 일치 상한)"
+  },
+  "cases": [
+    {
+      "id": "D0169",
+      "category": "구어체",
+      "targets": [
+        "523352"
+      ],
+      "none_case": false,
+      "pred": "523352",
+      "pred_name": "전기용품 및 조명장치 소매업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0166",
+      "category": "구어체",
+      "targets": [
+        "552303"
+      ],
+      "none_case": false,
+      "pred": "552303",
+      "pred_name": "커피 전문점",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 3,
+      "none_ok": false
+    },
+    {
+      "id": "D0171",
+      "category": "구어체",
+      "targets": [
+        "930100"
+      ],
+      "none_case": false,
+      "pred": "930100",
+      "pred_name": "가정용 세탁업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0168",
+      "category": "구어체",
+      "targets": [
+        "524010"
+      ],
+      "none_case": false,
+      "pred": "361006",
+      "pred_name": "소파 및 기타 내장 가구 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 23,
+      "none_ok": false
+    },
+    {
+      "id": "D0167",
+      "category": "구어체",
+      "targets": [
+        "155401"
+      ],
+      "none_case": false,
+      "pred": "151302",
+      "pred_name": "기타 과실ㆍ채소 가공 및 저장 처리업",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 23,
+      "none_ok": false
+    },
+    {
+      "id": "D0178",
+      "category": "구어체",
+      "targets": [
+        "809016"
+      ],
+      "none_case": false,
+      "pred": "809016",
+      "pred_name": "온라인 교육학원",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 5,
+      "none_ok": false
+    },
+    {
+      "id": "D0177",
+      "category": "구어체",
+      "targets": [
+        "722000"
+      ],
+      "none_case": false,
+      "pred": "722000",
+      "pred_name": "응용 소프트웨어 개발 및 공급업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0066",
+      "category": "명확단일",
+      "targets": [
+        "722004"
+      ],
+      "none_case": false,
+      "pred": "722004",
+      "pred_name": "시스템 소프트웨어 개발 및 공급업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0059",
+      "category": "명확단일",
+      "targets": [
+        "722000"
+      ],
+      "none_case": false,
+      "pred": "722000",
+      "pred_name": "응용 소프트웨어 개발 및 공급업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0074",
+      "category": "명확단일",
+      "targets": [
+        "809017"
+      ],
+      "none_case": false,
+      "pred": "809017",
+      "pred_name": "외국어학원",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0006",
+      "category": "명확단일",
+      "targets": [
+        "154901"
+      ],
+      "none_case": false,
+      "pred": "154901",
+      "pred_name": "커피 가공업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0024",
+      "category": "명확단일",
+      "targets": [
+        "922104"
+      ],
+      "none_case": false,
+      "pred": "922104",
+      "pred_name": "가전제품 수리업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0053",
+      "category": "명확단일",
+      "targets": [
+        "292100"
+      ],
+      "none_case": false,
+      "pred": "292100",
+      "pred_name": "농업 및 임업용 기계 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0073",
+      "category": "명확단일",
+      "targets": [
+        "809013"
+      ],
+      "none_case": false,
+      "pred": "809013",
+      "pred_name": "컴퓨터 학원",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0014",
+      "category": "명확단일",
+      "targets": [
+        "522061"
+      ],
+      "none_case": false,
+      "pred": "522061",
+      "pred_name": "빵류, 과자류 및 당류 소매업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 5,
+      "none_ok": false
+    },
+    {
+      "id": "D0041",
+      "category": "명확단일",
+      "targets": [
+        "210201"
+      ],
+      "none_case": false,
+      "pred": "210201",
+      "pred_name": "판지 상자 및 용기 제조업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0019",
+      "category": "명확단일",
+      "targets": [
+        "523236"
+      ],
+      "none_case": false,
+      "pred": "523236",
+      "pred_name": "가죽 및 모피 의복 소매업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0075",
+      "category": "명확단일",
+      "targets": [
+        "809009"
+      ],
+      "none_case": false,
+      "pred": "809009",
+      "pred_name": "음악학원",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 9,
+      "none_ok": false
+    },
+    {
+      "id": "D0048",
+      "category": "명확단일",
+      "targets": [
+        "011002"
+      ],
+      "none_case": false,
+      "pred": "011002",
+      "pred_name": "화훼작물 재배업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0065",
+      "category": "명확단일",
+      "targets": [
+        "515050"
+      ],
+      "none_case": false,
+      "pred": "515050",
+      "pred_name": "컴퓨터 및 주변장치, 소프트웨어 도매업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0022",
+      "category": "명확단일",
+      "targets": [
+        "524001"
+      ],
+      "none_case": false,
+      "pred": "524001",
+      "pred_name": "공구 소매업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0015",
+      "category": "명확단일",
+      "targets": [
+        "523983"
+      ],
+      "none_case": false,
+      "pred": "523520",
+      "pred_name": "문구용품 및 회화용품 소매업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0032",
+      "category": "명확단일",
+      "targets": [
+        "930203"
+      ],
+      "none_case": false,
+      "pred": "930203",
+      "pred_name": "두발 미용업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 4,
+      "none_ok": false
+    },
+    {
+      "id": "D0036",
+      "category": "명확단일",
+      "targets": [
+        "311003"
+      ],
+      "none_case": false,
+      "pred": "311003",
+      "pred_name": "변압기 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0029",
+      "category": "명확단일",
+      "targets": [
+        "922106"
+      ],
+      "none_case": false,
+      "pred": "922106",
+      "pred_name": "건설ㆍ광업용 기계 및 장비 수리업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 3,
+      "none_ok": false
+    },
+    {
+      "id": "D0001",
+      "category": "명확단일",
+      "targets": [
+        "552303"
+      ],
+      "none_case": false,
+      "pred": "552303",
+      "pred_name": "커피 전문점",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0030",
+      "category": "명확단일",
+      "targets": [
+        "930100"
+      ],
+      "none_case": false,
+      "pred": "930100",
+      "pred_name": "가정용 세탁업",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 6,
+      "none_ok": false
+    },
+    {
+      "id": "D0038",
+      "category": "명확단일",
+      "targets": [
+        "154905"
+      ],
+      "none_case": false,
+      "pred": "154805",
+      "pred_name": "동물성 유지 제조업 | 식물성 유지 제조업 | 수산동물 건조 및 염장품 제조업 | 수산식물 가공 및 저장 처리업 | 기타 과실ㆍ채소 가공 및 저장 처리업 | 기타 곡물 가공품 제조업 | 건강 보조용 액화식품 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 29,
+      "none_ok": false
+    },
+    {
+      "id": "D0012",
+      "category": "명확단일",
+      "targets": [
+        "523390"
+      ],
+      "none_case": false,
+      "pred": "523321",
+      "pred_name": "가전제품 소매업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 3,
+      "none_ok": false
+    },
+    {
+      "id": "D0034",
+      "category": "명확단일",
+      "targets": [
+        "269508"
+      ],
+      "none_case": false,
+      "pred": "269603",
+      "pred_name": "기타 석제품 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0062",
+      "category": "명확단일",
+      "targets": [
+        "642004"
+      ],
+      "none_case": false,
+      "pred": "642004",
+      "pred_name": "포털 및 기타 인터넷 정보 매개 서비스업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0011",
+      "category": "명확단일",
+      "targets": [
+        "512260"
+      ],
+      "none_case": false,
+      "pred": "512260",
+      "pred_name": "비알코올 음료 도매업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0023",
+      "category": "명확단일",
+      "targets": [
+        "725000"
+      ],
+      "none_case": false,
+      "pred": "725000",
+      "pred_name": "컴퓨터 및 주변 기기 수리업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0067",
+      "category": "명확단일",
+      "targets": [
+        "221103"
+      ],
+      "none_case": false,
+      "pred": "221103",
+      "pred_name": "교과서 및 학습 서적 출판업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0054",
+      "category": "명확단일",
+      "targets": [
+        "512212"
+      ],
+      "none_case": false,
+      "pred": "512212",
+      "pred_name": "채소류, 서류 및 향신작물류 도매업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 3,
+      "none_ok": false
+    },
+    {
+      "id": "D0040",
+      "category": "명확단일",
+      "targets": [
+        "251102"
+      ],
+      "none_case": false,
+      "pred": "251101",
+      "pred_name": "고무 타이어 및 튜브 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0051",
+      "category": "명확단일",
+      "targets": [
+        "012103"
+      ],
+      "none_case": false,
+      "pred": "012103",
+      "pred_name": "그 외 기타 축산업(사슴, 토끼)",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 5,
+      "none_ok": false
+    },
+    {
+      "id": "D0061",
+      "category": "명확단일",
+      "targets": [
+        "724002"
+      ],
+      "none_case": false,
+      "pred": "724002",
+      "pred_name": "가상자산 매매 및 중개업 | 그 외 기타 정보 서비스업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0009",
+      "category": "명확단일",
+      "targets": [
+        "512273"
+      ],
+      "none_case": false,
+      "pred": "512273",
+      "pred_name": "커피 및 차류 도매업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0076",
+      "category": "명확단일",
+      "targets": [
+        "940306"
+      ],
+      "none_case": false,
+      "pred": "921505",
+      "pred_name": "미디어콘텐츠창작업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 13,
+      "none_ok": false
+    },
+    {
+      "id": "D0060",
+      "category": "명확단일",
+      "targets": [
+        "722000"
+      ],
+      "none_case": false,
+      "pred": "722000",
+      "pred_name": "응용 소프트웨어 개발 및 공급업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0046",
+      "category": "명확단일",
+      "targets": [
+        "011001"
+      ],
+      "none_case": false,
+      "pred": "011001",
+      "pred_name": "채소작물 재배업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 5,
+      "none_ok": false
+    },
+    {
+      "id": "D0025",
+      "category": "명확단일",
+      "targets": [
+        "922108"
+      ],
+      "none_case": false,
+      "pred": "922108",
+      "pred_name": "가죽, 가방 및 신발 수리업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0035",
+      "category": "명확단일",
+      "targets": [
+        "172903"
+      ],
+      "none_case": false,
+      "pred": "172903",
+      "pred_name": "부직포 및 펠트 제조업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0043",
+      "category": "명확단일",
+      "targets": [
+        "289901"
+      ],
+      "none_case": false,
+      "pred": "289901",
+      "pred_name": "금속선 가공제품 제조업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0070",
+      "category": "명확단일",
+      "targets": [
+        "221104"
+      ],
+      "none_case": false,
+      "pred": "221104",
+      "pred_name": "만화 출판업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 5,
+      "none_ok": false
+    },
+    {
+      "id": "D0152",
+      "category": "복합",
+      "targets": [
+        "552303"
+      ],
+      "none_case": false,
+      "pred": "552303",
+      "pred_name": "커피 전문점",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0160",
+      "category": "복합",
+      "targets": [
+        "011008"
+      ],
+      "none_case": false,
+      "pred": "712100",
+      "pred_name": "기타 산업용 기계 및 장비 임대업",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0156",
+      "category": "복합",
+      "targets": [
+        "930100"
+      ],
+      "none_case": false,
+      "pred": "930100",
+      "pred_name": "가정용 세탁업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0162",
+      "category": "복합",
+      "targets": [
+        "722000"
+      ],
+      "none_case": false,
+      "pred": "642004",
+      "pred_name": "포털 및 기타 인터넷 정보 매개 서비스업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": false
+    },
+    {
+      "id": "D0161",
+      "category": "복합",
+      "targets": [
+        "011004"
+      ],
+      "none_case": false,
+      "pred": "011004",
+      "pred_name": "과실작물 재배업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 3,
+      "none_ok": false
+    },
+    {
+      "id": "D0164",
+      "category": "복합",
+      "targets": [
+        "809013"
+      ],
+      "none_case": false,
+      "pred": "809013",
+      "pred_name": "컴퓨터 학원",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0158",
+      "category": "복합",
+      "targets": [
+        "269506"
+      ],
+      "none_case": false,
+      "pred": "269509",
+      "pred_name": "그 외 기타 콘크리트 제품 및 유사 제품 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 8,
+      "none_ok": false
+    },
+    {
+      "id": "D0088",
+      "category": "유사경계",
+      "targets": [
+        "514971"
+      ],
+      "none_case": false,
+      "pred": "514971",
+      "pred_name": "재생용 재료 수집 및 판매업",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 18,
+      "none_ok": false
+    },
+    {
+      "id": "D0115",
+      "category": "유사경계",
+      "targets": [
+        "242101"
+      ],
+      "none_case": false,
+      "pred": "242104",
+      "pred_name": "생물 살균ㆍ살충제 및 식물보호제 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0129",
+      "category": "유사경계",
+      "targets": [
+        "221100"
+      ],
+      "none_case": false,
+      "pred": "221100",
+      "pred_name": "일반 서적 출판업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0110",
+      "category": "유사경계",
+      "targets": [
+        "511111"
+      ],
+      "none_case": false,
+      "pred": "642004",
+      "pred_name": "포털 및 기타 인터넷 정보 매개 서비스업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 9,
+      "none_ok": false
+    },
+    {
+      "id": "D0085",
+      "category": "유사경계",
+      "targets": [
+        "523491"
+      ],
+      "none_case": false,
+      "pred": "930911",
+      "pred_name": "그 외 기타 달리 분류되지 않은 개인 서비스업",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 32,
+      "none_ok": false
+    },
+    {
+      "id": "D0099",
+      "category": "유사경계",
+      "targets": [
+        "922105"
+      ],
+      "none_case": false,
+      "pred": "642004",
+      "pred_name": "포털 및 기타 인터넷 정보 매개 서비스업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": false
+    },
+    {
+      "id": "D0084",
+      "category": "유사경계",
+      "targets": [
+        "155401"
+      ],
+      "none_case": false,
+      "pred": "154901",
+      "pred_name": "커피 가공업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 25,
+      "none_ok": false
+    },
+    {
+      "id": "D0093",
+      "category": "유사경계",
+      "targets": [
+        "725000"
+      ],
+      "none_case": false,
+      "pred": "300100",
+      "pred_name": "컴퓨터 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 12,
+      "none_ok": false
+    },
+    {
+      "id": "D0108",
+      "category": "유사경계",
+      "targets": [
+        "011008"
+      ],
+      "none_case": false,
+      "pred": "011008",
+      "pred_name": "채소, 화훼 및 과실작물 시설 재배업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 8,
+      "none_ok": false
+    },
+    {
+      "id": "D0091",
+      "category": "유사경계",
+      "targets": [
+        "642002"
+      ],
+      "none_case": false,
+      "pred": "642002",
+      "pred_name": "통신 재판매업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 3,
+      "none_ok": false
+    },
+    {
+      "id": "D0125",
+      "category": "유사경계",
+      "targets": [
+        "221103"
+      ],
+      "none_case": false,
+      "pred": "722000",
+      "pred_name": "응용 소프트웨어 개발 및 공급업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 6,
+      "none_ok": false
+    },
+    {
+      "id": "D0107",
+      "category": "유사경계",
+      "targets": [
+        "202903"
+      ],
+      "none_case": false,
+      "pred": "202906",
+      "pred_name": "코르크 및 조물 제품 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0100",
+      "category": "유사경계",
+      "targets": [
+        "922202"
+      ],
+      "none_case": false,
+      "pred": "922203",
+      "pred_name": "자동차 세차업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 3,
+      "none_ok": false
+    },
+    {
+      "id": "D0105",
+      "category": "유사경계",
+      "targets": [
+        "154905"
+      ],
+      "none_case": false,
+      "pred": "154905",
+      "pred_name": "차류 가공업",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 7,
+      "none_ok": false
+    },
+    {
+      "id": "D0090",
+      "category": "유사경계",
+      "targets": [
+        "523552"
+      ],
+      "none_case": false,
+      "pred": "523552",
+      "pred_name": "기타 광학 및 정밀 기기 소매업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0128",
+      "category": "유사경계",
+      "targets": [
+        "809009"
+      ],
+      "none_case": false,
+      "pred": "809009",
+      "pred_name": "음악학원",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 3,
+      "none_ok": false
+    },
+    {
+      "id": "D0122",
+      "category": "유사경계",
+      "targets": [
+        "602309"
+      ],
+      "none_case": false,
+      "pred": "602309",
+      "pred_name": "화물 운송 중개, 대리 및 관련 서비스업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0130",
+      "category": "유사경계",
+      "targets": [
+        "221900"
+      ],
+      "none_case": false,
+      "pred": "221900",
+      "pred_name": "기타 인쇄물 출판업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 8,
+      "none_ok": false
+    },
+    {
+      "id": "D0112",
+      "category": "유사경계",
+      "targets": [
+        "014302"
+      ],
+      "none_case": false,
+      "pred": "014302",
+      "pred_name": "작물재배 지원 서비스업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0109",
+      "category": "유사경계",
+      "targets": [
+        "292100"
+      ],
+      "none_case": false,
+      "pred": "331206",
+      "pred_name": "기기용 자동 측정 및 제어장치 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 9,
+      "none_ok": false
+    },
+    {
+      "id": "D0123",
+      "category": "유사경계",
+      "targets": [
+        "940926"
+      ],
+      "none_case": false,
+      "pred": "722000",
+      "pred_name": "응용 소프트웨어 개발 및 공급업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": 17,
+      "none_ok": false
+    },
+    {
+      "id": "D0118",
+      "category": "유사경계",
+      "targets": [
+        "672000"
+      ],
+      "none_case": false,
+      "pred": "672000",
+      "pred_name": "보험 대리 및 중개업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 5,
+      "none_ok": false
+    },
+    {
+      "id": "D0101",
+      "category": "유사경계",
+      "targets": [
+        "269508"
+      ],
+      "none_case": false,
+      "pred": "269504",
+      "pred_name": "인조대리석 제품 제조업 | 콘크리트 타일, 기와, 벽돌 및 블록 제조업",
+      "state": "사용자_확인_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 2,
+      "none_ok": false
+    },
+    {
+      "id": "D0080",
+      "category": "유사경계",
+      "targets": [
+        "552303"
+      ],
+      "none_case": false,
+      "pred": "552307",
+      "pred_name": "기타 비알코올 음료점업",
+      "state": "사용자_확인_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0078",
+      "category": "유사경계",
+      "targets": [
+        "154901"
+      ],
+      "none_case": false,
+      "pred": "154901",
+      "pred_name": "커피 가공업",
+      "state": "사용자_확인_필요",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0096",
+      "category": "유사경계",
+      "targets": [
+        "930100"
+      ],
+      "none_case": false,
+      "pred": "930100",
+      "pred_name": "가정용 세탁업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "D0121",
+      "category": "유사경계",
+      "targets": [
+        "724002"
+      ],
+      "none_case": false,
+      "pred": "724002",
+      "pred_name": "가상자산 매매 및 중개업 | 그 외 기타 정보 서비스업",
+      "state": "추천_가능",
+      "confidence": "high",
+      "top1": true,
+      "recall3": true,
+      "pool_rank": 1,
+      "none_ok": false
+    },
+    {
+      "id": "N004",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "552101",
+      "pred_name": "한식 일반 음식점업",
+      "state": "정보_추가_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    },
+    {
+      "id": "N006",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "730006",
+      "pred_name": "기타 공학 연구개발업",
+      "state": "정보_추가_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    },
+    {
+      "id": "N011",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "749942",
+      "pred_name": "기타 전문 서비스업",
+      "state": "정보_추가_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    },
+    {
+      "id": "N007",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "749942",
+      "pred_name": "기타 전문 서비스업",
+      "state": "정보_추가_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    },
+    {
+      "id": "N015",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "642004",
+      "pred_name": "포털 및 기타 인터넷 정보 매개 서비스업",
+      "state": "정보_추가_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    },
+    {
+      "id": "N020",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "722005",
+      "pred_name": "컴퓨터 프로그래밍 서비스업",
+      "state": "정보_추가_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    },
+    {
+      "id": "N016",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "930925",
+      "pred_name": "그 외 기타 달리 분류되지 않은 개인 서비스업",
+      "state": "정보_추가_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    },
+    {
+      "id": "N010",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "722000",
+      "pred_name": "응용 소프트웨어 개발 및 공급업",
+      "state": "정보_추가_필요",
+      "confidence": "low",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    },
+    {
+      "id": "N019",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "741400",
+      "pred_name": "경영 컨설팅업",
+      "state": "정보_추가_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    },
+    {
+      "id": "N005",
+      "category": "정보부족",
+      "targets": [],
+      "none_case": true,
+      "pred": "741300",
+      "pred_name": "시장 조사 및 여론 조사업",
+      "state": "정보_추가_필요",
+      "confidence": "mid",
+      "top1": false,
+      "recall3": false,
+      "pool_rank": null,
+      "none_ok": true
+    }
+  ]
+}
