@@ -55,8 +55,10 @@ TARGET_REFERENCE_PATTERNS = [
 # 0. RAW 조회
 # ==================================================================
 
-def load_raw_kstartup_from_postgres(only_unprocessed: bool = False, limit: int | None = None) -> pd.DataFrame:
-    """limit: 소량만 먼저 확인하거나 여러 번에 나눠 돌릴 때 씀 (sync_bizinfo_announcements.py와 동일 이유)."""
+def load_raw_kstartup_from_postgres(
+    only_unprocessed: bool = False, limit: int | None = None, offset: int | None = None
+) -> pd.DataFrame:
+    """limit/offset: 소량만 먼저 확인하거나 여러 번에 나눠 돌릴 때 씀 (sync_bizinfo_announcements.py와 동일 이유)."""
     conn = get_connection()
     try:
         if only_unprocessed:
@@ -71,6 +73,8 @@ def load_raw_kstartup_from_postgres(only_unprocessed: bool = False, limit: int |
             query = "SELECT * FROM announcements_raw_kstartup ORDER BY raw_kstartup_id"
         if limit:
             query += f" LIMIT {int(limit)}"
+        if offset:
+            query += f" OFFSET {int(offset)}"
         return pd.read_sql(query, conn)
     finally:
         conn.close()
@@ -514,8 +518,8 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
 # 실행
 # ==================================================================
 
-def run(only_unprocessed: bool = True, limit: int | None = None):
-    raw_df = load_raw_kstartup_from_postgres(only_unprocessed=only_unprocessed, limit=limit)
+def run(only_unprocessed: bool = True, limit: int | None = None, offset: int | None = None):
+    raw_df = load_raw_kstartup_from_postgres(only_unprocessed=only_unprocessed, limit=limit, offset=offset)
     print(f"RAW 조회: {len(raw_df)}건")
     if raw_df.empty:
         return
@@ -548,5 +552,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=None, help="테스트/분할 실행용: 이번 실행에서 처리할 최대 건수")
+    parser.add_argument("--offset", type=int, default=None, help="--all과 같이 배치 나눠 돌릴 때 시작 위치")
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="이미 announcements에 반영된 공고도 포함해 전부 다시 처리(재검증/로그 확인용). "
+        "기본은 아직 반영 안 된 것만 처리",
+    )
     args = parser.parse_args()
-    run(limit=args.limit)
+    run(only_unprocessed=not args.all, limit=args.limit, offset=args.offset)

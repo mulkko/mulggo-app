@@ -98,6 +98,26 @@ async def biz_cert_ocr_endpoint(file: UploadFile = File(...)) -> dict:
                 business_item = ", ".join(i for i in groups[0].get("종목", []) if i.strip())
         except Exception as e:
             print(f"[업태/종목 추출 실패] {e}")
+
+        # [2026-09-11] 업태/종목 OCR이 아예 실패하거나, 글자는 읽었어도 우리 KSIC
+        # 참고표에 없는 표현이면 업종코드를 알 방법이 없다 - 그 경우 프론트가 사용자에게
+        # 직접 선택(GET /api/ksic/options 기반 셀렉트박스)하게 하도록, 여기선 "자동으로
+        # 확신 있게 매칭됐는지"만 판단해서 결과에 같이 실어 보낸다. 실시간 응답 경로라
+        # LLM 폴백(2단계, 느림·비용)은 빼고 결정적 매칭(1단계)만 시도 - 실패하면 그냥
+        # 매칭 없음으로 두고 선택은 사용자 몫으로 넘긴다.
+        ksic_code, ksic_name = "", ""
+        combined = f"{business_category} {business_item}".strip()
+        if combined:
+            try:
+                from backend.ml.classifier.decide_industry import decide_industry, needs_human_review
+
+                match = decide_industry(combined, use_llm_fallback=False)
+                codes = (match or {}).get("확정코드") or []
+                if match and not needs_human_review(match) and len(codes) == 1:
+                    ksic_code = codes[0]
+                    ksic_name = match["확정업종명"][0]
+            except Exception as e:
+                print(f"[업종코드 자동매칭 실패] {e}")
     except Exception as e:
         error_type, error_label = classify_ocr_error(e)
         result["error_type"] = error_type
@@ -112,6 +132,8 @@ async def biz_cert_ocr_endpoint(file: UploadFile = File(...)) -> dict:
     result["extracted"] = _extracted_to_fields(entity_type, biz_cert)
     result["extracted"]["business_category"] = business_category
     result["extracted"]["business_item"] = business_item
+    result["extracted"]["ksic_code"] = ksic_code
+    result["extracted"]["ksic_name"] = ksic_name
     return result
 
 

@@ -312,18 +312,36 @@ def _sync_log_path(source: str) -> Path:
     return SYNC_LOG_DIR / f"sync_{source}.log"
 
 
-def _run_sync(source: str, limit: int | None = None) -> None:
+def _run_sync(
+    source: str, limit: int | None = None, offset: int | None = None, reprocess_all: bool = False
+) -> None:
     SYNC_LOG_DIR.mkdir(exist_ok=True)
     log_path = _sync_log_path(source)
     started = datetime.now().isoformat(timespec="seconds")
     returncode = None
     try:
-        with open(log_path, "w", encoding="utf-8") as log_file:
-            log_file.write(f"=== 시작: {started} · source={source}" + (f" · limit={limit} ===\n" if limit else " ===\n"))
+        # [2026-09-11] "통합 반영(임시)" 화면에서 reprocess_all=True로 이미 반영된
+        # 공고까지 재검증할 때, 실행마다 로그가 덮어써지면(원래 "w") 여러 번에 나눠
+        # 돌린 배치들의 결과를 이어서 못 본다 - append("a")로 계속 쌓이게 한다.
+        # ponytail: 로그 파일이 무한정 커질 수 있음 - 문제되면 그때 rotate/truncate 추가.
+        with open(log_path, "a", encoding="utf-8") as log_file:
+            params = []
+            if limit:
+                params.append(f"limit={limit}")
+            if offset:
+                params.append(f"offset={offset}")
+            if reprocess_all:
+                params.append("all=true")
+            suffix = f" · {' · '.join(params)}" if params else ""
+            log_file.write(f"\n=== 시작: {started} · source={source}{suffix} ===\n")
             log_file.flush()
             cmd = [sys.executable, "-m", SYNC_MODULES[source]]
             if limit:
                 cmd += ["--limit", str(limit)]
+            if offset:
+                cmd += ["--offset", str(offset)]
+            if reprocess_all:
+                cmd += ["--all"]
             completed = subprocess.run(  # noqa: S603 - 고정된 내부 모듈만 실행
                 cmd,
                 stdout=log_file,
@@ -357,10 +375,20 @@ def _run_sync(source: str, limit: int | None = None) -> None:
 
 
 @router.post("/sync")
-def run_sync(source: str, background_tasks: BackgroundTasks, limit: int | None = None) -> JSONResponse:
+def run_sync(
+    source: str,
+    background_tasks: BackgroundTasks,
+    limit: int | None = None,
+    offset: int | None = None,
+    reprocess_all: bool = False,
+) -> JSONResponse:
     """raw -> announcements 통합 반영을 백그라운드로 시작하고 즉시 반환한다.
-    limit: 지정하면 이번 실행에서 그 건수만 처리(테스트/분할 실행용). only_unprocessed=True라
-    이미 반영된 건은 자동으로 빠지므로, 같은 limit으로 반복 호출하면 다음 구간이 이어서 처리된다."""
+    limit: 지정하면 이번 실행에서 그 건수만 처리(테스트/분할 실행용).
+    reprocess_all=False(기본)면 only_unprocessed=True라 이미 반영된 건은 자동으로
+    빠지므로, 같은 limit으로 반복 호출하면 다음 구간이 이어서 처리된다.
+    reprocess_all=True면 이미 반영된 건도 전부 다시 처리한다(재검증/로그 확인용,
+    "통합 반영(임시)" 화면 전용) - 이땐 매번 같은 앞부분만 잡히지 않도록 배치마다
+    offset을 직접 늘려가며 호출해야 한다."""
     if source not in SYNC_MODULES:
         return JSONResponse(
             status_code=400,
@@ -387,10 +415,13 @@ def run_sync(source: str, background_tasks: BackgroundTasks, limit: int | None =
             )
         _running_syncs.add(source)
 
-    background_tasks.add_task(_run_sync, source, limit)
+    background_tasks.add_task(_run_sync, source, limit, offset, reprocess_all)
     return JSONResponse(
         status_code=202,
-        content={"success": True, "data": {"source": source, "status": "started", "limit": limit}},
+        content={
+            "success": True,
+            "data": {"source": source, "status": "started", "limit": limit, "offset": offset},
+        },
     )
 
 
@@ -412,6 +443,27 @@ def get_sync_status(source: str) -> dict:
             log_text = "…(앞부분 생략)…\n" + log_text
 
     return {"success": True, "data": {"source": source, "running": running, "log": log_text}}
+
+
+@router.post("/sync-log/clear")
+def clear_sync_log(source: str) -> dict:
+    """logs/sync_<source>.log를 비운다. 재검증(reprocess_all) 로그가 실행마다 안
+    지워지고 계속 쌓이게 바꾸면서(_run_sync 참고), 로그 형식이 바뀌었을 때나
+    그냥 처음부터 새로 보고 싶을 때 옛날 내용이 섞여 헷갈리지 않도록 쓴다."""
+    if source not in SYNC_MODULES:
+        return {"success": False, "error": {"message": f"알 수 없는 소스: {source}", "code": "UNKNOWN_SOURCE"}}
+
+    with _running_lock:
+        if source in _running_syncs:
+            return {
+                "success": False,
+                "error": {"message": f"{source} 실행 중에는 로그를 지울 수 없습니다.", "code": "ALREADY_RUNNING"},
+            }
+
+    log_path = _sync_log_path(source)
+    if log_path.exists():
+        log_path.unlink()
+    return {"success": True, "data": {"source": source}}
 
 
 @router.get("/batch-logs")

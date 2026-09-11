@@ -11,15 +11,15 @@
 
 - **백엔드**: FastAPI
 - **프론트엔드**: React (Vite + TypeScript)
-- **DB**: Supabase (PostgreSQL)
-- **벡터DB**: Chroma (서버 모드)
-- **ORM**: SQLAlchemy
+- **DB**: Supabase (PostgreSQL) — `backend/db/connection.py::get_connection()`이 psycopg2로 직접 접속, **ORM 없이 raw SQL**로 쓴다.
+  (`requirements.txt`에 SQLAlchemy가 올라있지만 실제로 import하는 코드는 없다 — 미사용 의존성이니 새 코드에서 끌어다 쓰지 말 것.)
+- **벡터DB**: Chroma — `backend/ml/industry_code_matching/business_matching/`에서 실사용 중
 
 ## 3. 인증 방식
 
 - 비밀번호: **bcrypt** 해싱
-- 민감 필드: **Fernet** 암호화
-- 로컬 개발 환경: **SQLite** 사용 (Supabase 대신 로컬 DB로 개발)
+- 민감 필드 암호화: **미구현** (Fernet 등 어떤 방식도 아직 없음 — 필요해지면 구현 필요)
+- 로컬 개발 환경: 별도 로컬 DB 없이 팀 전체가 **Supabase(클라우드)에 직접 접속**해서 개발한다 (SQLite 미사용)
 
 ## 4. 폴더 구조
 
