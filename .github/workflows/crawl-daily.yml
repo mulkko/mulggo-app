@@ -9,8 +9,11 @@ name: crawl-daily
 
 on:
   schedule:
-    # KST 04:00 = UTC 19:00 (한국은 서머타임 없음)
-    - cron: "0 19 * * *"
+    # KST 04:07 = UTC 19:07 (한국은 서머타임 없음)
+    # [2026-09-11] 정시(0분)는 GitHub Actions 스케줄 실행이 몰려서 지연되기 쉽다고
+    # 공식 문서가 권장 -> 정시에서 7분 벗어나게 조정. (9/11에 04:00 요청이 실제로는
+    # 06:20경 시작돼 kstartup 크롤이 지연·실패한 사례가 있었음)
+    - cron: "7 19 * * *"
   workflow_dispatch: {}
 
 concurrency:
