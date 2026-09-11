@@ -226,7 +226,7 @@ function MyPage() {
         <button
           type="button"
           className={styles.contactBtn}
-          aria-label="고객센터"
+          aria-label="1:1 문의"
           onClick={handleContactClick}
         >
           <svg
