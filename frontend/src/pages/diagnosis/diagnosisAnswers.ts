@@ -13,15 +13,24 @@
 
 export type Origin = "problem" | "opportunity";
 
+// ①고객방문형 오프라인 매장·공간 / ②예약 방문형 서비스 공간 / ③배달·제조 중심 고객방문없음 /
+// ④온라인 판매·중개 플랫폼 / ⑤앱·소프트웨어·디지털 서비스
+export type StoreType = "offline" | "booking" | "delivery" | "online" | "digital";
+
 export interface DiagnosisAnswers {
   origin?: Origin;
   seedInterest?: string;
   problemToSolve?: string;
   solutionApproach?: string;
   hasStore?: boolean;
+  storeType?: StoreType;
   sido?: string;
   sigungu?: string;
   dong?: string;
+  target?: string;
+  differentiator?: string;
+  revenueModel?: string;
+  coreSkill?: string;
 }
 
 const STORAGE_KEY = "mulkko_diagnosis_answers";

@@ -1,30 +1,30 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.svg";
-import styles from "../../styles/ideaChoice.module.css";
+import styles from "../../styles/diagnosisChoice.module.css";
 
 /**
- * 진단 방식 선택 화면 (`/idea/choice`).
+ * 진단 방식 선택 화면 (`/diagnosis/choice`).
  *
  * 프로토타입 라벨 "05-1 진단 방식 선택" (내부 키 is.ideaChoice).
  * 사업 아이디어 구체화에 들어가기 전, 빠른 매칭 / 정밀 구체화 두 방식 중
- * 하나를 고르는 분기 화면. 두 카드 모두 사업구체화 진단 플로우(/diagnosis/select)로
+ * 하나를 고르는 분기 화면. 두 카드 모두 사업구체화 진단 플로우(Q1, /diagnosis/1)로
  * 이어진다 — 빠른 매칭 / 정밀 구체화에 따른 질문 수 분기는 추후 반영 예정.
  * 백엔드 / URL 파라미터 연동 없음.
  *
  * 값(색상/radius/shadow)은 webTokens.css 토큰만 사용한다.
  */
 
-function IdeaChoice() {
+function DiagnosisChoice() {
   const navigate = useNavigate();
 
   const startFast = () => {
-    // TODO: "빠른 매칭"(질문 6개) 트랙 분기는 추후 반영 — 지금은 공통 진단 플로우로 진입
-    navigate("/diagnosis/select");
+    // TODO: "빠른 매칭"(질문 6개) 트랙 분기는 추후 반영 — 지금은 공통 질문 플로우로 진입
+    navigate("/diagnosis/1");
   };
 
   const startPrecise = () => {
-    // TODO: "정밀 구체화"(질문 10개) 트랙 분기는 추후 반영 — 지금은 공통 진단 플로우로 진입
-    navigate("/diagnosis/select");
+    // TODO: "정밀 구체화"(질문 10개) 트랙 분기는 추후 반영 — 지금은 공통 질문 플로우로 진입
+    navigate("/diagnosis/1");
   };
 
   return (
@@ -86,4 +86,4 @@ function IdeaChoice() {
   );
 }
 
-export default IdeaChoice;
+export default DiagnosisChoice;

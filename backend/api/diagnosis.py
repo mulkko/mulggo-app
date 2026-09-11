@@ -32,6 +32,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from backend.auth.session import get_current_user_id
+from backend.chatbot.idea_card_generator import call_llm_for_idea_cards
+from backend.chatbot.real_llm_client import call_llm
 from backend.db.connection import get_connection
 
 router = APIRouter(prefix="/api/diagnosis", tags=["diagnosis"])
@@ -50,6 +52,10 @@ class DiagnosisSubmitRequest(BaseModel):
     sido: str
     sigungu: str
     dong: str
+    target: str = ""
+    differentiator: str = ""
+    revenue_model: str = ""
+    core_skill: str = ""
 
 
 @router.post("/submit")
@@ -86,4 +92,16 @@ def submit_diagnosis(payload: DiagnosisSubmitRequest, user_id: int = Depends(get
     finally:
         conn.close()
 
-    return JSONResponse(content={"success": True, "data": {"session_id": session_id}})
+    slots = {
+        "target": payload.target,
+        "differentiator": payload.differentiator,
+        "revenue_model": payload.revenue_model,
+        "core_skill": payload.core_skill,
+    }
+    try:
+        card_result = call_llm_for_idea_cards(slots, llm_client=call_llm)
+        cards = card_result.get("cards", [])
+    except Exception:
+        cards = []  # 카드 생성 실패해도 세션 저장은 이미 끝났으니 요청 자체는 성공 처리
+
+    return JSONResponse(content={"success": True, "data": {"session_id": session_id, "cards": cards}})

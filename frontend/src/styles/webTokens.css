@@ -189,4 +189,18 @@
   --color-navy-mist: #e7ecf8; /* "정밀 구체화" 카드 pill 배경 (--color-teal-mist의 네이비 버전) */
   --shadow-idea-card-navy: 0 0 0 1.5px rgba(21, 50, 140, 0.4), 0 10px 26px -18px rgba(21, 50, 140, 0.35); /* "정밀 구체화" 카드 기본 (--shadow-onboarding-card의 링 색 네이비 버전) */
   --shadow-idea-card-navy-hover: 0 0 0 1.5px rgba(21, 50, 140, 0.7), 0 14px 30px -16px rgba(21, 50, 140, 0.4); /* "정밀 구체화" 카드 hover */
+
+  /* ===== 사업구체화 질문 화면 전용 (06~10-4, isQ) ===== */
+  /* 재사용: 진행바 배경 --color-dot-inactive, 채움 --color-navy-sphere, 스텝뱃지 --color-stone-gray
+     + --color-stone-mist, 토픽뱃지 --color-teal-green + --color-teal-mist, 제목 --color-ink-charcoal,
+     설명 --color-stone-gray, textarea 배경 --color-stone-mist + radius --radius-card,
+     "다음" 버튼 --color-light-teal + hover --color-light-teal-hover-strong, 버튼 radius --radius-cta,
+     "이전" 버튼 테두리 --shadow-inset-gray-strong 재사용 */
+  --shadow-inset-gray-strong-hover: inset 0 0 0 1.5px #8b8d93; /* "이전" 버튼 hover (--shadow-inset-gray-strong의 hover 상태) */
+
+  /* ===== 사업구체화 진단 슬롯필링 화면 전용 (07 출발점선택 / 09-1 매장운영형태, isDiag) ===== */
+  /* 재사용: 라디오카드 기본 테두리 --shadow-inset-gray-strong, 카드 radius --radius-card(14px),
+     라디오 원 테두리 색 --color-border-dashed(rgba(139,141,147,.3)), 선택 dot 색 --color-deep-navy,
+     제목 --color-ink-charcoal, 설명 --color-stone-gray */
+  --shadow-inset-teal-strong: inset 0 0 0 1.5px #3fb6a8; /* 라디오카드 hover 테두리 (--shadow-inset-teal은 1px라 재사용 불가) */
 }
