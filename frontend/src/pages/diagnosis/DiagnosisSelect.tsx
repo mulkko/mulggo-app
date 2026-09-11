@@ -30,7 +30,7 @@ function DiagnosisSelect() {
 
   const choose = (origin: Origin) => {
     saveDiagnosisAnswers({ origin });
-    navigate("/diagnosis/2");
+    navigate("/diagnosis/3");
   };
 
   if (!ready) return null;

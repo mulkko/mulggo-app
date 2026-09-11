@@ -31,7 +31,7 @@ function DiagnosisStep2() {
 
   const handleSubmit = (value: string) => {
     saveDiagnosisAnswers({ problemToSolve: value });
-    navigate("/diagnosis/3");
+    navigate("/diagnosis/4");
   };
 
   if (!ready) return null;

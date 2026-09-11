@@ -17,18 +17,18 @@ function DiagnosisStep7() {
   useEffect(() => {
     const answers = getDiagnosisAnswers();
     if (!answers.sido || !answers.sigungu || !answers.dong) {
-      navigate("/diagnosis/5", { replace: true });
+      navigate("/diagnosis/6", { replace: true });
       return;
     }
     setInitialValue(answers.differentiator ?? "");
     setReady(true);
   }, [navigate]);
 
-  const handleBack = () => navigate("/diagnosis/6");
+  const handleBack = () => navigate("/diagnosis/7");
 
   const handleSubmit = (value: string) => {
     saveDiagnosisAnswers({ differentiator: value });
-    navigate("/diagnosis/8");
+    navigate("/diagnosis/9");
   };
 
   if (!ready) return null;

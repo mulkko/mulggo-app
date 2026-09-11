@@ -130,7 +130,7 @@ function Home() {
 
         {isLoggedIn ? (
           // [2026-09-11] 진단 진입점 /diagnosis/choice(빠른매칭 vs 정밀구체화) → /diagnosis/1(Q1) →
-          // /diagnosis/select(Q2) → /diagnosis/2~9. 업종코드 매칭/분석 리포트 연결은 아직 준비 중이라
+          // /diagnosis/select(Q2) → /diagnosis/3~10. 업종코드 매칭/분석 리포트 연결은 아직 준비 중이라
           // 질문 흐름까지만 동작함.
           <>
             <button

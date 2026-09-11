@@ -24,12 +24,12 @@ function DiagnosisStep4() {
     setReady(true);
   }, [navigate]);
 
-  const handleBack = () => navigate("/diagnosis/3");
+  const handleBack = () => navigate("/diagnosis/4");
 
   const handleNext = () => {
     if (storeType === null) return;
     saveDiagnosisAnswers({ storeType });
-    navigate("/diagnosis/5");
+    navigate("/diagnosis/6");
   };
 
   if (!ready) return null;

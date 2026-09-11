@@ -110,14 +110,14 @@ function App() {
         <Route path="/support" element={<CustomerSupport />} />
         <Route path="/diagnosis/select" element={<DiagnosisSelect />} />
         <Route path="/diagnosis/1" element={<DiagnosisStep1 />} />
-        <Route path="/diagnosis/2" element={<DiagnosisStep2 />} />
-        <Route path="/diagnosis/3" element={<DiagnosisStep3 />} />
-        <Route path="/diagnosis/4" element={<DiagnosisStep4 />} />
-        <Route path="/diagnosis/5" element={<DiagnosisStep5 />} />
-        <Route path="/diagnosis/6" element={<DiagnosisStep6 />} />
-        <Route path="/diagnosis/7" element={<DiagnosisStep7 />} />
-        <Route path="/diagnosis/8" element={<DiagnosisStep8 />} />
-        <Route path="/diagnosis/9" element={<DiagnosisStep9 />} />
+        <Route path="/diagnosis/3" element={<DiagnosisStep2 />} />
+        <Route path="/diagnosis/4" element={<DiagnosisStep3 />} />
+        <Route path="/diagnosis/5" element={<DiagnosisStep4 />} />
+        <Route path="/diagnosis/6" element={<DiagnosisStep5 />} />
+        <Route path="/diagnosis/7" element={<DiagnosisStep6 />} />
+        <Route path="/diagnosis/8" element={<DiagnosisStep7 />} />
+        <Route path="/diagnosis/9" element={<DiagnosisStep8 />} />
+        <Route path="/diagnosis/10" element={<DiagnosisStep9 />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />
