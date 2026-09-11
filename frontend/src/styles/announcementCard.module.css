@@ -56,10 +56,27 @@
   padding-right: 22px;
 }
 
+.agencyGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .agency {
   font-size: 11.5px;
   font-weight: 500;
   color: var(--color-deep-navy);
+}
+
+/* [임시] 매칭된 업종코드 확인용 - 확인 끝나면 제거 */
+.ksicDebug {
+  margin: 0;
+  font-size: 10px;
+  color: var(--color-stone-gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dday {
