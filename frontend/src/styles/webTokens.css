@@ -197,4 +197,10 @@
      "다음" 버튼 --color-light-teal + hover --color-light-teal-hover-strong, 버튼 radius --radius-cta,
      "이전" 버튼 테두리 --shadow-inset-gray-strong 재사용 */
   --shadow-inset-gray-strong-hover: inset 0 0 0 1.5px #8b8d93; /* "이전" 버튼 hover (--shadow-inset-gray-strong의 hover 상태) */
+
+  /* ===== 사업구체화 진단 슬롯필링 화면 전용 (07 출발점선택 / 09-1 매장운영형태, isDiag) ===== */
+  /* 재사용: 라디오카드 기본 테두리 --shadow-inset-gray-strong, 카드 radius --radius-card(14px),
+     라디오 원 테두리 색 --color-border-dashed(rgba(139,141,147,.3)), 선택 dot 색 --color-deep-navy,
+     제목 --color-ink-charcoal, 설명 --color-stone-gray */
+  --shadow-inset-teal-strong: inset 0 0 0 1.5px #3fb6a8; /* 라디오카드 hover 테두리 (--shadow-inset-teal은 1px라 재사용 불가) */
 }

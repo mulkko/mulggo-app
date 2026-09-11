@@ -1,7 +1,7 @@
 /* 고객센터 챗봇 화면. 짝꿍 컴포넌트: pages/support/CustomerSupport.tsx
    값(색상/radius)은 webTokens.css 토큰만 사용한다.
-   백엔드 backend/api/support.py(POST /api/support/chat)는 이미 있었는데 프론트가
-   없어서 그냥 붙임(테스트용, 2026-09-10) - 디자인 시안 없이 최소 형태로 구현. */
+   프로토타입(260910_2008_Mulkko Prototype standalone.html, is.csChat) 실측값 기준
+   디자인 반영(2026-09-11). 백엔드 연동은 그대로. */
 
 .page {
   display: flex;
@@ -41,6 +41,22 @@
   display: block;
 }
 
+.headerAvatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-light-teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.headerAvatar svg {
+  width: 18px;
+  height: 18px;
+}
+
 .headerTitle {
   font-size: var(--font-size-h1);
   font-weight: var(--font-weight-h1);
@@ -59,11 +75,29 @@
 .botBubbleRow {
   display: flex;
   justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .userBubbleRow {
   display: flex;
   justify-content: flex-end;
+}
+
+.botAvatar {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-light-teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.botAvatar svg {
+  width: 16px;
+  height: 16px;
 }
 
 .botBubble,
@@ -90,9 +124,23 @@
 }
 
 .humanHint {
-  margin: 2px 0 0;
-  max-width: 78%;
-  font-size: var(--font-size-caption);
+  display: inline-block;
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+  background: var(--color-teal-mist);
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+}
+
+.loadingBubble {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-input);
+  border-top-left-radius: 4px;
+  font-size: var(--font-size-body);
+  background: var(--color-stone-mist);
   color: var(--color-stone-gray);
 }
 
@@ -103,9 +151,42 @@
   text-align: center;
 }
 
+.chipRow {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+  overflow-x: auto;
+}
+
+.chip {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--color-ink-charcoal);
+  background: var(--color-white);
+  padding: 7px 12px;
+  border: none;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1.2px var(--color-border-dashed);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1.2px var(--color-light-teal);
+}
+
+.chip:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .inputBar {
   flex-shrink: 0;
   display: flex;
+  align-items: center;
   gap: 8px;
   padding: 12px 16px 20px;
   border-top: 1px solid var(--color-border-web);
@@ -115,14 +196,14 @@
 .input {
   flex: 1;
   min-width: 0;
-  height: var(--input-height-min);
-  border: 1px solid var(--color-stone-gray);
-  border-radius: var(--radius-input);
+  height: 46px;
+  border: 1.5px solid var(--color-border-dashed);
+  border-radius: var(--radius-pill);
   padding: 0 var(--input-padding-x-min);
   font-size: var(--font-size-body);
   font-family: inherit;
   color: var(--color-ink-charcoal);
-  background: var(--color-stone-mist);
+  background: var(--color-white);
   box-sizing: border-box;
 }
 
@@ -136,16 +217,20 @@
 
 .sendButton {
   flex-shrink: 0;
-  height: var(--input-height-min);
-  padding: 0 18px;
+  width: 46px;
+  height: 46px;
   border: none;
-  border-radius: var(--radius-input);
+  border-radius: 50%;
   background: var(--color-light-teal);
-  color: var(--color-white);
-  font-size: 14px;
-  font-weight: 700;
-  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+}
+
+.sendButton svg {
+  width: 20px;
+  height: 20px;
 }
 
 .sendButton:hover:not(:disabled) {
