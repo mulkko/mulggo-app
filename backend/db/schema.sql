@@ -389,3 +389,37 @@ CREATE TABLE IF NOT EXISTS administrative_dong (
     dong_name VARCHAR(50),
     level     VARCHAR(10) NOT NULL
 );
+
+-- 사업구체화 진단(슬롯필링) 세션. DA가 팀 ERD 구글시트("0. ERD 구조" 탭, 테이블 19)로
+-- 설계해 실 DB에 만들어둔 테이블 - 이 파일엔 문서화가 안 돼있었음(2026-09-11 확인,
+-- administrative_dong/bookmarks와 같은 패턴). backend/api/diagnosis.py(POST /api/
+-- diagnosis/submit, 2026-09-11 신규)가 이 테이블에 저장한다.
+--
+-- [컬럼명 함정] 설계문서 한글 라벨 기준 psst_problem="PSST-사업 아이템"(시드/
+-- 아이디어), psst_solution="PSST-문제 정의"(문제·기회 정의), psst_strategy="사업화
+-- 방식" - 컬럼명(problem/solution)만 보고 짐작하면 틀림, backend/api/diagnosis.py
+-- 주석 참고.
+-- [설계문서와 다른 점] 설계문서는 has_offline_store(BOOLEAN)인데 이 컬럼은
+-- business_operation_type(VARCHAR(30))으로 이름·타입이 다르게 만들어져 있음 -
+-- 정확한 값 종류(enum) 미확정, 지금은 diagnosis.py에서 "오프라인"/"온라인" 임시값.
+-- resolved_nts_codes/market_analysis/tech_analysis/best_practices_summary는 별도
+-- 진행 중인 업종코드 매칭·분석 기능이 채우는 자리 - diagnosis.py는 NULL로 둠.
+CREATE TABLE IF NOT EXISTS idea_refinement_sessions (
+    session_id             BIGSERIAL PRIMARY KEY,
+    profile_id              BIGINT NOT NULL REFERENCES business_profiles(profile_id),
+    status                   VARCHAR(20) NOT NULL,          -- '진행중' / '완료'
+    flow_type                VARCHAR(20),                   -- 'problem' / 'opportunity' (출발점 분기)
+    resolved_nts_codes       JSONB,
+    region                   TEXT,
+    psst_problem             TEXT,                          -- 실제 의미: 시드(사업 아이템)
+    psst_solution            TEXT,                          -- 실제 의미: 문제/기회 정의
+    psst_strategy            TEXT,                          -- 실제 의미: 사업화 방식
+    psst_team                TEXT,
+    market_analysis          JSONB,
+    tech_analysis            JSONB,
+    best_practices_summary   JSONB,
+    save_consented           BOOLEAN NOT NULL,
+    created_at               TIMESTAMPTZ NOT NULL,
+    is_extended_diagnosis    BOOLEAN NOT NULL DEFAULT false,
+    business_operation_type  VARCHAR(30)                    -- 설계문서의 has_offline_store(BOOLEAN)와 이름/타입 다름
+);

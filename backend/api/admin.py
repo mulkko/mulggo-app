@@ -415,17 +415,20 @@ def get_sync_status(source: str) -> dict:
 
 
 @router.get("/batch-logs")
-def get_batch_logs() -> dict:
+def get_batch_logs(limit: int = 10, offset: int = 0) -> dict:
     connection = get_connection()
     try:
         cursor = connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM crawl_batch_logs")
+        total = cursor.fetchone()[0]
         cursor.execute(
             """
             SELECT source, fetched_count, inserted_count, status, ran_at
             FROM crawl_batch_logs
             ORDER BY ran_at DESC
-            LIMIT 5
-            """
+            LIMIT %s OFFSET %s
+            """,
+            (limit, offset),
         )
         rows = cursor.fetchall()
     finally:
@@ -441,7 +444,7 @@ def get_batch_logs() -> dict:
         }
         for source, fetched_count, inserted_count, status, ran_at in rows
     ]
-    return {"success": True, "data": {"logs": logs}}
+    return {"success": True, "data": {"logs": logs, "total": total}}
 
 
 KST = timezone(timedelta(hours=9))

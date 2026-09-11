@@ -23,6 +23,8 @@ interface AnnouncementCardData {
   tags: string[];
   /** [임시] 채우기 가능한 서류가 있는 공고인지 (backend/api/matching.py fillable) */
   fillable?: boolean;
+  /** [임시] 매칭된 KSIC 업종코드 확인용 (backend/api/matching.py ksicCodesMatched) */
+  ksicCodesMatched?: string[];
 }
 
 interface AnnouncementCardProps {
@@ -42,7 +44,13 @@ function AnnouncementCard({ item, onClick, onDelete }: AnnouncementCardProps) {
         onClick={onClick ? () => onClick(item) : undefined}
       >
         <div className={`${styles.top} ${onDelete ? styles.topWithDelete : ""}`}>
-          <span className={styles.agency}>{item.agency}</span>
+          <span className={styles.agencyGroup}>
+            <span className={styles.agency}>{item.agency}</span>
+            {/* [임시] 매칭된 업종코드 확인용 - 확인 끝나면 제거 */}
+            {item.ksicCodesMatched && item.ksicCodesMatched.length > 0 && (
+              <p className={styles.ksicDebug}>업종코드: {item.ksicCodesMatched.join(", ")}</p>
+            )}
+          </span>
           <div className={styles.rightGroup}>
             {item.fillable && <span className={styles.fillableBadge}>채우기 가능</span>}
             <span className={styles.dday}>{item.dday}</span>

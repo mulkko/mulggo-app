@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
+import { authHeaders } from "../../auth/session";
 import { clearDiagnosisAnswers, getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -16,27 +17,26 @@ interface RegionRow {
 
 const toSelectSheetOptions = (values: string[]) => values.map((v) => ({ label: v, value: v }));
 
-interface IdeaCard {
-  axis: string;
-  title: string;
-  description: string;
-}
-
-interface SlotFillingResponse {
+interface DiagnosisSubmitResponse {
   success: boolean;
-  cards: IdeaCard[] | null;
-  weak_slots: string[] | null;
-  error: string | null;
-  // ksic/report_type도 응답에 있지만 업종분류 쪽을 팀에서 별도로 다시 만들고 있어서
-  // (사용자 확인, 2026-09-10) 이 화면에서는 안 쓴다 - 완성되면 여기서 마저 연결.
+  data?: { session_id: number };
+  error?: { message: string };
 }
 
 /**
  * 사업구체화 진단 5/5 — "구체화 진단4" (dev_links.html 목업 이름).
  * 슬롯 4(매장운영여부, 버튼선택) + 슬롯 14(지역·규모, 시/도·시군구·동)를 한 화면에서
- * 받고, POST /api/test/slot-filling로 지금까지의 답변을 한 번에 제출한다
- * (backend/api/idea_card_test.py — DB 저장 없는 테스트 전용 엔드포인트, 정식
- * 엔드포인트로 바뀌면 이 fetch 경로만 교체하면 됨).
+ * 받고, 지금까지의 답변을 POST /api/diagnosis/submit로 한 번에 제출한다.
+ *
+ * [2026-09-11] 원래는 backend/api/idea_card_test.py의 POST /api/test/slot-filling
+ * (DB 미저장, 테스트 전용)을 재사용했는데, DA가 설계한 idea_refinement_sessions
+ * 테이블(backend/api/diagnosis.py 참고)에 실제로 저장하는 정식 경로로 교체함.
+ * 로그인이 필요하다(profile_id를 찾아야 저장 가능) - 비로그인이면 401 에러를
+ * 그대로 안내 문구로 보여준다.
+ * 예전엔 이 화면이 선택 슬롯(타깃/차별점/수익모델/보유역량)을 전혀 안 받으면서도
+ * LLM 아이디어 카드를 요청했었는데, 그 4개가 항상 빈 값이라 카드가 사실상 한 번도
+ * 안 나왔음(idea_card_generator가 4개 다 부실하면 호출 자체를 스킵) - 정식 API로
+ * 바꾸면서 그 쓸모없던 호출도 같이 제거하고 결과 화면을 "제출 완료" 안내로 단순화함.
  */
 function DiagnosisStep4() {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ function DiagnosisStep4() {
   const [dong, setDong] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<SlotFillingResponse | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   // [2026-09-10] 지역 3단을 자유입력 대신 administrative_dong 기반 캐스케이딩
   // 셀렉트박스로 바꿈 - GET /analysis/regions(3,924행, 작아서 한 번에 다 받음)를
@@ -113,10 +113,11 @@ function DiagnosisStep4() {
     setSubmitting(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/test/slot-filling`, {
+      const res = await fetch(`${API_BASE_URL}/api/diagnosis/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
+          origin: answers.origin || "problem",
           seed_interest: answers.seedInterest || "",
           problem_to_solve: answers.problemToSolve || "",
           solution_approach: answers.solutionApproach || "",
@@ -124,19 +125,18 @@ function DiagnosisStep4() {
           sido,
           sigungu,
           dong,
-          // 타깃/차별점/수익모델/보유역량(선택 슬롯)은 이 5화면 플로우에서 안 받음 - 빈 값.
-          target: "",
-          differentiator: "",
-          revenue_model: "",
-          core_skill: "",
         }),
       });
-      const data: SlotFillingResponse = await res.json();
-      if (!data.success) {
-        setError(data.error || "제출에 실패했어요.");
+      if (res.status === 401) {
+        setError("로그인이 필요해요. 로그인 후 다시 시도해주세요.");
         return;
       }
-      setResult(data);
+      const data: DiagnosisSubmitResponse = await res.json();
+      if (!data.success) {
+        setError(data.error?.message || "제출에 실패했어요.");
+        return;
+      }
+      setSubmitted(true);
       clearDiagnosisAnswers();
     } catch {
       setError("서버에 연결할 수 없습니다.");
@@ -147,34 +147,16 @@ function DiagnosisStep4() {
 
   if (!ready) return null;
 
-  if (result) {
+  if (submitted) {
     return (
       <div className={`pageContainer ${styles.page}`}>
         <DiagnosisHeader onBack={handleFinish} stepLabel="4 / 4" />
         <div className={styles.scrollArea}>
           <h1 className={styles.questionTitle}>사업 구체화가 끝났어요!</h1>
           <p className={styles.noticeText}>
-            업종코드 매칭·분석 리포트 연결은 준비 중이에요. 지금까지 답변을 바탕으로 한
-            아이디어를 먼저 보여드릴게요.
+            답변이 저장됐어요. 업종코드 매칭·분석 리포트 연결은 준비 중이라, 완성되면
+            마이페이지에서 결과를 확인하실 수 있어요.
           </p>
-
-          {result.weak_slots && result.weak_slots.length > 0 && (
-            <p className={styles.noticeText}>
-              답변이 짧아 근거로 못 쓴 항목: {result.weak_slots.join(", ")}
-            </p>
-          )}
-
-          {result.cards && result.cards.length > 0 ? (
-            result.cards.map((card) => (
-              <div key={card.title} className={styles.resultCard}>
-                <span className={styles.resultAxis}>{card.axis}</span>
-                <span className={styles.resultTitle}>{card.title}</span>
-                <span className={styles.resultDesc}>{card.description}</span>
-              </div>
-            ))
-          ) : (
-            <p className={styles.noticeText}>아이디어 카드는 생성되지 않았어요.</p>
-          )}
         </div>
         <div className={styles.footer}>
           <button type="button" className={styles.nextButton} onClick={handleFinish}>

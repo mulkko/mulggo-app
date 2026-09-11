@@ -56,8 +56,8 @@ dryrun_sync_*.xlsx
 *.bak
 
 # 업종코드 매칭 — 로컬 벡터DB (바이너리, 74MB). 재생성:
-#   cd backend/mulkko_industry_code_matching
+#   cd backend/ml/industry_code_matching
 #   python business_matching/34_reindex_local.py --model bge-m3
-backend/mulkko_industry_code_matching/chroma_db/
-backend/mulkko_industry_code_matching/__pycache__/
-backend/mulkko_industry_code_matching/business_matching/__pycache__/
+backend/ml/industry_code_matching/chroma_db/
+backend/ml/industry_code_matching/__pycache__/
+backend/ml/industry_code_matching/business_matching/__pycache__/

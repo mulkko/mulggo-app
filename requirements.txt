@@ -25,3 +25,10 @@ langchain-core    # '대표자' 계열 라벨 판별 체인 (label_llm.py) — �
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 #   pip install "transformers>=4.49" qwen-vl-utils accelerate   # 기본정보 OCR (Qwen2.5-VL)
 #   pip install easyocr                                          # 업태·종목 표 OCR (category_ocr.py)
+
+# --- 업종코드 매칭 (backend/ml/industry_code_matching) ---
+chromadb>=0.5      # 벡터DB (사업 아이디어 -> 업종코드 검색)
+
+# 로컬 임베딩(bge-m3) 사용 시에만 필요. OpenAI 임베딩만 쓰면 생략 가능. GPU 권장(CPU도 동작):
+#   pip install torch --index-url https://download.pytorch.org/whl/cu124   (GPU)
+#   pip install sentence-transformers>=3.0

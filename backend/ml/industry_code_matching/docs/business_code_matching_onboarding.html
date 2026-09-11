@@ -1,0 +1,572 @@
+<title>업종코드 매칭 현황</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#f6f6f3;
+    --surface:#ffffff;
+    --surface-2:#f0f1ee;
+    --ink:#1b1d21;
+    --ink-soft:#3d424c;
+    --muted:#5f6672;
+    --line:#e0e1db;
+    --line-strong:#c9cbc3;
+    --accent:#2f5fac;
+    --accent-soft:#e8eef8;
+    --good:#3c7a4c;
+    --good-soft:#e4efe4;
+    --warn:#9a6b12;
+    --warn-soft:#f5ebd6;
+    --crit:#a9412f;
+    --crit-soft:#f4e2dd;
+    --shadow:0 1px 2px rgba(20,22,28,.04),0 8px 24px -12px rgba(20,22,28,.12);
+    --measure:44rem;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#121317;
+      --surface:#1a1c21;
+      --surface-2:#22252b;
+      --ink:#e9eaed;
+      --ink-soft:#c2c5cc;
+      --muted:#9198a4;
+      --line:#2b2e35;
+      --line-strong:#3a3e47;
+      --accent:#7aa5e6;
+      --accent-soft:#1f2a3d;
+      --good:#77b986;
+      --good-soft:#1c2a20;
+      --warn:#d8a94e;
+      --warn-soft:#2e2717;
+      --crit:#df8676;
+      --crit-soft:#301e1a;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#121317;
+    --surface:#1a1c21;
+    --surface-2:#22252b;
+    --ink:#e9eaed;
+    --ink-soft:#c2c5cc;
+    --muted:#9198a4;
+    --line:#2b2e35;
+    --line-strong:#3a3e47;
+    --accent:#7aa5e6;
+    --accent-soft:#1f2a3d;
+    --good:#77b986;
+    --good-soft:#1c2a20;
+    --warn:#d8a94e;
+    --warn-soft:#2e2717;
+    --crit:#df8676;
+    --crit-soft:#301e1a;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.55);
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:60rem;margin:0 auto;padding:clamp(1.5rem,4vw,4rem) clamp(1.1rem,4vw,3rem) 6rem}
+  .prose{max-width:var(--measure)}
+
+  code,.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  code{
+    font-size:.86em;background:var(--surface-2);border:1px solid var(--line);
+    padding:.06em .38em;border-radius:5px;word-break:break-word;
+  }
+
+  h1,h2,h3{line-height:1.28;text-wrap:balance;font-weight:600;margin:0}
+  h1{font-size:clamp(1.8rem,4.4vw,2.5rem);letter-spacing:-.015em;font-weight:700}
+  h2{font-size:clamp(1.3rem,3vw,1.62rem);letter-spacing:-.01em}
+  h3{font-size:1.06rem;font-weight:600}
+
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--accent);font-weight:500;
+  }
+
+  header.masthead{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:1.6rem;margin-bottom:2.4rem;
+  }
+  header.masthead p.lede{
+    font-size:1.12rem;color:var(--ink-soft);max-width:var(--measure);
+    margin:.9rem 0 0;
+  }
+  .meta{
+    display:flex;flex-wrap:wrap;gap:.5rem 1.6rem;margin-top:1.4rem;
+    font-size:.82rem;color:var(--muted);font-family:"IBM Plex Mono",monospace;
+  }
+  .meta b{color:var(--ink-soft);font-weight:500}
+
+  section{margin-top:3.4rem;scroll-margin-top:1.5rem}
+  section > p,section > ul,section > ol{max-width:var(--measure)}
+  section p{margin:1rem 0}
+  .sec-head{display:flex;gap:.9rem;align-items:baseline;margin-bottom:1.2rem}
+  .sec-head .n{
+    font-family:"IBM Plex Mono",monospace;font-size:.9rem;color:var(--muted);
+    font-weight:500;flex:none;padding-top:.15rem;
+  }
+
+  ul.clean{list-style:none;padding:0;margin:1rem 0}
+  ul.clean li{
+    position:relative;padding-left:1.4rem;margin:.55rem 0;
+  }
+  ul.clean li::before{
+    content:"";position:absolute;left:.2rem;top:.62em;
+    width:6px;height:6px;border-radius:1px;background:var(--accent);
+  }
+
+  /* pipeline */
+  .pipeline{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;
+    margin:1.8rem 0 .6rem;
+  }
+  .stage{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:1rem 1.05rem 1.15rem;position:relative;box-shadow:var(--shadow);
+  }
+  .stage .s-n{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--accent);letter-spacing:.1em}
+  .stage h3{margin:.35rem 0 .4rem;font-size:1rem}
+  .stage p{margin:0;font-size:.86rem;color:var(--muted);line-height:1.55}
+  .pipeline .stage:not(:last-child)::after{
+    content:"→";position:absolute;right:-.6rem;top:50%;transform:translateY(-50%);
+    color:var(--line-strong);font-size:1.1rem;z-index:2;
+  }
+  @media (max-width:640px){
+    .pipeline{grid-template-columns:1fr;gap:1.4rem}
+    .pipeline .stage:not(:last-child)::after{content:"↓";right:50%;top:auto;bottom:-1.15rem;transform:translateX(50%)}
+  }
+
+  /* metric tiles */
+  .tiles{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));
+    gap:.7rem;margin:1.6rem 0;
+  }
+  .tile{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:1rem 1.05rem;
+  }
+  .tile .k{font-size:.76rem;color:var(--muted);letter-spacing:.02em}
+  .tile .v{
+    font-family:"IBM Plex Mono",monospace;font-size:1.7rem;font-weight:500;
+    margin-top:.3rem;line-height:1;font-variant-numeric:tabular-nums;
+  }
+  .tile .sub{font-size:.74rem;color:var(--muted);margin-top:.4rem}
+  .tile.hi{border-color:var(--accent);background:var(--accent-soft)}
+  .tile.hi .v{color:var(--accent)}
+
+  /* tables */
+  .t-scroll{overflow-x:auto;margin:1.4rem 0;border:1px solid var(--line);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:.87rem}
+  caption{
+    caption-side:top;text-align:left;font-size:.8rem;color:var(--muted);
+    padding:.7rem .95rem;border-bottom:1px solid var(--line);background:var(--surface-2);
+  }
+  th,td{padding:.6rem .95rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{
+    font-weight:600;font-size:.76rem;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--muted);background:var(--surface);position:sticky;top:0;
+  }
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:nth-child(even) td{background:var(--surface-2)}
+  td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .arrow{color:var(--muted);padding:0 .2em}
+
+  .pill{
+    display:inline-block;font-size:.72rem;font-family:"IBM Plex Mono",monospace;
+    padding:.12em .5em;border-radius:999px;font-weight:500;white-space:nowrap;
+  }
+  .pill.good{background:var(--good-soft);color:var(--good)}
+  .pill.warn{background:var(--warn-soft);color:var(--warn)}
+  .pill.crit{background:var(--crit-soft);color:var(--crit)}
+
+  /* callout */
+  .note{
+    border:1px solid var(--line);border-left:3px solid var(--accent);
+    background:var(--surface);border-radius:0 10px 10px 0;
+    padding:1.1rem 1.3rem;margin:1.6rem 0;max-width:var(--measure);
+  }
+  .note.warn{border-left-color:var(--warn)}
+  .note.crit{border-left-color:var(--crit)}
+  .note h3{margin-bottom:.4rem;font-size:.95rem}
+  .note p{margin:.5rem 0 0;font-size:.92rem;color:var(--ink-soft)}
+  .note :first-child{margin-top:0}
+
+  /* file map */
+  .fmap{display:grid;gap:.15rem;margin:1.4rem 0;font-size:.85rem}
+  .fmap .row{
+    display:grid;grid-template-columns:minmax(11rem,15rem) 1fr;gap:1rem;
+    padding:.5rem .2rem;border-bottom:1px solid var(--line);
+  }
+  .fmap .row:last-child{border-bottom:none}
+  .fmap .p{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--accent);word-break:break-all}
+  .fmap .d{color:var(--ink-soft)}
+  @media (max-width:640px){.fmap .row{grid-template-columns:1fr;gap:.15rem}}
+
+  hr.rule{border:none;border-top:1px solid var(--line);margin:0}
+
+  a{color:var(--accent);text-underline-offset:2px}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  footer{
+    margin-top:4.5rem;padding-top:1.5rem;border-top:1px solid var(--line);
+    font-size:.8rem;color:var(--muted);max-width:var(--measure);
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">물꼬 · 3차 프로젝트 · 업종코드 파트</div>
+    <h1>사업 아이디어 → 업종코드 자동매칭</h1>
+    <p class="lede">
+      사용자가 적어낸 사업 설명(PSST)을 읽고, 국세청 6자리 업종코드를
+      자동으로 골라 주는 기능입니다. 이 문서는 처음 합류한 팀원이
+      <em>지금 어디까지 됐고, 무엇이 안 되고, 다음에 뭘 하면 되는지</em>를
+      30분 안에 파악하도록 정리한 것입니다.
+    </p>
+    <div class="meta">
+      <span><b>기준일</b> 2026-09-09</span>
+      <span><b>평가 데이터</b> gold_set_v2 · 240건</span>
+      <span><b>상태</b> 담당 범위 1차 완료 · 검색 recall 개선 남음</span>
+    </div>
+  </header>
+
+  <section id="what">
+    <div class="sec-head"><span class="n">01</span><h2>이 기능이 하는 일</h2></div>
+    <p>
+      물꼬는 소상공인·예비창업자가 자기 사업을 설명하면 그에 맞는
+      정부 지원사업·상권·지역 정보를 이어 주는 서비스입니다. 그 첫 단추가
+      <strong>업종 확정</strong>입니다. 사용자는 업종코드를 모르지만,
+      뒤쪽 모든 매칭(지원사업 자격, 상권 통계)은 코드가 있어야 돌아갑니다.
+    </p>
+    <p>
+      그래서 이 파트는 <strong>자연어 사업 설명 한 덩어리를 받아
+      <code>업종코드-표준산업분류 연계표</code>의 6자리 코드(총 1,612개)
+      중 하나로 매핑</strong>합니다. 예:
+    </p>
+    <div class="note">
+      <p style="margin:0">
+        <em>“직접 원두를 볶아 카페에서 팔고 일부는 도매로 납품합니다”</em>
+        &nbsp;→&nbsp;
+        <code>154901</code> 커피 전문점(대표) + <code>552303</code> 볶은 커피 제조(부가)
+      </p>
+    </div>
+    <p>
+      기존 <code>ksic_core/</code>, <code>scripts/</code> 파이프라인은 건드리지
+      않습니다. 이 기능의 코드는 전부 <code>business_matching/</code> 안,
+      파일명 <code>21_</code>~<code>29_</code> 입니다.
+    </p>
+  </section>
+
+  <section id="how">
+    <div class="sec-head"><span class="n">02</span><h2>어떻게 작동하나 — 3단계</h2></div>
+    <p>
+      입력 한 건이 아래 3단계를 거쳐 코드 하나(+대안 2·3순위)와
+      신뢰도 등급으로 나옵니다. 본체는 <code>match_business_code.py</code>.
+    </p>
+
+    <div class="pipeline">
+      <div class="stage">
+        <div class="s-n">STEP 1</div>
+        <h3>후보 검색 (retrieval)</h3>
+        <p>
+          LLM이 사업 설명을 “~업 / ~제조업” 같은 분류표 어투로 다듬고,
+          여러 표현으로 임베딩 검색 + 키워드 검색을 함께 돌려
+          후보 15~20개를 모읍니다. DB는 통계청 해설서 기반
+          <code>business_code_docs_2025</code>.
+        </p>
+      </div>
+      <div class="stage">
+        <div class="s-n">STEP 2</div>
+        <h3>재판정 (rerank)</h3>
+        <p>
+          LLM이 후보 목록을 놓고 사업자 역할(제조/도매/소매/음식점 등)과
+          세세분류명을 대조해 딱 하나를 고르고 이유를 답니다.
+          역할이 상충하는 후보는 먼저 탈락.
+        </p>
+      </div>
+      <div class="stage">
+        <div class="s-n">STEP 3</div>
+        <h3>신뢰도 산정</h3>
+        <p>
+          LLM 자기판단(high/mid/low)을 출발점으로, 검색 신호가 나쁘면
+          한 단계 낮춥니다(올리진 않음). 몇 위 후보를 골랐나 · 두 검색에
+          다 잡혔나 · 1·2위 유사도 차이가 신호입니다.
+        </p>
+      </div>
+    </div>
+    <p style="font-size:.85rem;color:var(--muted)">
+      <strong>A / B / C</strong> 표기는 평가용입니다 —
+      A: 원문을 그대로 임베딩 검색, B: A + LLM 다듬기·재판정 전 단계,
+      C: 최종 결과(위 3단계 전부). 아래 성능 표에서 계속 나옵니다.
+    </p>
+  </section>
+
+  <section id="perf">
+    <div class="sec-head"><span class="n">03</span><h2>지금 성능 — 정직한 숫자</h2></div>
+    <p>
+      통계청 <strong>KSIC 11차 해설서 PDF</strong>(958쪽)의
+      <code>&lt;예시&gt;</code>·<code>&lt;제외&gt;</code> 항목을 근거로 만든
+      정답셋 <strong>240건</strong>으로 채점했습니다
+      (<code>build_gold_from_haeseol.py</code> → <code>gold_set_v2.csv</code>,
+      채점 <code>eval_business_code.py</code>, 모델 gpt-5-mini).
+    </p>
+
+    <div class="tiles">
+      <div class="tile hi">
+        <div class="k">C 최종 · Top-1</div>
+        <div class="v">57.5%</div>
+        <div class="sub">3단계 전부 거친 최종 정답률</div>
+      </div>
+      <div class="tile">
+        <div class="k">B · Top-1 / Top-3</div>
+        <div class="v">40 / 53</div>
+        <div class="sub">LLM 다듬기까지</div>
+      </div>
+      <div class="tile">
+        <div class="k">A 원문 · Top-1</div>
+        <div class="v">24.6%</div>
+        <div class="sub">아무 가공 없이 임베딩</div>
+      </div>
+      <div class="tile">
+        <div class="k">정답이 후보에 포함</div>
+        <div class="v">80.4%</div>
+        <div class="sub">후보 20개 안: 70.4%</div>
+      </div>
+    </div>
+
+    <div class="note warn">
+      <h3>v1(42건)에서는 C가 95%였는데 왜 57%로 떨어졌나?</h3>
+      <p>
+        v1 정답셋은 우리가 직접 고른 <em>상대적으로 쉬운</em> 42건이라
+        점수가 과대평가됐습니다. v2 240건은 해설서에서 제조·건설·소매
+        세세분류 전반을 폭넓게 뽑은 것이라 <strong>실제 실력에 훨씬
+        가깝습니다.</strong> 57.5%가 현재의 진짜 수준입니다.
+      </p>
+    </div>
+
+    <div class="t-scroll">
+      <table>
+        <caption>역할별 C Top-1 — 제조·가공이 데이터의 절반이면서 가장 약함</caption>
+        <thead><tr><th>사업자 역할</th><th>정확도</th><th>건수</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>제조·가공</td><td class="num">54%</td><td class="num">68 / 126</td><td><span class="pill warn">최다·취약</span></td></tr>
+          <tr><td>건설·시공</td><td class="num">80%</td><td class="num">8 / 10</td><td><span class="pill good">양호</span></td></tr>
+          <tr><td>전문·과학·기술서비스</td><td class="num">75%</td><td class="num">9 / 12</td><td><span class="pill good">양호</span></td></tr>
+          <tr><td>소매</td><td class="num">64%</td><td class="num">9 / 14</td><td></td></tr>
+          <tr><td>도매</td><td class="num">56%</td><td class="num">9 / 16</td><td></td></tr>
+          <tr><td>음식·주점 / 정보·SW / 예술·여가</td><td class="num">33%</td><td class="num">각 3~6건</td><td><span class="pill crit">표본 적음·주의</span></td></tr>
+          <tr><td>보건·복지 / 시설관리·사업지원</td><td class="num">25%</td><td class="num">각 4건</td><td><span class="pill crit">표본 적음·주의</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="confidence">
+    <div class="sec-head"><span class="n">04</span><h2>신뢰도 등급의 진짜 의미</h2></div>
+    <p>
+      결과마다 <code>high / mid / low</code>가 붙습니다.
+      <code>calibrate_confidence.py</code>로 240건에서 등급별
+      <strong>실측 정확도</strong>를 뽑았습니다(저장된 평가 결과만 분석, API 비용 0).
+    </p>
+
+    <div class="t-scroll">
+      <table>
+        <caption>신뢰도 등급 — 데이터 기반 재설정 전 / 후 (2026-09-09)</caption>
+        <thead>
+          <tr><th>등급</th><th>비중(기존)</th><th>실측 정확도(기존)</th><th>비중(개선 후·시뮬)</th><th>실측 정확도(개선 후)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="pill good">high</span></td><td class="num">65%</td><td class="num">72.0%</td><td class="num">54%</td><td class="num">73.8%</td></tr>
+          <tr><td><span class="pill warn">mid</span></td><td class="num">34%</td><td class="num">30.5%</td><td class="num">30%</td><td class="num">42.3%</td></tr>
+          <tr><td><span class="pill crit">low</span></td><td class="num">0.4%</td><td class="num">—</td><td class="num">16%</td><td class="num">30.8%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>개선 후 가드(<code>compute_confidence()</code>)는 v2 실측에서 나온 갈림 지점을 그대로 반영합니다:</p>
+    <ul class="clean">
+      <li>재판정이 고른 후보 순위 — <strong>1~3위 67% vs 4위+ 37%.</strong> 급락 지점이 4위라서, <code>rank ≥ 4</code>면 한 단계 하향(기존 임계값 6위는 너무 느슨했음).</li>
+      <li>벡터·키워드 <strong>동시 검출 O 66% vs X 33%.</strong> 한쪽에서만 잡히면 순위와 무관하게 하향.</li>
+      <li>1·2위 유사도 차 <strong>&gt;0.15 → 71% vs ≤0.06 → 43%.</strong> <code>margin &lt; 0.06</code>이고 1위도 아니면 하향.</li>
+      <li>근거가 확실히 얕은 경우(<code>6위+ &amp; 한쪽 검색만</code>)는 <code>low</code>로 확정.</li>
+    </ul>
+
+    <div class="note crit">
+      <h3>핵심: 넓은 입력에서는 “확실한” 등급이 안 나온다</h3>
+      <p>
+        어떤 신호 조합으로도 정확도 80%를 못 넘습니다(가장 빡세게 걸러도
+        <code>high &amp; 1~3위 &amp; 동시검출 &amp; margin≥0.1</code> → 79%, 전체의 30%만 해당).
+        따라서 <strong><code>high</code>는 “확실”이 아니라 “십중팔구”</strong>로 읽어야 하고,
+        <strong>자동 확정 금지</strong> — 반드시 사람 확인(보정 UI) 단계가 필요합니다.
+        v1 42건에서 나온 “high = 95%”는 쉬운 셋 과적합이었습니다.
+      </p>
+    </div>
+  </section>
+
+  <section id="why-wrong">
+    <div class="sec-head"><span class="n">05</span><h2>왜 틀리나 — 검색 실패 47건 분석</h2></div>
+    <p>
+      오답 102건 중 정답표 자체 오류(같은 KSIC인데 업종코드만 다름)는 1~5건뿐.
+      나머지 ~97건이 진짜 오답이고, 둘로 갈립니다:
+    </p>
+    <div class="tiles">
+      <div class="tile">
+        <div class="k">검색 실패</div>
+        <div class="v">47</div>
+        <div class="sub">정답이 후보 목록에 아예 없었음</div>
+      </div>
+      <div class="tile">
+        <div class="k">재판정 실패</div>
+        <div class="v">55</div>
+        <div class="sub">후보엔 있었는데 LLM이 다른 걸 고름<br>(절반은 정답이 20위권 밖)</div>
+      </div>
+    </div>
+    <p>
+      더 심각한 쪽은 <strong>검색 실패 47건</strong>입니다 — 검색이 정답을
+      못 올리면 뒤 단계가 아무리 좋아도 못 맞힙니다. 이 47건을 뜯어본 패턴:
+    </p>
+
+    <div class="t-scroll">
+      <table>
+        <caption>검색 실패 47건의 패턴</caption>
+        <thead><tr><th>패턴</th><th>규모</th><th>설명</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>제조·가공에 집중</td>
+            <td class="num">29 / 47</td>
+            <td>제조 세세분류는 재료·용도 중심으로 잘게 쪼개져 있어, 활동 설명과 코드명의 어휘가 안 겹침.</td>
+          </tr>
+          <tr>
+            <td>공식 분류가 직관에 반함</td>
+            <td class="num">다수</td>
+            <td>해설서가 정한 코드가 활동어와 한 단어도 안 겹치는 경우가 흔함. 이게 해설서의 가치이자, 검색이 못 따라가는 지점.</td>
+          </tr>
+          <tr>
+            <td>정답이 “기타 / 그 외” 코드</td>
+            <td class="num">18 / 47</td>
+            <td>이름이 뭉뚱그려져(“그 외 기타 달리 분류되지 않은…”) 특정 활동과의 유사도가 원천적으로 낮음.</td>
+          </tr>
+          <tr>
+            <td>원문 임베딩도 놓침</td>
+            <td class="num">42 / 47</td>
+            <td>LLM 다듬기 표현의 문제가 아니라, 코드 문서 자체에 “이 활동 = 이 코드” 연결고리가 없어서.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="t-scroll">
+      <table>
+        <caption>“직관에 반함” 실제 예시 — 활동어와 정답 코드명이 안 겹친다</caption>
+        <thead><tr><th>사업 설명(요지)</th><th></th><th>해설서가 정한 정답 코드</th></tr></thead>
+        <tbody>
+          <tr><td>밀가루·콩가루 생산</td><td class="arrow">→</td><td>곡물 제분업</td></tr>
+          <tr><td>페인트용 롤러 제조</td><td class="arrow">→</td><td>비 및 솔 제조업</td></tr>
+          <tr><td>공기주입식(에어) 매트리스 제조</td><td class="arrow">→</td><td>천막, 텐트 및 유사 제품 제조</td></tr>
+          <tr><td>새 깃털로 장식품·액세서리 제조</td><td class="arrow">→</td><td>전시용 모형 제조업</td></tr>
+          <tr><td>배양토를 도매로 판매</td><td class="arrow">→</td><td>비료 및 농약 도매업</td></tr>
+          <tr><td>특수 목적 줄사다리 제조</td><td class="arrow">→</td><td>어망 및 기타 끈 가공품 제조</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note crit">
+      <h3>근본 원인 1개</h3>
+      <p>
+        현재 검색 인덱스(<code>business_code_docs</code>)는 업종코드의
+        <strong>이름·계층·연계 KSIC·설명</strong>만 담고 있고,
+        통계청 해설서의 <code>&lt;예시&gt;</code> 활동 문구는 안 담았습니다.
+        그런데 우리는 그 예시를 이미 <code>parse_ksic_haeseol.py</code>로
+        <strong>5,411개 추출</strong>해 뒀습니다
+        (<code>data/processed/ksic_haeseol_examples_v1.csv</code>).
+        정답을 오직 예시 문구로만 찾을 수 있는 케이스가 많은데,
+        그게 검색 인덱스에 빠져 있습니다.
+      </p>
+    </div>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="n">06</span><h2>다음 할 일</h2></div>
+
+    <h3 style="margin-bottom:.5rem">1순위 — 해설서 예시를 검색 문서에 추가</h3>
+    <p>
+      각 업종코드에 “그 코드에 속하는 해설서 예시 활동들”을 문서로 붙여
+      벡터 DB를 다시 만듭니다. 검색 실패 47건 중 상당수를 직접 겨냥합니다.
+      작업 흐름: <code>25_</code> 문서 생성 스크립트에 예시 소스 추가 →
+      <code>26_</code> 재색인 → <code>24_</code> 재평가.
+    </p>
+    <div class="note warn">
+      <h3>주의 — 재평가 점수는 부풀려질 수 있음</h3>
+      <p>
+        <code>gold_set_v2</code>의 사업 설명은 해설서 예시를 LLM이 풀어 쓴
+        것이라, 예시를 그대로 색인하면 재평가 Top-1이 인위적으로 올라갑니다.
+        정직한 검증은 <strong>해설서에서 안 나온 별도 셋</strong>이 필요합니다.
+        다만 <em>실제 제품</em>에는 이게 옳은 방향입니다 — 해설서 예시가 곧
+        “이 활동은 이 코드”라는 공식 근거니까요.
+      </p>
+    </div>
+
+    <h3 style="margin:1.8rem 0 .5rem">그 다음 후보</h3>
+    <ul class="clean">
+      <li>“기타 / 그 외” 코드에 상위 계층·형제 코드 설명을 덧붙여 검색 가시성 올리기.</li>
+      <li>재판정 실패 55건 중 정답이 20위권 밖이던 케이스 → 후보 pool 크기·다중쿼리 확대.</li>
+      <li>불완전한 사업 아이디어를 사용자에게 되묻는 흐름(합의된 계획 5번).</li>
+      <li>업종 확정 이후의 보정 UI / 로그(사람이 고친 기록 축적 → 나중에 재학습·임계값 근거).</li>
+    </ul>
+  </section>
+
+  <section id="files">
+    <div class="sec-head"><span class="n">07</span><h2>파일 지도 — 어디에 뭐가 있나</h2></div>
+
+    <h3 style="margin-bottom:.6rem">코드 (<code>business_matching/</code>)</h3>
+    <div class="fmap">
+      <div class="row"><span class="p">21_ / 22_</span><span class="d">구 벡터 DB 구축(reference CSV → chroma). 롤백용으로만 보존.</span></div>
+      <div class="row"><span class="p">match_business_code.py</span><span class="d">본체. 검색 + 재판정 + 신뢰도. 실서비스가 부르는 진입 로직.</span></div>
+      <div class="row"><span class="p">eval_business_code.py</span><span class="d">채점기. gold set을 넣어 A/B/C Top-1·3·5, pool recall, 신뢰도 실측을 냄. <code>--ids M01,M02</code>로 부분 실행 가능.</span></div>
+      <div class="row"><span class="p">25_ / 26_</span><span class="d">현행 벡터 DB(멀티문서 방식). 코드 1개 = 문서 여러 개. → <code>business_code_docs_2025</code>.</span></div>
+      <div class="row"><span class="p">parse_ksic_haeseol.py</span><span class="d">해설서 PDF 파싱 → 예시/제외 5,411 라벨 추출.</span></div>
+      <div class="row"><span class="p">build_gold_from_haeseol.py</span><span class="d">해설서 근거로 정답셋 240건 생성 → <code>gold_set_v2.csv</code>.</span></div>
+      <div class="row"><span class="p">calibrate_confidence.py</span><span class="d">저장된 평가 JSON을 분석해 신뢰도 임계값을 실측. API 비용 없음.</span></div>
+    </div>
+
+    <h3 style="margin:1.8rem 0 .6rem">데이터 · 산출물</h3>
+    <div class="fmap">
+      <div class="row"><span class="p">business_matching/gold_set_v2.csv</span><span class="d">정답셋 240건(예시 200 + 제외/구분 40).</span></div>
+      <div class="row"><span class="p">data/processed/ksic_haeseol_examples_v1.csv</span><span class="d">해설서 예시 5,411 라벨. ← 1순위 작업의 재료.</span></div>
+      <div class="row"><span class="p">data/processed/business_code_docs_v1.csv</span><span class="d">현행 검색 문서 3,948개.</span></div>
+      <div class="row"><span class="p">data/outputs/eval_gold_set_v2.json</span><span class="d">240건 평가 결과(2026-09-08 22:51). `calibrate_confidence.py`의 입력.</span></div>
+      <div class="row"><span class="p">chroma_db/business_code_docs_2025</span><span class="d">현행 벡터 DB. 구 DB(<code>business_codes_2025</code>)는 롤백용 보존.</span></div>
+      <div class="row"><span class="p">data/raw/KSIC_11차_해설서.pdf</span><span class="d">통계청 원본 958쪽. 모든 정답 근거.</span></div>
+      <div class="row"><span class="p">docs/business_code_matching_status.html</span><span class="d">이전(9/8) 상태 문서.</span></div>
+      <div class="row"><span class="p">~/Downloads/mulkko_industry_code_matching_20260908.zip</span><span class="d">백엔드 통합 패키지(18MB, 벡터 DB 동봉). 진입점 <code>industry_matcher.py</code> — <code>match_business_code()</code>, <code>warm_up()</code>, <code>health()</code>.</span></div>
+    </div>
+
+    <div class="note">
+      <p style="margin:0">
+        <strong>환경 주의:</strong> <code>.env</code>의 <code>LLM_MODEL</code>이
+        인수인계서 설명(gpt-5-mini)과 달리 실제로는 <code>gpt-5-nano</code>로
+        되어 있던 적이 있음 — 평가 전 확인할 것.
+        <code>24_</code>는 CSV가 열려 있으면 저장을 건너뜀(try/except).
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    물꼬 3차 프로젝트 · 업종코드 매칭 파트 온보딩 문서 · 2026-09-09 기준<br>
+    작업 방식: 코드 파일 하나 실행 → 결과 해석 → 다음 수정. 한 번에 큰 변경 지양.
+  </footer>
+
+</div>
