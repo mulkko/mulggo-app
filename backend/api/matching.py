@@ -135,6 +135,7 @@ def list_announcements(
         cur.execute(
             f"""
             SELECT a.announcement_id, a.host_org_name, a.title, a.apply_end_date,
+                   a.ksic_codes_matched,
                    EXISTS (
                        SELECT 1 FROM announcement_attachments att
                        WHERE att.announcement_id = a.announcement_id
@@ -163,8 +164,10 @@ def list_announcements(
             # [2026-09-09] 해시태그 로직은 사용자가 직접 확인 중 - 우선 빈 배열로 둔다.
             "tags": [],
             "fillable": bool(fillable),
+            # [임시, 2026-09-11] 매칭된 업종코드 확인용 - 화면에 agency 옆 노출.
+            "ksicCodesMatched": ksic_codes_matched or [],
         }
-        for announcement_id, host_org_name, title, apply_end_date, fillable in rows
+        for announcement_id, host_org_name, title, apply_end_date, ksic_codes_matched, fillable in rows
     ]
     return {"success": True, "data": data, "has_more": has_more, "total": total}
 

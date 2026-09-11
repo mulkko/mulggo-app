@@ -28,6 +28,13 @@ const SOURCE_LABELS: Record<string, string> = {
   kstartup: "K-스타트업",
 };
 
+const LOG_SOURCE_LABELS: Record<string, string> = {
+  bizinfo: "기업마당 수집",
+  kstartup: "K-스타트업 수집",
+  "bizinfo-sync": "기업마당 통합 반영",
+  "kstartup-sync": "K-스타트업 통합 반영",
+};
+
 function formatLogTime(isoString: string): string {
   const d = new Date(isoString);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -90,6 +97,8 @@ const CRAWL_SOURCES: { value: string; label: string }[] = [
 const CRAWL_POLL_INTERVAL_MS = 5000;
 const CRAWL_POLL_TIMEOUT_MS = 20 * 60 * 1000;
 
+const BATCH_LOG_PAGE_SIZE = 10;
+
 // [2026-09-11] /admin/bizinfo-count, /admin/kstartup-count가 누적 건수뿐 아니라
 // 오늘 신규 건수(today_count, KST 기준)/마지막·최초 수집 시각까지 같이 내려주도록
 // 백엔드가 바뀌어서, 프론트도 숫자 하나(count)가 아니라 이 요약 전체를 들고 있는다.
@@ -106,6 +115,8 @@ function AdminHome() {
   const [kstartupSummary, setKstartupSummary] = useState<SourceSummary | null>(null);
   const [kstartupError, setKstartupError] = useState(false);
   const [batchLogs, setBatchLogs] = useState<BatchLog[]>([]);
+  const [batchLogTotal, setBatchLogTotal] = useState(0);
+  const [batchLogPage, setBatchLogPage] = useState(0);
   const [backlog, setBacklog] = useState<Backlog[]>([]);
   const [crawlSource, setCrawlSource] = useState(CRAWL_SOURCES[0].value);
   // 현재 백그라운드로 수집 중인 소스(없으면 null). 진행 중엔 셀렉트·버튼 잠금.
@@ -130,10 +141,14 @@ function AdminHome() {
       .catch(() => setKstartupError(true));
   };
 
-  const fetchBatchLogs = () => {
-    fetch(`${API_BASE_URL}/admin/batch-logs`)
+  const fetchBatchLogs = (page = 0) => {
+    fetch(`${API_BASE_URL}/admin/batch-logs?limit=${BATCH_LOG_PAGE_SIZE}&offset=${page * BATCH_LOG_PAGE_SIZE}`)
       .then((res) => res.json())
-      .then((data: { success: boolean; data: { logs: BatchLog[] } }) => setBatchLogs(data.data.logs))
+      .then((data: { success: boolean; data: { logs: BatchLog[]; total: number } }) => {
+        setBatchLogs(data.data.logs);
+        setBatchLogTotal(data.data.total);
+        setBatchLogPage(page);
+      })
       .catch(() => {});
   };
 
@@ -160,17 +175,17 @@ function AdminHome() {
     const deadline = Date.now() + CRAWL_POLL_TIMEOUT_MS;
     while (Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, CRAWL_POLL_INTERVAL_MS));
-      const logs: BatchLog[] = await fetch(`${API_BASE_URL}/admin/batch-logs`)
+      const logs: BatchLog[] = await fetch(`${API_BASE_URL}/admin/batch-logs?limit=${BATCH_LOG_PAGE_SIZE}`)
         .then((res) => res.json())
         .then((data: { data: { logs: BatchLog[] } }) => data.data.logs)
         .catch(() => []);
-      if (logs.length) setBatchLogs(logs);
 
       const newest = logs.find((log) => log.source === src);
       if (newest && newest.ran_at !== prevLatestRanAt) {
         setCrawlingSource(null);
         fetchCount();
         fetchKstartupCount();
+        fetchBatchLogs(0);
         const label = newest.status === "success" ? "완료" : "실패";
         alert(`${src} 수집 ${label}: 신규 ${newest.inserted_count}건`);
         return;
@@ -460,22 +475,90 @@ function AdminHome() {
 
       <div className={styles.gridCard}>
         <p className={styles.gridCardTitle}>최근 배치 실행 로그</p>
-        <div className={styles.logsList}>
-          {batchLogs.map((log) => (
-            <div className={styles.logItem} key={log.ran_at}>
-              <p className={styles.logTime}>{formatLogTime(log.ran_at)}</p>
-              <span
-                className={`${styles.statusBadge} ${
-                  log.status === "success" ? styles.statusBadgeSuccess : styles.statusBadgeError
-                }`}
-              >
-                {log.status === "success" ? "성공" : "실패"} · 신규 {log.inserted_count}건
-              </span>
-            </div>
-          ))}
-        </div>
+        <table className={styles.logTable}>
+          <thead>
+            <tr>
+              <th>출처</th>
+              <th>실행 시각</th>
+              <th>상태</th>
+              <th>건수</th>
+            </tr>
+          </thead>
+          <tbody>
+            {batchLogs.length === 0 ? (
+              <tr>
+                <td className={styles.logTableEmpty} colSpan={4}>
+                  실행 로그가 없습니다.
+                </td>
+              </tr>
+            ) : (
+              batchLogs.map((log, idx) => (
+                <tr key={`${log.ran_at}-${log.source}-${idx}`}>
+                  <td>{LOG_SOURCE_LABELS[log.source] ?? log.source}</td>
+                  <td>{formatLogTime(log.ran_at)}</td>
+                  <td>
+                    <span
+                      className={`${styles.statusBadge} ${
+                        log.status === "success" ? styles.statusBadgeSuccess : styles.statusBadgeError
+                      }`}
+                    >
+                      {log.status === "success" ? "성공" : "실패"}
+                    </span>
+                  </td>
+                  <td>
+                    {log.source.endsWith("-sync")
+                      ? `반영 ${log.inserted_count.toLocaleString()}건`
+                      : `신규 ${log.inserted_count.toLocaleString()}건`}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+        <BatchLogPagination page={batchLogPage} total={batchLogTotal} onPageChange={fetchBatchLogs} />
       </div>
     </>
+  );
+}
+
+// 게시판형 페이지 번호 목록(현재 페이지 기준 최대 5개 노출) + 이전/다음.
+function BatchLogPagination({
+  page,
+  total,
+  onPageChange,
+}: {
+  page: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}) {
+  const totalPages = Math.max(1, Math.ceil(total / BATCH_LOG_PAGE_SIZE));
+  if (totalPages <= 1) return null;
+
+  const windowStart = Math.max(0, Math.min(page - 2, totalPages - 5));
+  const pageNumbers = Array.from(
+    { length: Math.min(5, totalPages - windowStart) },
+    (_, i) => windowStart + i,
+  );
+
+  return (
+    <div className={styles.pagination}>
+      <button type="button" disabled={page === 0} onClick={() => onPageChange(page - 1)}>
+        이전
+      </button>
+      {pageNumbers.map((p) => (
+        <button
+          type="button"
+          key={p}
+          className={p === page ? styles.paginationActive : undefined}
+          onClick={() => onPageChange(p)}
+        >
+          {p + 1}
+        </button>
+      ))}
+      <button type="button" disabled={page >= totalPages - 1} onClick={() => onPageChange(page + 1)}>
+        다음
+      </button>
+    </div>
   );
 }
 

@@ -324,3 +324,66 @@
   background: var(--color-error-bg);
   color: var(--color-error);
 }
+
+/* ===== 배치 로그 게시판형 테이블 + 페이징 ===== */
+.logTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-body);
+}
+
+.logTable th {
+  border-bottom: 1.5px solid var(--color-border);
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.logTable td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 12px 8px;
+  color: var(--color-text-dark);
+}
+
+.logTable tr:last-child td {
+  border-bottom: none;
+}
+
+.logTableEmpty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 24px 0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.pagination button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-text-dark);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.paginationActive {
+  background: var(--color-brand-navy) !important;
+  border-color: var(--color-brand-navy) !important;
+  color: #fff !important;
+}

@@ -1,0 +1,615 @@
+<title>업종코드 매칭 개발 현황</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;700&display=swap">
+
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --surface: #ffffff;
+    --surface-2: #eef2f1;
+    --ink: #172220;
+    --ink-soft: #59635f;
+    --border: #dee3e1;
+    --accent: #0f6d63;
+    --accent-soft: #e2efec;
+    --good: #1f7a4d;
+    --warn: #9a5a0c;
+    --bad: #b23b3b;
+    --shadow: 0 1px 2px rgba(23, 34, 32, .05), 0 8px 28px rgba(23, 34, 32, .05);
+  }
+  :root:not([data-theme="light"]) {
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0f1413;
+      --surface: #171d1b;
+      --surface-2: #1e2523;
+      --ink: #e8ece9;
+      --ink-soft: #9aa4a1;
+      --border: #2a312f;
+      --accent: #4bc2b2;
+      --accent-soft: #16302c;
+      --good: #4faf7f;
+      --warn: #d08f45;
+      --bad: #d96c6c;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0f1413;
+    --surface: #171d1b;
+    --surface-2: #1e2523;
+    --ink: #e8ece9;
+    --ink-soft: #9aa4a1;
+    --border: #2a312f;
+    --accent: #4bc2b2;
+    --accent-soft: #16302c;
+    --good: #4faf7f;
+    --warn: #d08f45;
+    --bad: #d96c6c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans KR", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: clamp(2.5rem, 6vw, 5rem) clamp(1.1rem, 4vw, 2rem) 6rem;
+  }
+
+  header.masthead {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 1.6rem;
+    margin-bottom: 3rem;
+  }
+  .kicker {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .74rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  h1 {
+    font-family: "Noto Serif KR", serif;
+    font-weight: 700;
+    font-size: clamp(1.9rem, 5.4vw, 2.85rem);
+    line-height: 1.24;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    margin: .7rem 0 .9rem;
+  }
+  .standfirst {
+    font-size: 1.06rem;
+    color: var(--ink-soft);
+    max-width: 46ch;
+  }
+  .meta {
+    margin-top: 1.4rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .78rem;
+    color: var(--ink-soft);
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem 1.4rem;
+  }
+  .meta b { color: var(--ink); font-weight: 500; }
+
+  section { margin-top: 3.4rem; }
+  section > .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .74rem;
+    letter-spacing: .14em;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  h2 {
+    font-family: "Noto Serif KR", serif;
+    font-weight: 700;
+    font-size: clamp(1.32rem, 3.4vw, 1.62rem);
+    line-height: 1.34;
+    letter-spacing: -.005em;
+    text-wrap: balance;
+    margin: .35rem 0 1.1rem;
+    padding-bottom: .55rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.8rem 0 .5rem;
+  }
+  p { margin: .85rem 0; }
+  p + p { margin-top: .5rem; }
+  a { color: var(--accent); }
+  strong { font-weight: 600; }
+
+  ul, ol { margin: .8rem 0 .8rem 1.2rem; }
+  li { margin: .35rem 0; padding-left: .2rem; }
+
+  .lead-note {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: .9rem 1.1rem;
+    border-radius: 0 6px 6px 0;
+    font-size: .95rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.15rem 1.25rem;
+    box-shadow: var(--shadow);
+  }
+  .card-grid {
+    display: grid;
+    gap: .9rem;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 620px) {
+    .card-grid.three { grid-template-columns: repeat(3, 1fr); }
+  }
+  .card h3 { margin: 0 0 .35rem; font-size: .95rem; }
+  .card p { margin: 0; font-size: .88rem; color: var(--ink-soft); line-height: 1.6; }
+  .card .tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .7rem;
+    color: var(--bad);
+    letter-spacing: .04em;
+  }
+
+  .table-scroll { overflow-x: auto; margin: 1.1rem 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: .86rem;
+    min-width: 460px;
+  }
+  th, td {
+    text-align: left;
+    padding: .6rem .7rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  thead th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+    border-bottom: 1.5px solid var(--ink);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num-cell, th.num-cell { text-align: right; font-variant-numeric: tabular-nums; font-family: "IBM Plex Mono", monospace; }
+  .mono { font-family: "IBM Plex Mono", monospace; font-size: .92em; }
+  .hl { color: var(--accent); font-weight: 600; }
+  .ok { color: var(--good); font-weight: 600; }
+  .no { color: var(--bad); font-weight: 600; }
+
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    margin: 1.2rem 0;
+  }
+  .step {
+    display: flex;
+    gap: .85rem;
+    align-items: flex-start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .75rem .9rem;
+  }
+  .step .s-ix {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .78rem;
+    color: var(--accent);
+    font-weight: 500;
+    padding-top: .1rem;
+    flex-shrink: 0;
+  }
+  .step .s-body { font-size: .9rem; }
+  .step .s-body b { font-weight: 600; }
+  .step .s-body span { color: var(--ink-soft); display: block; font-size: .84rem; }
+  .arrow {
+    text-align: center;
+    color: var(--border);
+    font-size: .9rem;
+    line-height: 1;
+  }
+
+  .model-legend {
+    display: grid;
+    gap: .55rem;
+    margin: 1rem 0;
+    font-size: .88rem;
+  }
+  .model-legend div { display: flex; gap: .6rem; }
+  .model-legend .badge {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 500;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  pre {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .9rem 1rem;
+    overflow-x: auto;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .8rem;
+    line-height: 1.65;
+    margin: 1rem 0;
+  }
+  code {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .88em;
+    background: var(--surface-2);
+    padding: .1em .35em;
+    border-radius: 4px;
+  }
+  pre code { background: none; padding: 0; }
+
+  .files { list-style: none; margin-left: 0; }
+  .files li {
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: .88rem;
+    display: flex;
+    gap: .8rem;
+    flex-wrap: wrap;
+  }
+  .files li .fname { font-family: "IBM Plex Mono", monospace; color: var(--accent); font-size: .85rem; }
+  .files li .fdesc { color: var(--ink-soft); flex: 1; min-width: 12rem; }
+  .files li .fstate { font-family: "IBM Plex Mono", monospace; font-size: .74rem; }
+
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.3rem;
+    border-top: 1px solid var(--border);
+    font-size: .8rem;
+    color: var(--ink-soft);
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  .next-list { counter-reset: step; list-style: none; margin-left: 0; }
+  .next-list li {
+    position: relative;
+    padding: .55rem 0 .55rem 2.4rem;
+    border-bottom: 1px solid var(--border);
+    font-size: .92rem;
+  }
+  .next-list li::before {
+    counter-increment: step;
+    content: counter(step, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: .62rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .74rem;
+    color: var(--accent);
+  }
+  .next-list li:last-child { border-bottom: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">물꼬 · 3차 프로젝트 개발 현황</div>
+    <h1>사업 아이디어를 6자리 업종코드로 매칭하기</h1>
+    <p class="standfirst">사용자가 PSST로 입력한 사업 아이디어를 분석해 국세청 업종분류표의 6자리 업종코드를 자동으로 찾아주는 기능. 검색 품질이 왜 낮았고, 무엇을 고쳤는지 정리한다.</p>
+    <div class="meta">
+      <span><b>대상 데이터</b> 업종코드-표준산업분류 연계표 (1,612개 코드)</span>
+      <span><b>작업 폴더</b> business_matching/</span>
+      <span><b>기준일</b> 2026-09-08</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="num">01 — 개요</div>
+    <h2>이 기능이 하는 일</h2>
+    <p>사용자는 PSST 슬롯에 사업 아이디어(슬롯 0), 문제·기회(슬롯 2), 사업화 방식(슬롯 5)을 입력한다. 시스템은 이 세 가지만 사용해 <strong>실제로 돈을 버는 사업활동</strong>을 1~3개로 정리하고, 각 활동에 가장 잘 맞는 6자리 업종코드를 찾는다. 지역(슬롯 14)은 업종 판정에 넣지 않고, 업종코드가 확정된 뒤 지원사업·상권·시장분석에만 쓴다.</p>
+    <div class="lead-note">
+      최종 출력은 <strong>KSIC 코드가 아니라</strong> ‘업종코드-표준산업분류 연계표.csv’의 <strong>6자리 업종코드</strong>다. 예: <span class="mono">154901</span> 커피 가공업, <span class="mono">552303</span> 커피 전문점. 앞자리 0이 날아가면 안 되므로 항상 문자열로 다룬다.
+    </div>
+  </section>
+
+  <section>
+    <div class="num">02 — 진단</div>
+    <h2>“코사인 유사도가 낮다”를 실제로 재본 결과</h2>
+    <p>같은 커피 사례를 여러 방식으로 임베딩 검색해 봤다. 정답은 <span class="mono">154901</span>(커피 가공업)과 <span class="mono">552303</span>(커피 전문점)이다.</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>검색 쿼리</th><th>1위 결과</th><th class="num-cell">정답 순위</th><th>해석</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">커피 원두 가공 및 제조</td>
+            <td><span class="ok">154901 커피 가공업</span></td>
+            <td class="num-cell">1</td>
+            <td>깔끔한 분류표 용어면 잘 맞는다</td>
+          </tr>
+          <tr>
+            <td class="mono">커피 원두 로스팅 및 <b>판매</b></td>
+            <td><span class="no">512273 커피 및 차류 도매업</span></td>
+            <td class="num-cell">2</td>
+            <td>“판매”가 도매 쪽으로 끌어당김</td>
+          </tr>
+          <tr>
+            <td class="mono">카페에서 커피 음료 <b>제조</b> 및 판매</td>
+            <td><span class="no">154901 커피 가공업</span></td>
+            <td class="num-cell">3</td>
+            <td>“제조”가 제조업 쪽으로 끌어당김</td>
+          </tr>
+          <tr>
+            <td class="mono">커피 전문점 운영</td>
+            <td><span class="ok">552303 커피 전문점</span></td>
+            <td class="num-cell">1</td>
+            <td>역할이 분명하면 정확하다</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>임베딩 모델(<span class="mono">text-embedding-3-small</span>)로 짧은 한국어 문구를 비교하면 <strong>코사인 절댓값이 원래 0.3~0.5로 낮게</strong> 나온다. 이건 정상이고, 임베딩 자체는 문제가 없다. 진짜 문제는 두 가지였다 — <strong>쿼리 문구가 사업자의 역할을 흐리면 엉뚱한 업종으로 끌려가는 것</strong>, 그리고 <strong>검색 문서가 코드번호·라벨로 지저분한 것</strong>(09 참고).</p>
+  </section>
+
+  <section>
+    <div class="num">03 — 원인</div>
+    <h2>검색이 흔들린 3가지 이유</h2>
+    <div class="card-grid three">
+      <div class="card">
+        <div class="tag">CAUSE 1</div>
+        <h3>오염된 표현</h3>
+        <p>LLM이 만든 검색어에 “판매·온라인·앱·제조” 같은 단어가 섞이면 그쪽 업종으로 벡터가 쏠린다.</p>
+      </div>
+      <div class="card">
+        <div class="tag">CAUSE 2</div>
+        <h3>역할 구분 없음</h3>
+        <p>제조·도매·소매·음식점 중 무엇인지 명시하지 않으면, 재판정 단계에서도 후보를 걸러낼 기준이 없다.</p>
+      </div>
+      <div class="card">
+        <div class="tag">CAUSE 3</div>
+        <h3>단일 표현 검색</h3>
+        <p>한 가지 문구로만 검색하면, 그 문구가 조금만 어긋나도 정답이 후보군 밖으로 밀려난다.</p>
+      </div>
+    </div>
+    <p>핵심은 <strong>“정답이 후보군 안에 들어오는가”(retrieval)</strong>다. 후보에 정답이 없으면 아무리 좋은 LLM도 정답을 고를 수 없다.</p>
+  </section>
+
+  <section>
+    <div class="num">04 — 개선</div>
+    <h2>v3에서 바꾼 것</h2>
+    <p><code>match_business_code.py</code>는 구조는 단순하게 유지하고(심사위원이 이해하기 쉽게), 검색 품질에 직접 영향을 주는 부분만 손봤다.</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>바꾼 것</th><th>이유</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>canonical_activity를 분류표 용어로 강제</strong><br><span class="mono">~업 / ~제조업 / ~전문점</span> 어미, “판매·온라인·앱” 금지, 예시 8개 제공</td><td>진단에서 “로스팅 및 판매” → 커피 도매업으로 끌려간 문제</td></tr>
+          <tr><td><strong>business_role을 18종 고정 목록으로 추출</strong><br>제조·가공 / 도매 / 소매 / 음식·주점 / SW개발 / 중개·플랫폼 …</td><td>재판정이 “역할이 안 맞는 후보”를 먼저 탈락시킬 근거</td></tr>
+          <tr><td><strong>멀티쿼리 임베딩 검색</strong><br>한 활동을 3가지 표현으로 검색 → 업종코드 기준 병합(best-rank)</td><td>표현 하나에 의존하지 않음 → 정답이 후보군에 들어올 확률↑</td></tr>
+          <tr><td><strong>키워드 검색: 세세분류명 일치 2배 가중</strong><br>연계 KSIC명은 계속 제외</td><td>한 업종코드에 여러 KSIC가 묶여 생기는 오탐 완화</td></tr>
+          <tr><td><strong>재판정 프롬프트 재설계</strong><br>“역할 상충 후보 제외 → 세세분류·세부설명 직접일치” 순서 + 신뢰도(high/mid/low)</td><td>하드코딩 임계값 없이 신뢰도 표시</td></tr>
+          <tr><td><strong>후보 업종명·적중 쿼리 출력, <span class="mono">--json-out</span> / <span class="mono">--no-llm</span> 추가</strong></td><td>retrieval 품질을 눈으로 확인, 정답셋 구축·평가용</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="num">05 — 파이프라인</div>
+    <h2>지금의 처리 흐름</h2>
+    <div class="pipeline">
+      <div class="step"><div class="s-ix">1</div><div class="s-body"><b>사업활동 구조화</b><span>PSST 0+2+5 → GPT가 실제 수익활동 1~3개 + canonical_activity + business_role</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="step"><div class="s-ix">2</div><div class="s-body"><b>멀티쿼리 임베딩 검색</b><span>3가지 표현으로 검색 → 병합 → 벡터 후보 25개</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="step"><div class="s-ix">3</div><div class="s-body"><b>키워드 후보 보완</b><span>세세분류명 일치 중심으로 후보 15개</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="step"><div class="s-ix">4</div><div class="s-body"><b>통합 후보 Pool</b><span>두 검색에서 같이 잡힌 후보 우선 → 재판정 입력 20개</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="step"><div class="s-ix">5</div><div class="s-body"><b>GPT 재판정 + 신뢰도</b><span>역할 상충 후보 제외 → 대표 업종 1개 + 부가 0~2개 + high/mid/low</span></div></div>
+    </div>
+    <p>성능 검증에서는 아래 세 방식을 비교한다.</p>
+    <div class="model-legend">
+      <div><span class="badge">A</span><span>원문(슬롯 0+2+5)을 그대로 임베딩 → Chroma 1위. LLM 없음.</span></div>
+      <div><span class="badge">B</span><span>LLM 활동 구조화 → 멀티쿼리 임베딩 → 후보 Pool 1위. 재판정 없음.</span></div>
+      <div><span class="badge">C</span><span>B + GPT 재판정. (v3 최종 방식)</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="num">06 — 성능</div>
+    <h2>정답셋 비교 결과</h2>
+    <p><code>gold_set_v1.csv</code> <strong>42건</strong>, <code>eval_business_code.py</code>로 측정(LLM = gpt-5-mini, 다중문서 DB, 3단계 튜닝 반영). 코사인 절댓값은 지표로 쓰지 않고 <strong>순위·후보 포함 여부</strong>만 본다.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>방식</th><th class="num-cell">Top1</th><th class="num-cell">Top3</th><th class="num-cell">Top5</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>A.</strong> 원문 임베딩 (LLM 없음)</td><td class="num-cell">38.1%</td><td class="num-cell">61.9%</td><td class="num-cell">66.7%</td></tr>
+          <tr><td><strong>B.</strong> LLM 구조화 + 임베딩 (후보 Pool)</td><td class="num-cell">64.3%</td><td class="num-cell">83.3%</td><td class="num-cell">90.5%</td></tr>
+          <tr><td><strong>C.</strong> B + GPT 재판정 <span class="hl">(v3 최종)</span></td><td class="num-cell hl">95.2%</td><td class="num-cell">—</td><td class="num-cell">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="card">
+        <h3>C. 최종 Top1 (대표 업종)</h3>
+        <p style="font-size:1.6rem;color:var(--ink);font-family:'IBM Plex Mono',monospace;">95.2%</p>
+        <p>42건 중 40건. 오답 2건은 특정 소매·시공 업종의 검색 약함 (G25 꽃집, G30 도배)</p>
+      </div>
+      <div class="card">
+        <h3>정답이 후보 Pool 안에 포함</h3>
+        <p style="font-size:1.6rem;color:var(--ink);font-family:'IBM Plex Mono',monospace;">97.6%</p>
+        <p>재판정 후보(TOP20) 안: 95.2%</p>
+      </div>
+    </div>
+
+    <h3>단계별 개선 추이 (동일 규모 재측정)</h3>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>C. 최종 Top1</th><th class="num-cell">14건</th><th class="num-cell">42건</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1단계 (단일문서 DB)</td><td class="num-cell">64.3%</td><td class="num-cell">—</td></tr>
+          <tr><td>2단계 (다중문서 DB)</td><td class="num-cell hl">92.9%</td><td class="num-cell">85.7%</td></tr>
+          <tr><td>3단계 (재판정 창·프롬프트·동의어)</td><td class="num-cell">—</td><td class="num-cell hl">95.2%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>복수 업종(대표 + 부가) — 3건</h3>
+    <p>실제로 독립 수익활동이 2개인 케이스(원두 로스팅+카페, 딸기 재배+가공, 가구 제조+목공교습). <strong>대표 업종 3/3 적중</strong>, 부가 업종 2/3 (딸기잼 제조를 유지 제조업으로 오분류). n=3은 참고 수준.</p>
+
+    <h3>신뢰도 버킷별 실측 정확도 (42건)</h3>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>버킷</th><th class="num-cell">건수 (비중)</th><th class="num-cell">실측 정확도</th><th>UX 처리</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>high</strong></td><td class="num-cell">35건 (83%)</td><td class="num-cell ok">100%</td><td>찾은 업종을 바로 확정 후보로 제시</td></tr>
+          <tr><td><strong>mid</strong></td><td class="num-cell">7건 (17%)</td><td class="num-cell">71%</td><td>제시하되 "다른 후보도 확인" + 후보 2·3위 노출</td></tr>
+          <tr><td><strong>low</strong></td><td class="num-cell">0건</td><td class="num-cell">—</td><td>"직접 선택" 우선 노출</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>신뢰도 = 재판정 LLM의 자기판단(high/mid/low) + 검색 신호 가드(후보 6위↓ 선택, 한쪽 검색만 잡힘 → 한 단계 하향). 가드 덕에 <strong>high 버킷은 42건에서 오답 0건</strong>. 코사인 마진 등 숫자는 저장만 하고 임계값은 정답셋 확대 후 결정(인수인계서 24절).</p>
+
+    <h3>이 결과가 말해주는 것</h3>
+    <ul>
+      <li><strong>3단계가 각각 기여한다.</strong> 원문만(A) 38% → LLM 활동 구조화(B) 64% → 재판정(C) 95%. "검색 + 검증 분리"(BEACON/ONS) 구조의 효과를 국내 6자리 코드에서 정량 입증.</li>
+      <li><strong>재판정이 가장 큰 폭.</strong> B에서 정답이 pool에 있어도(98%) 1위는 64%뿐인데, 역할 기준 재판정으로 95%.</li>
+      <li><strong>신뢰도가 잘 맞는다.</strong> "high"라고 한 35건은 실제로 전부 정답. 사용자에게 확신도를 보여줄 근거가 생김.</li>
+      <li><strong>남은 오답 2건은 검색 약함.</strong> "화초"·"도배장판" 같은 특정 용어에서 임베딩이 정답 문서를 못 잡음. 품목 동의어를 늘리거나 정답셋을 키워 재보정하면 개선 여지.</li>
+      <li>n=42는 방향 확인엔 충분하나 소수점까지 믿을 규모는 아니다. 100건대가 이상적.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="num">07 — 파일</div>
+    <h2>파일 구성과 실행법</h2>
+    <ul class="files">
+      <li><span class="fname">21_prepare_..._reference.py</span><span class="fdesc">원본 CSV → 업종코드 1개 = 1행으로 정리</span><span class="fstate ok">완료</span></li>
+      <li><span class="fname">build_business_code_chroma.py</span><span class="fdesc">1,612개 단일 문서 임베딩 → 구 ChromaDB</span><span class="fstate">대체됨(롤백용 보존)</span></li>
+      <li><span class="fname">match_business_code.py</span><span class="fdesc">파이프라인 본체 — 활동 구조화·멀티쿼리 검색·재판정·신뢰도·alternatives 출력</span><span class="fstate hl">최종</span></li>
+      <li><span class="fname">23_match_business_code.py</span><span class="fdesc">Hybrid·RRF·가중치 다 붙인 버전 (참고용, 복잡)</span><span class="fstate">보류</span></li>
+      <li><span class="fname">prepare_business_code_docs.py</span><span class="fdesc">업종코드 1개 → 검색문서 여러 개(name/hier/ksic/desc)로 확장</span><span class="fstate hl">신규</span></li>
+      <li><span class="fname">build_business_code_docs_chroma.py</span><span class="fdesc">3,948개 다중 문서 임베딩 → 새 ChromaDB(<span class="mono">business_code_docs_2025</span>)</span><span class="fstate hl">신규</span></li>
+      <li><span class="fname">gold_set_v1.csv</span><span class="fdesc">정답셋 45건 (단일 42 + 복수활동 3). 애매한 케이스는 허용코드 다중 지정</span><span class="fstate hl">45건</span></li>
+      <li><span class="fname">eval_business_code.py</span><span class="fdesc">A/B/C 성능 + 신뢰도 버킷별 정확도 + 복수업종 recall</span><span class="fstate hl">신규</span></li>
+    </ul>
+    <pre><code># (최초 1회) 검색 DB 구축
+python business_matching/prepare_business_code_docs.py
+python business_matching/build_business_code_docs_chroma.py
+
+# 단일 케이스 매칭
+python business_matching/match_business_code.py \
+  --seed "..." --problem "..." --solution "..." --json-out data/outputs/case01.json
+
+# 정답셋 전체 성능 비교
+python business_matching/eval_business_code.py</code></pre>
+    <div class="lead-note"><code>.env</code> 확인: <code>LLM_MODEL</code> = <span class="mono">gpt-5-mini</span>, <code>EMBEDDING_MODEL</code> = <span class="mono">text-embedding-3-small</span>. 임베딩 모델을 바꾸면 `build_business_code_docs_chroma.py` DB를 다시 구축해야 한다. 구 DB <span class="mono">chroma_db/business_codes_2025</span>는 롤백용으로 남겨둔다.</div>
+  </section>
+
+  <section>
+    <div class="num">08 — 상태</div>
+    <h2>업종코드 매칭 기능: 완료</h2>
+    <p>담당 범위(사업 아이디어 → 대표 업종 1 + 부가 0~2)는 <strong>완료</strong>. C Top1 95.2%, 신뢰도 high 버킷 정확도 100%, 복수활동 분해 동작 확인.</p>
+    <ol class="next-list">
+      <li><s>파이프라인 구현 (활동 구조화 → 멀티쿼리 검색 → 재판정 → 대표+부가)</s></li>
+      <li><s>ONS 방식 다중 검색문서 DB 재구축</s></li>
+      <li><s>정답셋 42건 + 3단계 튜닝 (재판정 창 20, 프롬프트 규칙, 품목 동의어)</s></li>
+      <li><s>후보 alternatives + <span class="mono">ai_predicted_code/score</span> + <span class="mono">user_selected_code/changed_by_user</span> 출력</s></li>
+      <li><s>신뢰도 = LLM 자기판단 + 검색 신호 가드, 42건에서 검증 (high 100%)</s></li>
+    </ol>
+    <h3>향후 과제 (범위 밖 / 다른 파트)</h3>
+    <ul>
+      <li>정답셋 100건대 확장 → 신뢰도 코사인·마진 임계값 데이터 기반 확정</li>
+      <li>남은 오답 2건(꽃집·도배) — 품목 동의어 보강 또는 임베딩 문서 개선</li>
+      <li>"불완전한 사업 아이디어" 되묻기 로직</li>
+      <li>사용자 보정 UI + 보정 로그 수집 (프론트/백엔드)</li>
+      <li>업종코드 확정 이후: 지역 결합 → 지원사업 매칭 → 상권·시장분석 (다른 파트)</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="num">09 — 벤치마킹</div>
+    <h2>해외 사례 대조와 진행 로그</h2>
+    <p>미국 Census <strong>BEACON</strong>과 영국 ONS <strong>ClassifAI</strong>는 공통적으로 자유 텍스트를 곧바로 코드 하나로 확정하지 않고 <strong>후보 검색과 검증 단계를 분리</strong>한다. 우리는 여기에 PSST 질문형 입력, 복수 수익활동 분해, 국내 6자리 업종코드 매칭, 지원사업·시장분석 연결을 더했다.</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>벤치마킹 포인트</th><th>우리 시스템 반영</th><th>상태</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>BEACON — 즉시 확정 X, Top-K 후보 검색·랭킹</td><td>활동 → 벡터·키워드 후보 pool → 재판정</td><td class="ok">반영</td></tr>
+          <tr><td>ONS ClassifAI — 분류 1개 = 검색문서 여러 개</td><td>업종코드 1개 → name·hier·ksic·desc 문서 (1,612 → 3,948)</td><td class="ok">반영 (2단계)</td></tr>
+          <tr><td>Retrieve → Verify — 전체 코드공간 자유생성 금지</td><td>LLM은 활동 구조화·후보 안 재판정만. 코드 직접 생성 불가</td><td class="ok">반영</td></tr>
+          <tr><td>사용자 확인·보정 — 다른 후보 선택 가능</td><td><span class="mono">alternatives</span> + <span class="mono">ai_predicted_code/score</span> + <span class="mono">user_selected_code/changed_by_user</span> 자리</td><td class="ok">출력 반영</td></tr>
+          <tr><td>자체 차별화 — PSST 입력 / 복수 수익활동 분해</td><td>PSST 0+2+5 소비 / 1~3활동 분해 → 대표 1 + 부가 0~2</td><td class="ok">반영</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lead-note"><strong>담당 범위 명시:</strong> 이 파트는 "사업 아이디어 → 6자리 업종코드(대표 1 + 부가 0~2)"까지다. 업종코드 확정 이후의 지역 결합·지원사업·상권·시장분석은 별도 파트이며, 슬롯필링 인터페이스(입력 3개 텍스트)는 제안서 그대로 유지된다.</p>
+
+    <h3>진행 로그</h3>
+    <ul>
+      <li><strong>1단계</strong> — <code>23_v3</code> 결과에 활동별 <strong>후보 2·3위(alternatives)</strong>, <span class="mono">ai_predicted_code / ai_predicted_score / user_selected_code / changed_by_user</span> 자리 추가. 재판정 창 10 → 15.</li>
+      <li><strong>2단계</strong> — <code>25</code>·<code>26</code> 신규. "업종코드 1개 = 거대한 문서 1개"(코드번호·라벨이 벡터를 희석)를 버리고 <strong>짧고 깨끗한 문서 여러 개</strong>로 재구축(1,612 → 3,948). "커피 원두 가공" → <span class="mono">154901</span> 코사인 <strong>0.42 → 0.67</strong>.</li>
+      <li><strong>3단계</strong> — 오답 분석 후 저위험 수정: 재판정 창 15 → 20, 재판정 프롬프트에 "매장 조리=음식점 / 재고 매입·마진=도매(≠중개) / 인터넷 소매=전자상거래" 규칙, 키워드 검색 품목 동의어(꽃↔화초, 수산물↔활어·횟감 등). <strong>C Top1 85.7% → 95.2% (42건 재평가).</strong></li>
+      <li><strong>3단계+</strong> — 활동 구조화 프롬프트에 "직접 로스팅·제조·재배하면 도매·온라인으로 팔아도 canonical은 제조업·가공업·재배업" 규칙 추가(판매 채널을 업종으로 착각 방지). 실패 케이스(로스터가 "도매 공급" 강조 시 커피 도매업으로 오분류)를 개별 검증해 해결 확인. 전체 재평가는 API 지연으로 미완료 — 규칙이 기존 규칙의 명확화라 회귀 위험 낮음.</li>
+      <li><strong>신뢰도</strong> — 재판정 LLM 자기판단에 검색 신호 가드를 얹어 42건에서 <strong>high 버킷 정확도 100%</strong> 확인.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="num">부록</div>
+    <h2>코사인 유사도를 어떻게 해석하는가</h2>
+    <p>코사인 값은 <strong>정답 확률이 아니다.</strong> <span class="mono">cosine = 0.55</span>가 “정답 확률 55%”라는 뜻이 아니라, 임베딩 공간에서 두 벡터의 방향이 얼마나 가까운지를 나타내는 상대적 유사도다. 정답인데 0.4대가 나올 수도 있고, 0.80과 0.79처럼 붙어 있으면 후보 간 차이가 거의 없어 애매할 수 있다.</p>
+    <p>그래서 이 시스템은 코사인을 <strong>최종 신뢰도로 쓰지 않고 후보 검색(retrieval) 지표로만</strong> 쓴다. 실제 성능은 정답셋으로 따로 검증한다.</p>
+    <h3>근거 문헌</h3>
+    <ul>
+      <li><strong>Sentence-BERT</strong> (Reimers &amp; Gurevych, 2019) — 문장을 임베딩 벡터로 만들어 코사인 유사도로 의미적 근접도를 비교.</li>
+      <li><strong>Correlation Coefficients and Semantic Textual Similarity</strong> (Zhelezniak et al., 2019) — 코사인 유사도는 널리 쓰이지만 절댓값을 곧바로 정답 확률로 해석하면 안 됨.</li>
+      <li><strong>Vector Space Model</strong> 계열 — 문서와 질의를 벡터 공간에서 비교하는 정보검색의 기본 배경.</li>
+    </ul>
+    <p class="lead-note">발표용 문장: “본 시스템은 사업활동과 업종 설명을 임베딩 벡터로 변환하고 코사인 유사도 기반으로 의미적으로 가까운 업종 후보를 검색합니다. 단, 코사인 유사도는 정답 확률이 아니므로 최종 판정값이 아니라 후보 검색 지표로 사용하며, 실제 성능은 별도의 정답셋으로 검증합니다.”</p>
+  </section>
+
+  <footer>
+    물꼬 3차 프로젝트 · business_matching · 2026-09-08 기준
+  </footer>
+
+</div>

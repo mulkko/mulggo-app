@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>업종코드 자동매칭 온보딩</title>
+<meta name="description" content="사업설명 → 국세청 6자리 업종코드 자동매칭 기능의 전체 플로우, 현재 성능, 진행 상태 — 처음 보는 팀원용">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper: #f7f5f2;
+    --card: #fffefb;
+    --sunk: #efece6;
+    --ink: #23201c;
+    --ink-soft: #55504a;
+    --ink-faint: #8a8379;
+    --rule: #ddd8cf;
+    --rule-soft: #e9e5dd;
+    --accent: #1f5673;
+    --accent-soft: #e2ecf1;
+    --done: #2f6d54;
+    --done-bg: #e3efe9;
+    --wip: #9a6b12;
+    --wip-bg: #f3ebd9;
+    --wait: #6a6459;
+    --wait-bg: #ece8e0;
+    --stop: #a4472e;
+    --stop-bg: #f4e3dd;
+    --shadow: 0 1px 2px rgba(35,32,28,.05), 0 8px 24px -16px rgba(35,32,28,.25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #16150f;
+      --card: #1e1c16;
+      --sunk: #262319;
+      --ink: #e9e4d9;
+      --ink-soft: #b0a99b;
+      --ink-faint: #837c6d;
+      --rule: #363126;
+      --rule-soft: #2a271e;
+      --accent: #7fb8d4;
+      --accent-soft: #1c2e37;
+      --done: #6cbf9c;
+      --done-bg: #17281f;
+      --wip: #d6ac5c;
+      --wip-bg: #2c2513;
+      --wait: #a49d8d;
+      --wait-bg: #262319;
+      --stop: #dd8a6f;
+      --stop-bg: #2e1c15;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 28px -18px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #16150f;
+    --card: #1e1c16;
+    --sunk: #262319;
+    --ink: #e9e4d9;
+    --ink-soft: #b0a99b;
+    --ink-faint: #837c6d;
+    --rule: #363126;
+    --rule-soft: #2a271e;
+    --accent: #7fb8d4;
+    --accent-soft: #1c2e37;
+    --done: #6cbf9c;
+    --done-bg: #17281f;
+    --wip: #d6ac5c;
+    --wip-bg: #2c2513;
+    --wait: #a49d8d;
+    --wait-bg: #262319;
+    --stop: #dd8a6f;
+    --stop-bg: #2e1c15;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 28px -18px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Noto Sans KR", system-ui, sans-serif;
+    line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 4rem 1.5rem 7rem; }
+
+  header.doc { margin-bottom: 2.5rem; }
+  .kicker {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 1rem;
+  }
+  h1 {
+    font-family: "Noto Serif KR", serif;
+    font-weight: 700; font-size: 2.1rem; line-height: 1.3;
+    letter-spacing: -.01em; text-wrap: balance; margin: 0 0 .8rem;
+  }
+  .standfirst {
+    font-size: 1.08rem; color: var(--ink-soft); margin: 0 0 1.6rem; max-width: 64ch;
+  }
+  .facts {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    border-radius: 7px; overflow: hidden; margin-top: 1.8rem;
+  }
+  .facts div { background: var(--card); padding: .85rem 1rem; }
+  .facts dt {
+    font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: .2rem;
+  }
+  .facts dd { margin: 0; font-weight: 700; font-size: 1.02rem; }
+
+  nav.toc {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 7px;
+    padding: 1.1rem 1.4rem; margin: 2.5rem 0 3rem; box-shadow: var(--shadow);
+  }
+  nav.toc p {
+    font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); margin: 0 0 .6rem;
+  }
+  nav.toc ol { margin: 0; padding-left: 1.4rem; columns: 2; column-gap: 2rem; }
+  nav.toc li { margin: .25rem 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+
+  section { margin: 3.4rem 0; scroll-margin-top: 1.5rem; }
+  h2 {
+    font-family: "Noto Serif KR", serif; font-weight: 600; font-size: 1.5rem;
+    letter-spacing: -.01em; margin: 0 0 1rem; padding-bottom: .5rem;
+    border-bottom: 2px solid var(--accent); display: flex; gap: .7rem; align-items: baseline;
+  }
+  h2 .num {
+    font-family: "IBM Plex Mono", monospace; font-size: .85rem; font-weight: 500;
+    color: var(--accent); flex-shrink: 0;
+  }
+  h3 { font-size: 1.06rem; font-weight: 700; margin: 2rem 0 .6rem; }
+  p { margin: 0 0 1rem; max-width: 68ch; }
+  strong { font-weight: 700; }
+  a { color: var(--accent); }
+  ul, ol { max-width: 68ch; padding-left: 1.3rem; }
+  li { margin: .35rem 0; }
+  li::marker { color: var(--ink-faint); }
+
+  code {
+    font-family: "IBM Plex Mono", monospace; font-size: .84em;
+    background: var(--sunk); padding: .1em .4em; border-radius: 3px;
+  }
+
+  .callout {
+    border-radius: 7px; padding: 1rem 1.3rem; margin: 1.4rem 0; border: 1px solid;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .lbl {
+    font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .1em;
+    text-transform: uppercase; display: block; margin-bottom: .4rem; font-weight: 600;
+  }
+  .callout.key { background: var(--accent-soft); border-color: var(--accent); }
+  .callout.key .lbl { color: var(--accent); }
+  .callout.warn { background: var(--stop-bg); border-color: var(--stop); }
+  .callout.warn .lbl { color: var(--stop); }
+
+  /* pipeline */
+  .pipe { margin: 1.6rem 0; }
+  .stage {
+    position: relative; background: var(--card); border: 1px solid var(--rule);
+    border-radius: 7px; padding: 1rem 1.2rem 1rem 3.2rem; margin-bottom: .55rem;
+    box-shadow: var(--shadow);
+  }
+  .stage::before {
+    content: attr(data-n);
+    position: absolute; left: 0; top: 0; bottom: 0; width: 2.4rem;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1rem;
+    color: #fff; background: var(--accent); border-radius: 7px 0 0 7px;
+  }
+  .stage.hilite { border-color: var(--wip); border-width: 2px; }
+  .stage.hilite::before { background: var(--wip); }
+  .stage h4 { margin: 0 0 .2rem; font-size: 1rem; font-weight: 700; }
+  .stage .fn {
+    font-family: "IBM Plex Mono", monospace; font-size: .74rem; color: var(--ink-faint);
+  }
+  .stage p { margin: .45rem 0 0; font-size: .92rem; color: var(--ink-soft); }
+  .stage .tagrow { margin-top: .5rem; display: flex; flex-wrap: wrap; gap: .35rem; }
+  .mini {
+    font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+    padding: .1rem .45rem; border-radius: 3px; background: var(--sunk); color: var(--ink-soft);
+  }
+  .mini.paid { background: var(--wip-bg); color: var(--wip); }
+  .mini.free { background: var(--done-bg); color: var(--done); }
+  .flowarrow { text-align: center; color: var(--ink-faint); font-size: .8rem; margin: -.2rem 0 .35rem; }
+
+  /* status board */
+  .board { display: flex; flex-direction: column; gap: .5rem; margin: 1.4rem 0; }
+  .item {
+    display: grid; grid-template-columns: 7.5rem 1fr; gap: 1rem;
+    background: var(--card); border: 1px solid var(--rule); border-radius: 6px;
+    padding: .75rem 1rem; align-items: start;
+  }
+  .badge {
+    font-family: "IBM Plex Mono", monospace; font-size: .68rem; font-weight: 600;
+    letter-spacing: .04em; text-transform: uppercase; padding: .28rem .5rem;
+    border-radius: 4px; text-align: center; white-space: nowrap;
+  }
+  .b-done { background: var(--done-bg); color: var(--done); }
+  .b-wip  { background: var(--wip-bg); color: var(--wip); }
+  .b-wait { background: var(--wait-bg); color: var(--wait); }
+  .b-cond { background: var(--stop-bg); color: var(--stop); }
+  .item .what { font-size: .92rem; }
+  .item .what b { display: block; margin-bottom: .1rem; }
+  .item .what span { color: var(--ink-soft); }
+
+  .tbl-scroll { overflow-x: auto; margin: 1.4rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; min-width: 440px; }
+  th, td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  th {
+    font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--ink-faint); border-bottom: 1px solid var(--rule);
+  }
+  td.mono, th.mono { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: none; }
+  .up { color: var(--done); font-weight: 700; }
+
+  pre {
+    font-family: "IBM Plex Mono", monospace; font-size: .8rem; line-height: 1.65;
+    background: var(--card); border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+    border-radius: 5px; padding: 1rem 1.1rem; overflow-x: auto; margin: 1.2rem 0;
+  }
+  pre .c { color: var(--ink-faint); }
+
+  dl.glossary { margin: 1.2rem 0; }
+  dl.glossary dt {
+    font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: .86rem;
+    color: var(--accent); margin-top: 1rem;
+  }
+  dl.glossary dd { margin: .15rem 0 0; font-size: .92rem; color: var(--ink-soft); }
+
+  .foot {
+    margin-top: 4.5rem; padding-top: 1.3rem; border-top: 1px solid var(--rule);
+    font-size: .82rem; color: var(--ink-faint);
+  }
+  @media (max-width: 620px) {
+    .wrap { padding-top: 2.75rem; }
+    h1 { font-size: 1.65rem; }
+    nav.toc ol { columns: 1; }
+    .item { grid-template-columns: 1fr; gap: .4rem; }
+    h2 { flex-direction: column; gap: .1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div style="max-width:820px;margin:1rem auto 0;padding:1rem 1.3rem;border:2px solid #a4472e;border-radius:7px;background:#f4e3dd;color:#5a2a1c;font-family:system-ui,sans-serif">
+  <strong>⚠️ 이 문서는 2026-09-09 기준 — 재구현 전 버전입니다.</strong><br>
+  현재(개정 계획서 반영) 구조는 다릅니다: 입력 Q1/Q3/Q4/Q5, 임베딩 bge-m3, 3상태 결과, 앙상블 게이트.
+  최신은 <code>docs/최종상태_2026-09-10.md</code> · <code>docs/RUNBOOK_최종연결_2026-09-10.md</code> 를 보세요.
+</div>
+
+<div class="wrap">
+<header class="doc">
+  <p class="kicker">물꼬 · 3차 프로젝트 · 업종코드 파트 · 온보딩</p>
+  <h1>사업설명 → 국세청 6자리 업종코드 자동매칭</h1>
+  <p class="standfirst">
+    사용자가 자기 사업을 자연어로 설명하면 국세청 업종코드(1,612개 중 1개)를 자동으로
+    도출한다. 이 문서는 처음 보는 팀원이 <strong>전체 구조·현재 성능·진행 상태</strong>를
+    한 번에 파악하도록 만든 것이다.
+  </p>
+  <dl class="facts">
+    <div><dt>입력</dt><dd>PSST 자유텍스트 3개</dd></div>
+    <div><dt>출력</dt><dd>6자리 코드 + 신뢰도</dd></div>
+    <div><dt>분류 규모</dt><dd>1,612개 세세분류</dd></div>
+    <div><dt>현재 Top-1</dt><dd>67.1%</dd></div>
+    <div><dt>정답 후보포함</dt><dd>97.5%</dd></div>
+    <div><dt>상태</dt><dd>백엔드 연동 단계</dd></div>
+  </dl>
+</header>
+
+<nav class="toc">
+  <p>목차</p>
+  <ol>
+    <li><a href="#s1">이 기능이 하는 일</a></li>
+    <li><a href="#s2">왜 어려운가</a></li>
+    <li><a href="#s3">전체 플로우 (5단계)</a></li>
+    <li><a href="#s4">현재 성능</a></li>
+    <li><a href="#s5">병목과 남은 오답</a></li>
+    <li><a href="#s6">진행 상태 보드</a></li>
+    <li><a href="#s7">지금 진행 중: 계층 rerank 실험</a></li>
+    <li><a href="#s8">파일 지도</a></li>
+    <li><a href="#s9">팀원이 꼭 알아야 할 것</a></li>
+    <li><a href="#s10">용어집</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+  <h2><span class="num">01</span>이 기능이 하는 일</h2>
+  <p>
+    소상공인·예비창업자가 사업 아이디어를 글로 설명한다(질문 3개 답변). 시스템이 그 텍스트에서
+    <strong>실제 수익활동</strong>을 뽑아내고, 그에 맞는 <strong>국세청 6자리 업종코드</strong>를
+    대표 1개 + 부가 0~2개로 신뢰도와 함께 반환한다.
+  </p>
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>입력 슬롯</th><th>내용</th><th class="mono">길이</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">seed</td><td>사업 아이디어 시드 문장</td><td class="mono">20–120자</td></tr>
+      <tr><td class="mono">problem</td><td>풀려는 문제 / 기회</td><td class="mono">20–250자</td></tr>
+      <tr><td class="mono">solution</td><td>사업화 방식</td><td class="mono">20–300자</td></tr>
+      <tr><td class="mono">region</td><td>지역 — <strong>업종 판정에 안 씀</strong>, 통과만</td><td class="mono">제한 없음</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout key">
+    <span class="lbl">담당 범위</span>
+    <p><strong>"사업 아이디어 → 업종코드"까지.</strong> 그 뒤의 지역 결합 / 지원사업 자격 판정 /
+    상권·시장 분석 / 창업유형 분류는 <strong>전부 별도 파트</strong>다. 이 코드는 그 파트들의 입력이 된다.</p>
+  </div>
+</section>
+
+<section id="s2">
+  <h2><span class="num">02</span>왜 어려운가</h2>
+  <ul>
+    <li><strong>분류가 1,612개로 잘다.</strong> 세세분류 수준이라 재료·용도 중심으로 쪼개져 있음.</li>
+    <li><strong>공식 분류가 직관에 반한다.</strong> "밀가루 제조" → 정답 <code>곡물 제분업</code> /
+      "에어 매트리스 제조" → 정답 <code>천막·텐트 및 유사 제품 제조</code> /
+      "페인트용 롤러 제조" → 정답 <code>비 및 솔 제조업</code>.</li>
+    <li><strong>활동 설명 단어와 정답 코드명이 한 단어도 안 겹치는</strong> 케이스가 흔하다.</li>
+    <li><strong>실제 사용자 정답(라벨) 데이터가 0건.</strong> 통계청 KSIC 11차 해설서(공식 문서)로
+      부트스트랩 중.</li>
+  </ul>
+  <p>
+    이 기능의 설계는 즉흥이 아니라 공식통계의 <strong>"산업 자동코딩(automated industry coding)"</strong>
+    이라는 확립된 분야를 따른 것이다. 미국 Census <strong>BEACON</strong>(경제센서스 자가분류 도구,
+    검색→후보 리스트→사용자 선택), 영국 <strong>ONS ClassifAI</strong>(코드 1개 = 검색문서 여러 개)와
+    같은 방식. 근거 논문은 실재 확인됨.
+  </p>
+</section>
+
+<section id="s3">
+  <h2><span class="num">03</span>전체 플로우 (5단계)</h2>
+  <p>진입점: <code>industry_matcher.py</code> → <code>match_business_code(seed, problem, solution, region)</code>.
+  본체: <code>business_matching/match_business_code.py</code>.</p>
+
+  <div class="pipe">
+    <div class="stage" data-n="1">
+      <h4>구조화 — 수익활동 뽑기</h4>
+      <span class="fn">extract_activities() · gpt-5-mini</span>
+      <p>사업설명에서 실제 수익활동 1~3개를 구조화한다. <strong>업종코드는 생성하지 않는다.</strong>
+      각 활동: <code>canonical_activity</code>(분류표 어투 이름) · <code>business_role</code>(18종 중 1개:
+      제조·가공 / 도매 / 소매 / 음식·주점 / 중개·플랫폼 …) · <code>search_keywords</code> · <code>priority</code>.</p>
+      <div class="tagrow"><span class="mini paid">OpenAI 유료</span><span class="mini">LLM 1회</span></div>
+    </div>
+    <div class="flowarrow">▼</div>
+    <div class="stage" data-n="2">
+      <h4>검색 — 후보 코드 모으기</h4>
+      <span class="fn">vector_search_multi() + keyword_search() · text-embedding-3-small · ChromaDB</span>
+      <p>활동을 여러 표현으로 임베딩 검색(multi-query). 검색문서 DB는 2개 채널로 분리:
+      <strong>BASE</strong>(업종명/계층/KSIC/정의, 상위 25개 반드시 유지) +
+      <strong>EXAMPLE</strong>(해설서 예시·제외, 상위 12개 '추가만'). 키워드 검색(동의어 확장)이 보완.</p>
+      <div class="tagrow"><span class="mini paid">임베딩 유료(소액)</span><span class="mini">DB 문서 14,627개</span></div>
+    </div>
+    <div class="flowarrow">▼</div>
+    <div class="stage hilite" data-n="3">
+      <h4>후보 순위 매기기 &nbsp;← 지금 실험이 건드리는 지점</h4>
+      <span class="fn">build_candidate_pool()</span>
+      <p>벡터·키워드 신호를 코드별로 합치고 순위를 정한다.
+      <strong>role 적합성</strong>: 후보 대분류가 역할과 상충하면(소매인데 제조업 등) 순위 뒤로(+12),
+      부합하면 앞으로(−6). <strong>완전 제거는 안 함</strong> — 구조화가 role을 오판해도 재판정이 되돌릴 수 있게.</p>
+      <p><strong>[실험]</strong> 여기에 <strong>계층 적합성</strong> soft 신호를 하나 더 얹는 것이 지금 진행 중인
+      작업(§07). 기본값에서는 꺼져 있어 v3와 동일.</p>
+      <div class="tagrow"><span class="mini free">로컬 · 무료</span></div>
+    </div>
+    <div class="flowarrow">▼</div>
+    <div class="stage" data-n="4">
+      <h4>재판정 — 최종 1개 선택</h4>
+      <span class="fn">rerank() · gpt-5-mini · 후보 상위 20개</span>
+      <p>후보 20개를 놓고 LLM이 딱 하나 고른다. 판정 순서:
+      <strong>1) 역할 적합성 → 2) 제품/서비스 직접일치 → 3) 해설서 포함 예시 → 4) 해설서 &lt;제외&gt; 위반 →
+      5) KSIC → 6) 계층.</strong> 후보 목록 밖 코드는 생성 금지. LLM이 스스로 신뢰도(high/mid/low)도 매긴다.</p>
+      <div class="tagrow"><span class="mini paid">OpenAI 유료</span><span class="mini">LLM 1회 · 입력 ~1만 토큰</span></div>
+    </div>
+    <div class="flowarrow">▼</div>
+    <div class="stage" data-n="5">
+      <h4>신뢰도 산정 + 조립</h4>
+      <span class="fn">compute_confidence()</span>
+      <p>LLM 자기판단에서 시작해 검색 신호가 나쁘면 <strong>한 단계 낮추기만</strong> 한다
+      (후보 4위 이하 / 한쪽 검색만 / 1·2위 유사도차 얇음 / 근거 얕으면 low 확정).
+      대표 업종 1개 + 부가 0~2개 + 각각 신뢰도·대안 후보를 반환.</p>
+      <div class="tagrow"><span class="mini free">로컬 · 무료</span></div>
+    </div>
+  </div>
+  <p style="font-size:.9rem;color:var(--ink-soft)">
+    ※ 활동 1개당 OpenAI 3회 호출(구조화는 공통 1회 + 활동별 임베딩 1회 + 재판정 1회).
+    응답 보통 8~20초. 워커/큐 처리 또는 타임아웃 30초+ 권장.
+  </p>
+</section>
+
+<section id="s4">
+  <h2><span class="num">04</span>현재 성능</h2>
+  <p>2026-09-09 기준. 평가셋 <code>gold_set_v2.csv</code> 240건 (통계청 해설서 &lt;예시&gt;/&lt;제외&gt; 기반), gpt-5-mini.</p>
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>방식</th><th class="mono">Top-1</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>원문만 임베딩 (LLM 없음)</td><td class="mono">61.7%</td><td>예시 색인 후 raw 검색</td></tr>
+      <tr><td>LLM 구조화 + 임베딩 (후보 pool 1위)</td><td class="mono">36.7%</td><td>Top3 58% · Top5 66%</td></tr>
+      <tr><td><strong>+ GPT 재판정 (현재 방식)</strong></td><td class="mono up">67.1%</td><td>이전 판 57.5% → +9.6%p</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>지표</th><th class="mono">현재</th><th class="mono">이전 판</th></tr></thead>
+    <tbody>
+      <tr><td>정답이 후보 pool에 포함</td><td class="mono up">97.5%</td><td class="mono">80.4%</td></tr>
+      <tr><td>검색 실패 건수 (정답이 후보에 아예 없음)</td><td class="mono up">6</td><td class="mono">47</td></tr>
+      <tr><td>gold_v1 (42건, 손선별셋)</td><td class="mono">92.9%</td><td class="mono">95.2%</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>신뢰도 버킷별 실측 정확도 (gold_v2)</h3>
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>버킷</th><th class="mono">비중</th><th class="mono">실측 정확도</th><th>UX 정책</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-done">high</span></td><td class="mono">48%</td><td class="mono">83.5%</td><td>대표 업종 우선 표시 + "맞아요 / 다른 업종 같아요" 확인</td></tr>
+      <tr><td><span class="badge b-wip">mid</span></td><td class="mono">33%</td><td class="mono">64.6%</td><td>대표 + 대안 후보 여러 개 나란히</td></tr>
+      <tr><td><span class="badge b-cond">low</span></td><td class="mono">19%</td><td class="mono">30.4%</td><td>대안 크게 + 직접 검색·선택 UI 우선</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout warn">
+    <span class="lbl">high여도 100%가 아니다</span>
+    <p>이건 학습된 분류 확률이 아니라 <strong>LLM 자기판단 + 규칙 가드</strong>다. high는 "확실"이 아니라
+    "십중팔구". <strong>자동 확정 금지</strong> — 최소 "[맞아요 / 다른 업종 같아요]" 1회 확인 단계를 둔다.</p>
+  </div>
+</section>
+
+<section id="s5">
+  <h2><span class="num">05</span>병목과 남은 오답</h2>
+  <p>gold_v2 240건 중 오답 79건 분해:</p>
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>유형</th><th class="mono">건수</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td>검색 실패</td><td class="mono">6</td><td>거의 해결됨. <code>525101</code> 전자상거래 소매업이 반복(해설서 예시 1개뿐).</td></tr>
+      <tr><td><strong>재판정 실패</strong></td><td class="mono">73</td><td>후보엔 있으나 LLM이 오답 선택. <strong>그중 42건은 정답이 pool 15~31위</strong>로 깊어 재판정 창(20) 밖·근처. 40건이 제조·가공(통계청 반직관 분류).</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout key">
+    <span class="lbl">핵심 진단</span>
+    <p><strong>검색(retrieval)은 병목이 아니다</strong> (pool recall 97.5%). 병목은 <strong>최종 재판정</strong>.
+    그리고 가장 흔한 실패 원인은 <strong>1단계 구조화의 <code>business_role</code> 오판</strong> —
+    "손질·선별·조제·조립" 단어에 '제조·가공'을 과잉 발동해서 활어 도매를 수산가공으로, 안경원을 안경제조로 보낸다.
+    role이 틀리면 3단계에서 정답 후보가 뒤로 밀리고, 4단계 프롬프트가 "역할 상충 탈락"을 지시해 이중으로 억눌린다.</p>
+  </div>
+</section>
+
+<section id="s6">
+  <h2><span class="num">06</span>진행 상태 보드</h2>
+  <div class="board">
+    <div class="item"><span class="badge b-done">완료</span><div class="what"><b>v3 파이프라인 (사업설명→업종코드)</b><span>5단계 전부 동작. gold_v2 67.1% / pool recall 97.5%. 백엔드 통합 계약 확정(<code>README.md</code>).</span></div></div>
+    <div class="item"><span class="badge b-done">완료</span><div class="what"><b>해설서 파싱·색인</b><span>KSIC 11차 해설서 958쪽 → 정의 1,195 / 예시 5,411 / 제외 1,566. EXAMPLE 채널 + 제외 노트로 반영.</span></div></div>
+    <div class="item"><span class="badge b-done">완료</span><div class="what"><b>신뢰도 calibration</b><span>gold_v2 240건 실측으로 임계값 재설정(<code>calibrate_confidence.py</code>).</span></div></div>
+    <div class="item"><span class="badge b-wip">진행중</span><div class="what"><b>Soft Hierarchy Reranking 실험</b><span>코드·오프라인 검증 완료. gold_v2 A/B 실행 대기 (OpenAI 크레딧 필요). 상세 §07.</span></div></div>
+    <div class="item"><span class="badge b-wait">대기</span><div class="what"><b>백엔드 연동</b><span>동기 함수 · 호출마다 재로드 → 모듈 전역 캐시 리팩터 권장. <code>user_selected_code</code> / <code>changed_by_user</code> 로그 수집.</span></div></div>
+    <div class="item"><span class="badge b-wait">대기</span><div class="what"><b><code>RERANK_TOP_N</code> 20 → 28</b><span>재판정 실패 42/73이 정답 pool 15위+. OpenAI 크레딧 소진으로 미검증 (<code>23_...v3.py</code>).</span></div></div>
+    <div class="item"><span class="badge b-cond">조건부</span><div class="what"><b>비순환 평가셋 42 → ~100건</b><span>gold_v2는 해설서 파생이라 점수가 낙관적. 실험 결과가 "애매"로 나올 때만 착수. 초안 생성 + 사람 라벨 검수 ~2~3시간.</span></div></div>
+    <div class="item"><span class="badge b-cond">조건부</span><div class="what"><b>한국어 특화 임베딩 검토</b><span>KURE / bge-m3 / KoSimCSE 등. 재색인+재평가 비용 큼. 조사만 된 상태.</span></div></div>
+  </div>
+</section>
+
+<section id="s7">
+  <h2><span class="num">07</span>지금 진행 중: 계층 rerank 실험</h2>
+  <p><strong>질문:</strong> "후보 pool recall이 97.5%인데도 최종 선택이 자꾸 틀린다. 후보에 이미 들어있는
+  <strong>계층정보</strong>(대·중·소·세분류명)를 soft 신호로 써서 재판정 선택 오류를 줄일 수 있는가?"</p>
+
+  <h3>무엇을 바꾸나</h3>
+  <p>위 3단계 <code>build_candidate_pool()</code> 한 곳에만 <code>hierarchy_fit()</code> 순위 가감을 추가한다.
+  플래그 <code>USE_HIERARCHY_RERANK = False</code> 가 마스터 스위치 — <strong>기본값에서는 v3와 정렬 결과가 바이트 단위로 동일</strong>(검증 완료).
+  hard filter 아님, 후보 제거 없음.</p>
+
+  <div class="callout key">
+    <span class="lbl">핵심 설계</span>
+    <p><code>hierarchy_fit()</code>은 <strong><code>business_role</code>을 입력으로 받지 않는다.</strong> role 오판이
+    최대 실패원인인데 그걸 또 끌어오면 틀린 판단만 증폭한다. 대신 <code>canonical_activity</code> ·
+    <code>product_service</code> · <code>search_keywords</code> 와 후보 계층명의 <strong>겹침만</strong>으로
+    독립 계산해서, 틀린 role 페널티를 <strong>되돌릴 수 있는 별도 투표</strong>로 쓴다.</p>
+  </div>
+
+  <h3>실행 3단계 (예산 OpenAI $5)</h3>
+  <div class="pipe">
+    <div class="stage" data-n="1">
+      <h4>캐시 — <code>30_cache_experiment_inputs.py</code></h4>
+      <p>구조화+임베딩을 gold_v2 240건에 <strong>한 번만</strong> 지불해 저장. 이후 단계는 이 캐시만 읽는다.
+      구조화 비결정성(±7%p)도 이 시점에 고정 → A/B에서 노이즈 하나 제거.</p>
+      <div class="tagrow"><span class="mini paid">~$0.37 · 1회</span></div>
+    </div>
+    <div class="flowarrow">▼</div>
+    <div class="stage" data-n="2">
+      <h4>무비용 스윕 — <code>31_sweep_hierarchy.py</code></h4>
+      <p>로컬 Chroma + 캐시 임베딩만으로 상수(변형·임계값·가중치)를 무한 반복 측정.
+      <strong>정답이 재판정 창(20) 안으로 새로 들어오는가?</strong> 를 본다.
+      회귀검증(플래그 OFF = v3 동일)도 여기서.</p>
+      <div class="tagrow"><span class="mini free">$0 · 무한 반복</span><span class="mini">여기서 채택 1차 판단</span></div>
+    </div>
+    <div class="flowarrow">▼</div>
+    <div class="stage" data-n="3">
+      <h4>A/B 재판정 — <code>32_ab_rerank.py</code></h4>
+      <p>2단계가 유망하면, 최적 config로 A(현 v3) vs B(계층 rerank) 재판정을 돌려 최종 Top-1·역할별 정확도·
+      개선/악화 케이스·제조↔도소매 혼동 수를 비교. 채택/폐기/애매를 자동 판정.</p>
+      <div class="tagrow"><span class="mini paid">~$1.5 / 회</span></div>
+    </div>
+  </div>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>결과</th><th>조치</th></tr></thead>
+    <tbody>
+      <tr><td>2단계에서 순위 개선 없음</td><td><strong>$0.37에서 종료.</strong> 플래그는 이미 off, 원상복귀 비용 0.</td></tr>
+      <tr><td>Top-1 +2%p↑ 또는 제조↔도소매 혼동 감소, 악화 &lt; 개선</td><td>채택 후보 → repeats 늘려 재확인 후 플래그 True</td></tr>
+      <tr><td>Top-1 ±1~2%p, 방향 불명확</td><td>gold_v2 순환성상 판별 불가 → 비순환 셋 확장 논의(§06 조건부)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:.9rem;color:var(--ink-soft)">
+    전 과정: <code>EXPERIMENT_hierarchy_rerank.md</code> · 흐름 상세: <code>docs/pipeline_flow_2026-09-09.md</code>
+  </p>
+</section>
+
+<section id="s8">
+  <h2><span class="num">08</span>파일 지도</h2>
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>파일</th><th>역할</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">industry_matcher.py</td><td>백엔드 import 진입점. <code>match_business_code()</code> · <code>warm_up()</code> · <code>health()</code></td></tr>
+      <tr><td class="mono">business_matching/23_..._v3.py</td><td>파이프라인 본체. 5단계 전부 여기.</td></tr>
+      <tr><td class="mono">business_matching/23_..._v3_baseline_20260909.py</td><td>v3 동결본. 실험 롤백·대조용. 수정 금지.</td></tr>
+      <tr><td class="mono">business_matching/eval_business_code.py</td><td>성능 평가 (A/B/C Top-1·3·5, pool recall, 신뢰도 버킷).</td></tr>
+      <tr><td class="mono">business_matching/25·26_...</td><td>업종코드 → 검색문서 → 벡터 DB 빌드 (재구축 시에만).</td></tr>
+      <tr><td class="mono">business_matching/27·28_...</td><td>해설서 PDF 파싱 / 해설서 근거 정답셋 생성.</td></tr>
+      <tr><td class="mono">business_matching/calibrate_confidence.py</td><td>저장된 평가 JSON으로 신뢰도 임계값 실측 (무비용).</td></tr>
+      <tr><td class="mono">business_matching/30·31·32_...</td><td><strong>계층 rerank 실험</strong> 캐시 · 스윕 · A/B (§07).</td></tr>
+      <tr><td class="mono">business_matching/gold_set_v1.csv (42)</td><td>손으로 만든 셋. 해설서와 무관(비순환), 작고 쉬움.</td></tr>
+      <tr><td class="mono">business_matching/gold_set_v2.csv (240)</td><td>해설서 파생. 넓고 어려움. <strong>해설서를 검색에도 넣어 점수가 다소 낙관적.</strong></td></tr>
+      <tr><td class="mono">data/processed/*.csv, *.json</td><td>reference(후보 상세) · 해설서 파싱결과 · KSIC 매핑. 런타임 의존.</td></tr>
+      <tr><td class="mono">chroma_db/business_code_docs_2025/</td><td>구축된 벡터 DB. 문서 14,627개. 약 225MB, 동봉.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s9">
+  <h2><span class="num">09</span>팀원이 꼭 알아야 할 것</h2>
+  <ol>
+    <li><strong>정확도 67% = 3건 중 1건은 1순위가 틀림.</strong> "AI 제안 + 사용자 확인" 구조가 전제. 자동 확정 절대 금지.</li>
+    <li><strong>gold_v2는 순환적이다.</strong> 해설서에서 파생됐는데 해설서를 검색에도 넣었다. 실전 정확도는 ~60% 안팎으로 보수적으로 봐야 안전.</li>
+    <li><strong>LLM이 비결정적이다.</strong> gpt-5-mini는 같은 입력에 run마다 다른 답. 42건 셋에서 ±7%p 스윙. 개선 측정 시 여러 번 돌려 중앙값을 봐야 한다.</li>
+    <li><strong>실사용자 정답 데이터가 0건.</strong> 진짜 정확도·신뢰도 경계는 서비스 로그(<code>user_selected_code</code>)가 쌓여야 확정된다.</li>
+    <li><strong>호출마다 재로드.</strong> <code>match_business_code()</code>가 매번 CSV·Chroma·OpenAI 클라이언트를 새로 만든다. 트래픽 있으면 모듈 전역 캐시 리팩터 필요.</li>
+    <li><strong>실행:</strong> <code>pip install -r requirements.txt</code> → <code>.env</code>에 <code>OPENAI_API_KEY</code> → <code>python -c "from industry_matcher import health; print(health())"</code> → <code>chroma_doc_count 14627</code> 나오면 정상.</li>
+  </ol>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span>용어집</h2>
+  <dl class="glossary">
+    <dt>canonical_activity</dt>
+    <dd>1단계에서 LLM이 만드는, 분류표 어투로 정규화한 활동명. 예: "매장에서 커피를 판다" → "커피 전문점".</dd>
+    <dt>business_role</dt>
+    <dd>사업자가 "실제로 무엇을 해서 돈을 버는가"를 18종 중 하나로 확정한 값. 제조·가공 / 도매 / 소매 / 음식·주점 / 중개·플랫폼 등. <strong>이 값의 오판이 최대 실패원인.</strong></dd>
+    <dt>BASE 채널 / EXAMPLE 채널</dt>
+    <dd>검색문서 DB를 둘로 나눈 것. BASE = 공식 정보(업종명·계층·KSIC·정의), 상위 25개 반드시 유지. EXAMPLE = 해설서 예시·제외, 상위 12개를 '추가만'(BASE를 밀어내지 못함).</dd>
+    <dt>후보 pool</dt>
+    <dd>2단계 검색 결과를 합쳐 순위 매긴 코드 목록. 3단계에서 role(및 실험 시 계층) 신호로 순위 조정. 4단계 재판정은 이 pool의 상위 20개만 본다.</dd>
+    <dt>재판정 (rerank)</dt>
+    <dd>4단계. 후보 20개를 놓고 LLM이 최종 1개를 고르는 단계. 검색(후보 생성)과 분리된 검증 단계 — BEACON 방식.</dd>
+    <dt>confidence (high/mid/low)</dt>
+    <dd>재판정 LLM의 자기판단 + 검색 신호 가드(낮추기만). 학습된 확률 아님. UX 분기용.</dd>
+    <dt>gold_set_v1 / v2</dt>
+    <dd>v1 = 42건 손선별, 해설서 무관(비순환). v2 = 240건, 해설서 &lt;예시&gt;/&lt;제외&gt;를 LLM이 사업설명으로 풀어씀. 넓고 어렵지만 순환적.</dd>
+    <dt>pool recall</dt>
+    <dd>정답 코드가 후보 pool에 (전체 / 상위 20위 안에) 들어있는 비율. 검색 품질 지표. 현재 97.5%.</dd>
+    <dt>PSST</dt>
+    <dd>Problem–Solution–Scale–Team. 창업 사업계획 프레임. 이 기능은 그중 슬롯 0(아이디어)·2(문제)·5(솔루션)를 입력으로 쓴다.</dd>
+  </dl>
+</section>
+
+<div class="foot">
+  물꼬 3차 프로젝트 · 업종코드 파트 온보딩 · 2026-09-09 기준<br>
+  더 볼 것: <code>README.md</code>(백엔드 계약) · <code>docs/pipeline_flow_2026-09-09.md</code>(흐름 상세) ·
+  <code>EXPERIMENT_hierarchy_rerank.md</code>(실험 실행) · <code>CHANGELOG_20260909.md</code>
+</div>
+</div>
+
+</body>
+</html>

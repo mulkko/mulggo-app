@@ -97,7 +97,7 @@
 
   <div class="endpoint">
     <h3><span class="method get">GET</span><code>/admin/batch-logs</code></h3>
-    <p>최근 배치 실행 로그 5건 조회.</p>
+    <p>최근 배치 실행 로그 조회 (기본 10건, ?limit=N 파라미터 지원).</p>
     <table><tr><th>response</th><td>{success, data:{logs:[{source, fetched_count, inserted_count, status, ran_at}]}}</td></tr></table>
   </div>
 
