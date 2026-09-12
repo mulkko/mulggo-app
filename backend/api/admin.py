@@ -220,28 +220,32 @@ _running_lock = threading.Lock()
 
 
 def _crawl_bizinfo() -> None:
+    # source를 "bizinfo-manual"로 남긴다: 스케줄러(로컬 작업 스케줄러)가 남기는
+    # "bizinfo"와 구분해야 crawl_batch_logs만 보고 어느 쪽이 돈 건지 알 수 있다.
     try:
         items = bizinfo_api.fetch_all()
         inserted = bizinfo_api.save_to_db(items)
     except Exception as e:  # noqa: BLE001 - 백그라운드 작업이라 삼키고 로그로 남긴다
-        _log_crawl("bizinfo", 0, 0, "error")
+        _log_crawl("bizinfo-manual", 0, 0, "error")
         print(f"[crawl] bizinfo 실패: {e}")
     else:
-        _log_crawl("bizinfo", len(items), inserted, "success")
+        _log_crawl("bizinfo-manual", len(items), inserted, "success")
     finally:
         with _running_lock:
             _running_crawls.discard("bizinfo")
 
 
 def _crawl_kstartup() -> None:
+    # source를 "kstartup-manual"로 남긴다: GitHub Actions 스케줄이 남기는
+    # "kstartup"과 구분해야 crawl_batch_logs만 보고 어느 쪽이 돈 건지 알 수 있다.
     try:
         items = kst_api.fetch_announcements_all()
         summary = kst_api.save_to_db(items)
     except Exception as e:  # noqa: BLE001
-        _log_crawl("kstartup", 0, 0, "error")
+        _log_crawl("kstartup-manual", 0, 0, "error")
         print(f"[crawl] kstartup 실패: {e}")
     else:
-        _log_crawl("kstartup", len(items), summary["inserted"], "success")
+        _log_crawl("kstartup-manual", len(items), summary["inserted"], "success")
     finally:
         with _running_lock:
             _running_crawls.discard("kstartup")
