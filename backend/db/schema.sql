@@ -239,6 +239,18 @@ CREATE TABLE IF NOT EXISTS entity_types (
 
 -- 가입 시 user_id만 채워서 생성됨 (profile_type='예비창업자').
 -- 사업자등록증 OCR 성공 시 UPDATE로 profile_type='기존사업자', entity_type_code, business_name 등이 채워짐.
+--
+-- [2026-09-12] region TEXT -> regions TEXT[] 전환 (사용자 확인) - 하나의 컬럼이
+-- profile_type에 따라 의미가 다르게 쓰인다: 기존사업자는 사업자등록증 business_address에서
+-- 자동으로 뽑은 시/도(사실, backend/auth/signup.py::derive_sido_from_address), 예비창업자는
+-- 사업자등록증이 없어 자동으로 채울 게 없으니 사용자가 직접 고른 희망 지역(선호) - 둘 다
+-- "여러 개일 수 있다"는 공통점이 있어(법인은 본점/사업장 시/도가 다를 수 있고, 예비창업자는
+-- 애초에 여러 지역에 관심 가질 수 있음) 배열로 통일했다. announcements.regions(TEXT[])와
+-- 동일 패턴 - 매칭 시 `&&`(배열 겹침) 연산자로 비교.
+-- 실제 Supabase DB는 이 CREATE TABLE 재실행 안 되므로 별도로 마이그레이션 실행 필요:
+--   ALTER TABLE business_profiles RENAME COLUMN region TO regions;
+--   ALTER TABLE business_profiles ALTER COLUMN regions TYPE TEXT[]
+--     USING (CASE WHEN regions IS NULL THEN NULL ELSE ARRAY[regions] END);
 CREATE TABLE IF NOT EXISTS business_profiles (
     profile_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(user_id),
@@ -246,7 +258,7 @@ CREATE TABLE IF NOT EXISTS business_profiles (
     entity_type_code VARCHAR(10) REFERENCES entity_types(code), -- OCR 성공 전까지 NULL
     business_name TEXT,
     industry_text TEXT,
-    region TEXT,
+    regions TEXT[],
     business_age_months INT,
     annual_revenue BIGINT,
     employee_count INT,

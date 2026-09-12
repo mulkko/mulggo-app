@@ -305,11 +305,6 @@ def signup_endpoint(
             # 여기 걸리는 건 예외적인 경우 — 가입 자체는 이미 끝났으니 막지 않고 첨부만 건너뜀.
             print(f"[biz_cert 검증 실패] user_id={user['user_id']}: {validation_error}")
         else:
-            os.makedirs(UPLOAD_DIR, exist_ok=True)
-            save_path = os.path.join(UPLOAD_DIR, f"{user['user_id']}_{biz_cert_file.filename}")
-            with open(save_path, "wb") as f:
-                f.write(content)
-
             fields = None
             if biz_cert_data:
                 try:
@@ -318,10 +313,18 @@ def signup_endpoint(
                     fields = None
 
             if fields:
+                # [2026-09-11] 이미 /biz-cert-ocr에서 OCR 끝난 확정값이라 이미지를 다시
+                # 디스크에 저장할 이유가 없음(사용자 확인, 개인정보 최소화) - 값만 저장.
                 background_tasks.add_task(
-                    save_biz_cert_data, user["user_id"], save_path, biz_cert_file.filename, fields
+                    save_biz_cert_data, user["user_id"], None, biz_cert_file.filename, fields
                 )
             else:
+                # 레거시 경로: 백그라운드에서 직접 OCR 돌려야 하니 파일이 일단 필요함 -
+                # process_biz_cert_ocr가 OCR 끝나면 알아서 지운다.
+                os.makedirs(UPLOAD_DIR, exist_ok=True)
+                save_path = os.path.join(UPLOAD_DIR, f"{user['user_id']}_{biz_cert_file.filename}")
+                with open(save_path, "wb") as f:
+                    f.write(content)
                 background_tasks.add_task(
                     process_biz_cert_ocr, user["user_id"], save_path, biz_cert_file.filename
                 )

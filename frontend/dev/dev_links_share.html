@@ -116,7 +116,7 @@
         <td>사용자 스타일 가이드</td>
         <td><a href="http://192.168.0.160:5173/dev/web-style-guide" target="_blank">http://192.168.0.160:5173/dev/web-style-guide</a></td>
         <td>2026-09-06</td>
-        <td>2026-09-11</td>
+        <td>2026-09-12</td>
         <td></td>
         <td></td>
       </tr>
@@ -167,7 +167,7 @@
         <td>마이페이지</td>
         <td><a href="http://192.168.0.160:5173/mypage" target="_blank">http://192.168.0.160:5173/mypage</a></td>
         <td>2026-09-08</td>
-        <td>2026-09-10</td>
+        <td>2026-09-12</td>
         <td class="done">2026-09-09</td>
         <td>75%</td>
       </tr>
@@ -175,7 +175,7 @@
         <td>마이페이지 - 정보수정</td>
         <td><a href="http://192.168.0.160:5173/mypage/edit" target="_blank">http://192.168.0.160:5173/mypage/edit</a></td>
         <td>2026-09-08</td>
-        <td>2026-09-10</td>
+        <td>2026-09-12</td>
         <td class="done">2026-09-09</td>
         <td>85%</td>
       </tr>
@@ -230,7 +230,7 @@
         <td>진단방식선택</td>
         <td><a href="http://192.168.0.160:5173/diagnosis/choice" target="_blank">http://192.168.0.160:5173/diagnosis/choice</a></td>
         <td>2026-09-10</td>
-        <td>2026-09-11</td>
+        <td>2026-09-12</td>
         <td></td>
         <td></td>
       </tr>
@@ -270,7 +270,7 @@
         <td>Q5 - 셀렉트 형식</td>
         <td><a href="http://192.168.0.160:5173/diagnosis/5" target="_blank">http://192.168.0.160:5173/diagnosis/5</a></td>
         <td>2026-09-10</td>
-        <td>2026-09-11</td>
+        <td>2026-09-12</td>
         <td class="done">2026-09-10</td>
         <td></td>
       </tr>
@@ -288,6 +288,14 @@
         <td>2026-09-11</td>
         <td>2026-09-12</td>
         <td></td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>업종코드 보여주기 (매칭 결과 순수 표시, 선택 기능 없음)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/industry-result" target="_blank">http://192.168.0.160:5173/diagnosis/industry-result</a></td>
+        <td>2026-09-12</td>
+        <td>2026-09-12</td>
+        <td class="done">2026-09-12</td>
         <td>100%</td>
       </tr>
       <tr>
@@ -331,179 +339,6 @@
         <td>100%</td>
       </tr>
       <tr>
-        <td>PSST 확정 - 중간</td>
-        <td><a href="http://192.168.0.160:5173/diagnosis/psst-confirm" target="_blank">http://192.168.0.160:5173/diagnosis/psst-confirm</a></td>
-        <td>2026-09-11</td>
-        <td>2026-09-11</td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>업종코드 매칭</td>
-        <td><a href="http://192.168.0.160:5173/diagnosis/industry-code" target="_blank">http://192.168.0.160:5173/diagnosis/industry-code</a></td>
-        <td>2026-09-11</td>
-        <td>2026-09-11</td>
-        <td class="done">2026-09-11</td>
-        <td></td>
-      </tr>
-      <tr>
-        <td colspan="6" style="background:#bbb; font-weight:bold;">
-          [테스트, 2026-09-11 작업분 - 이후 위 Q6~Q10/질응답정리/분석리포트 행으로 정식 반영·병합 완료] 업종코드매칭·분석리포트·매칭 연결 — 아래 9개 파일은 그 작업 과정의 스크래치 파일, 라이브 페이지 아님(코드로만 존재)
-        </td>
-      </tr>
-      <tr>
-        <td style="background:#bbb;">업종코드 매칭 - 상권/기술창업 분석 호출</td>
-        <td style="background:#bbb;"><a href="#none" target="_blank">backend/api/diagnosis_test.py</a></td>
-        <td style="background:#bbb;">2026-09-11</td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-      </tr>
-      <tr>
-        <td style="background:#bbb;">상권/기술창업 분석 - 업종코드 콤마 다중 지원</td>
-        <td style="background:#bbb;"><a href="#none" target="_blank">backend/api/analysis_test.py</a></td>
-        <td style="background:#bbb;">2026-09-11</td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-      </tr>
-      <tr>
-        <td style="background:#bbb;">공고 매칭 - 업종코드 디버그 표시 제거</td>
-        <td style="background:#bbb;"><a href="#none" target="_blank">backend/api/matching_test.py</a></td>
-        <td style="background:#bbb;">2026-09-11</td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-      </tr>
-      <tr>
-        <td style="background:#bbb;">PSST → 국세청업종코드 매칭 API 라우터</td>
-        <td style="background:#bbb;"><a href="#none" target="_blank">backend/api/industry_code_test.py</a></td>
-        <td style="background:#bbb;">2026-09-11</td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-      </tr>
-      <tr>
-        <td style="background:#bbb;">idea_refinement_sessions - resolved_ksic_codes 컬럼</td>
-        <td style="background:#bbb;"><a href="#none" target="_blank">backend/db/schema_test.sql</a></td>
-        <td style="background:#bbb;">2026-09-11</td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-      </tr>
-      <tr>
-        <td style="background:#bbb;">업종코드 매칭 서비스 - KSIC코드를 DB(nts_ksic_mapping)에서 조회</td>
-        <td style="background:#bbb;"><a href="#none" target="_blank">backend/ml/industry_code_matching/service_test.py</a></td>
-        <td style="background:#bbb;">2026-09-11</td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-      </tr>
-      <tr>
-        <td style="background:#bbb;">공고 카드 컴포넌트 - 업종코드 디버그 표시 제거</td>
-        <td style="background:#bbb;"><a href="#none" target="_blank">frontend/src/components/AnnouncementCard/AnnouncementCard_test.tsx</a></td>
-        <td style="background:#bbb;">2026-09-11</td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-      </tr>
-      <tr>
-        <td style="background:#bbb;">공고 카드 스타일 - 업종코드 디버그 표시 제거</td>
-        <td style="background:#bbb;"><a href="#none" target="_blank">frontend/src/styles/announcementCard_test.module.css</a></td>
-        <td style="background:#bbb;">2026-09-11</td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-      </tr>
-      <tr>
-        <td style="background:#bbb;">구체화 진단4 - "이런 지원사업은 어때요?" 관련 공고 섹션</td>
-        <td style="background:#bbb;"><a href="#none" target="_blank">frontend/src/pages/diagnosis/DiagnosisStep4_test.tsx</a></td>
-        <td style="background:#bbb;">2026-09-11</td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-        <td style="background:#bbb;"></td>
-      </tr>
-      <tr>
-        <td>분석리포트 - 상권분석</td>
-        <td><a href="http://192.168.0.160:5173/diagnosis/market-report" target="_blank">http://192.168.0.160:5173/diagnosis/market-report</a></td>
-        <td>2026-09-03</td>
-        <td>2026-09-11</td>
-        <td class="done">2026-09-11</td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>분석리포트 - 기술창업</td>
-        <td><a href="http://192.168.0.160:5173/diagnosis/tech-report" target="_blank">http://192.168.0.160:5173/diagnosis/tech-report</a></td>
-        <td>2026-09-03</td>
-        <td>2026-09-11</td>
-        <td class="done">2026-09-11</td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>Q7 - 구체화(타깃)</td>
-        <td><a href="http://192.168.0.160:5173/diagnosis/7" target="_blank">http://192.168.0.160:5173/diagnosis/7</a></td>
-        <td>2026-09-11</td>
-        <td>2026-09-11</td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>Q8 - 구체화(차별점)</td>
-        <td><a href="http://192.168.0.160:5173/diagnosis/8" target="_blank">http://192.168.0.160:5173/diagnosis/8</a></td>
-        <td>2026-09-11</td>
-        <td>2026-09-11</td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>Q9 - 구체화(수익모델)</td>
-        <td><a href="http://192.168.0.160:5173/diagnosis/9" target="_blank">http://192.168.0.160:5173/diagnosis/9</a></td>
-        <td>2026-09-11</td>
-        <td>2026-09-11</td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>[테스트] 분석 리포트 API</td>
-        <td><a href="./analysis-test.html" target="_blank">./analysis-test.html</a></td>
-        <td>2026-09-08</td>
-        <td></td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>[테스트] 아이디어 카드 생성</td>
-        <td><a href="./idea-card-test.html" target="_blank">./idea-card-test.html</a></td>
-        <td>2026-09-09</td>
-        <td></td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>[테스트] 아이디어 카드 생성 (채팅형)</td>
-        <td><a href="./idea-chat-test.html" target="_blank">./idea-chat-test.html</a></td>
-        <td>2026-09-09</td>
-        <td></td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>[테스트] 슬롯필링 (업종코드 매칭 + 아이디어 브레인스토밍)</td>
-        <td><a href="./idea-flow-test.html" target="_blank">./idea-flow-test.html</a></td>
-        <td>2026-09-10</td>
-        <td></td>
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td>[테스트] 사업자등록증 OCR</td>
-        <td><a href="./ocr-test.html" target="_blank">./ocr-test.html</a></td>
-        <td>2026-09-05</td>
-        <td>2026-09-10</td>
-        <td class="done">2026-09-06</td>
-        <td></td>
-      </tr>
-      <tr>
         <td>RAG 봇</td>
         <td><a href="#none" target="_blank">#none</a></td>
         <td>2026-09-03</td>
@@ -518,7 +353,7 @@
         <td>매칭결과</td>
         <td><a href="http://192.168.0.160:5173/matching" target="_blank">http://192.168.0.160:5173/matching</a></td>
         <td>2026-09-08</td>
-        <td>2026-09-10</td>
+        <td>2026-09-12</td>
         <td class="done">2026-09-09</td>
         <td>100%</td>
       </tr>
@@ -542,7 +377,7 @@
         <td>서류 미리보기</td>
         <td><a href="http://192.168.0.160:5173/matching/a1/doc-preview" target="_blank">http://192.168.0.160:5173/matching/a1/doc-preview</a></td>
         <td>2026-09-08</td>
-        <td>2026-09-10</td>
+        <td>2026-09-12</td>
         <td class="done">2026-09-10</td>
         <td>85%</td>
       </tr>
