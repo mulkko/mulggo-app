@@ -1,0 +1,93 @@
+/* 12. 업종코드 매칭. 값은 webTokens.css 토큰만 재사용:
+   - 헤더는 diagnosisMarketReport.module.css(.header 계열)와 같은 스펙이라 여기서 다시 정의.
+   - 안내 박스는 diagnosis.module.css(.qAnchor/.qAnchorText), 매칭 카드 리스트는
+     diagnosis.module.css(.cardList/.radioCard 계열), 하단 이전/다음 버튼은
+     diagnosis.module.css(.bottom/.prevButton/.nextButton) 그대로 재사용.
+   - 로딩/에러 상태는 diagnosisMarketReport.module.css(.stateArea/.spinner/.stateText/
+     .stateBackButton) 그대로 재사용 - 같은 "리포트류 화면 로딩" 패턴.
+   레이아웃: 모바일 우선 + 데스크톱은 common.css .pageContainer(최대 640px 가운데 정렬). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  color: var(--color-ink-charcoal);
+}
+
+.header {
+  flex-shrink: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px;
+  box-sizing: border-box;
+}
+
+.backButton {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-ink-charcoal);
+  line-height: 0;
+}
+
+.backButton svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.resultLabel {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--color-stone-gray);
+  white-space: nowrap;
+}
+
+.scrollArea {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 24px 28px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  margin: 0;
+  font-weight: 900;
+  font-size: 21px;
+  color: var(--color-ink-charcoal);
+}
+
+.disclaimer {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--color-stone-gray);
+  line-height: 1.6;
+}
+
+.codeMeta {
+  font-size: 13px;
+  color: var(--color-stone-gray);
+}
+
+/* ===== state 배너 ("확인필요"/"정보부족" 안내) ===== */
+.stateBanner {
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  background: var(--color-navy-mist);
+  color: var(--color-deep-navy);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.6;
+}

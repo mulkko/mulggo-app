@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
-import { getDiagnosisAnswers, saveDiagnosisAnswers, type Origin } from "./diagnosisAnswers";
+import { consumeDiagnosisReturnTo, getDiagnosisAnswers, saveDiagnosisAnswers, type Origin } from "./diagnosisAnswers";
 
 /**
  * 사업구체화 진단 2/5 — "진단방식선택" = Q2 (dev_links.html 목업 이름, 프로토타입 qMeta.q1/Q2).
@@ -30,7 +30,8 @@ function DiagnosisSelect() {
 
   const choose = (origin: Origin) => {
     saveDiagnosisAnswers({ origin });
-    navigate("/diagnosis/3");
+    const returnTo = consumeDiagnosisReturnTo();
+    navigate(returnTo ?? "/diagnosis/3");
   };
 
   if (!ready) return null;

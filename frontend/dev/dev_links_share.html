@@ -181,11 +181,19 @@
       </tr>
       <tr>
         <td>고객센터 (챗봇)</td>
-        <td><a href="http://192.168.0.160:5173/support" target="_blank">http://192.168.0.160:5173/support</a></td>
+        <td><a href="http://192.168.0.160:5173/support/chat" target="_blank">http://192.168.0.160:5173/support/chat</a></td>
         <td>2026-09-10</td>
         <td>2026-09-11</td>
         <td class="done">2026-09-10</td>
         <td>50%</td>
+      </tr>
+      <tr>
+        <td>1:1 문의</td>
+        <td><a href="http://192.168.0.160:5173/support" target="_blank">http://192.168.0.160:5173/support</a></td>
+        <td>2026-09-11</td>
+        <td>2026-09-11</td>
+        <td></td>
+        <td></td>
       </tr>
       <tr>
         <td colspan="6" style="background:#eef7ff;">
@@ -200,12 +208,12 @@
               <b>채우기 이용내역</b>: GET /api/mypage/fill-history 연동(2026-09-10) — MyPage "채우기 이용내역" 섹션 실데이터로 교체됨, 재다운로드도 됨<br>
               <b>Onboarding 사업자등록증 팝업</b>: BizCertUpload를 Signup에서 Onboarding step3 "바로 매칭받기"로 이동, POST /api/mypage/biz-cert 저장 후 /matching 이동(2026-09-10)<br>
               <b>ProfileEdit</b>: 이름(users.name) 저장 연동, 예비창업자는 상호명/업력/직원수/연매출 입력창 숨김(2026-09-10)<br>
-              <b>고객센터 챗봇</b>: backend/api/support.py(POST /api/support/chat)는 이미 있었는데 프론트가 없어서 테스트용 최소 화면(CustomerSupport.tsx, /support)만 붙임(디자인 시안 없음, 2026-09-10) - MyPage 헤더 고객센터 아이콘에서 진입<br>
+              <b>고객센터</b>: backend/api/support.py(POST /api/support/chat) 연동 챗봇 화면(CustomerSupportChat.tsx, /support/chat, 19-1번)에서 문의 폼 화면(CustomerSupport.tsx, /support, 19번 "1:1 문의")을 분리 — MyPage 헤더 아이콘은 이제 문의 폼(/support)으로 진입하고, 챗봇은 그 안의 "챗봇에게 먼저 물어보기" 카드로 들어가는 하위 화면(2026-09-11). 문의 제출/조회 백엔드는 아직 없어서 프론트 유효성 검사만 하고 실제 저장은 안 함<br>
               <b>사업구체화 진단(슬롯필링)</b>: pages/diagnosis/(진단방식선택+구체화진단1~4) 5화면 신규 - frontend/dev/idea-flow-test.html에서 이미 검증된 질문 흐름을 그대로 옮김, 제출은 backend/api/idea_card_test.py(POST /api/test/slot-filling, DB 저장 없는 테스트 전용 엔드포인트) 재사용. 업종코드(KSIC) 매칭은 팀에서 별도 재작업 중이라 결과 화면엔 안 띄움(아이디어 카드만 표시). Home "아이디어 구체화하기"/Onboarding "아이디어 카드로 시작" 둘 다 연결됨(2026-09-10)<br>
               <b>아직 미구현</b>
               <ul style="margin:4px 0 0 20px; padding:0;">
                 <li>MyPage의 분석리포트/지원내역 2개 섹션 — 대응 DB 테이블이 실제로 0건이라 연동 보류</li>
-                <li>고객센터 화면 디자인 시안 반영(지금은 최소 기능만 동작하는 임시 UI)</li>
+                <li>1:1 문의 제출/조회 백엔드(문의 저장 API, "나의 문의 내역" 조회 API) — 지금은 프론트 유효성 검사만 동작, 실제 저장·조회 없음</li>
                 <li>ProfileEdit 프로필사진 변경</li>
                 <li>ProfileEdit 사업자등록증 재업로드</li>
                 <li>Signup 약관 실제 문구 (지금은 placeholder만 있음)</li>
@@ -323,6 +331,22 @@
         <td>100%</td>
       </tr>
       <tr>
+        <td>PSST 확정 - 중간</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/psst-confirm" target="_blank">http://192.168.0.160:5173/diagnosis/psst-confirm</a></td>
+        <td>2026-09-11</td>
+        <td>2026-09-11</td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>업종코드 매칭</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/industry-code" target="_blank">http://192.168.0.160:5173/diagnosis/industry-code</a></td>
+        <td>2026-09-11</td>
+        <td>2026-09-11</td>
+        <td class="done">2026-09-11</td>
+        <td></td>
+      </tr>
+      <tr>
         <td colspan="6" style="background:#bbb; font-weight:bold;">
           [테스트, 2026-09-11 작업분 - 이후 위 Q6~Q10/질응답정리/분석리포트 행으로 정식 반영·병합 완료] 업종코드매칭·분석리포트·매칭 연결 — 아래 9개 파일은 그 작업 과정의 스크래치 파일, 라이브 페이지 아님(코드로만 존재)
         </td>
@@ -401,17 +425,41 @@
       </tr>
       <tr>
         <td>분석리포트 - 상권분석</td>
-        <td><a href="#none" target="_blank">#none</a></td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/market-report" target="_blank">http://192.168.0.160:5173/diagnosis/market-report</a></td>
         <td>2026-09-03</td>
-        <td></td>
-        <td></td>
+        <td>2026-09-11</td>
+        <td class="done">2026-09-11</td>
         <td></td>
       </tr>
       <tr>
         <td>분석리포트 - 기술창업</td>
-        <td><a href="#none" target="_blank">#none</a></td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/tech-report" target="_blank">http://192.168.0.160:5173/diagnosis/tech-report</a></td>
         <td>2026-09-03</td>
+        <td>2026-09-11</td>
+        <td class="done">2026-09-11</td>
         <td></td>
+      </tr>
+      <tr>
+        <td>Q7 - 구체화(타깃)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/7" target="_blank">http://192.168.0.160:5173/diagnosis/7</a></td>
+        <td>2026-09-11</td>
+        <td>2026-09-11</td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>Q8 - 구체화(차별점)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/8" target="_blank">http://192.168.0.160:5173/diagnosis/8</a></td>
+        <td>2026-09-11</td>
+        <td>2026-09-11</td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>Q9 - 구체화(수익모델)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/9" target="_blank">http://192.168.0.160:5173/diagnosis/9</a></td>
+        <td>2026-09-11</td>
+        <td>2026-09-11</td>
         <td></td>
         <td></td>
       </tr>

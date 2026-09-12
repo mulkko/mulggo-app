@@ -21,13 +21,18 @@ import FilterPage from "./pages/matching/FilterPage";
 import MyPage from "./pages/mypage/MyPage";
 import ProfileEdit from "./pages/mypage/ProfileEdit";
 import CustomerSupport from "./pages/support/CustomerSupport";
+import CustomerSupportChat from "./pages/support/CustomerSupportChat";
 import DiagnosisSelect from "./pages/diagnosis/DiagnosisSelect";
 import DiagnosisStep1 from "./pages/diagnosis/DiagnosisStep1";
 import DiagnosisStep2 from "./pages/diagnosis/DiagnosisStep2";
 import DiagnosisStep3 from "./pages/diagnosis/DiagnosisStep3";
 import DiagnosisStep4 from "./pages/diagnosis/DiagnosisStep4";
 import DiagnosisStep5 from "./pages/diagnosis/DiagnosisStep5";
+import DiagnosisPsstConfirm from "./pages/diagnosis/DiagnosisPsstConfirm";
+import DiagnosisIndustryCode from "./pages/diagnosis/DiagnosisIndustryCode";
 import DiagnosisStep6 from "./pages/diagnosis/DiagnosisStep6";
+import DiagnosisMarketReport from "./pages/diagnosis/DiagnosisMarketReport";
+import DiagnosisTechReport from "./pages/diagnosis/DiagnosisTechReport";
 import DiagnosisStep7 from "./pages/diagnosis/DiagnosisStep7";
 import DiagnosisStep8 from "./pages/diagnosis/DiagnosisStep8";
 import DiagnosisStep9 from "./pages/diagnosis/DiagnosisStep9";
@@ -108,12 +113,17 @@ function App() {
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/edit" element={<ProfileEdit />} />
         <Route path="/support" element={<CustomerSupport />} />
+        <Route path="/support/chat" element={<CustomerSupportChat />} />
         <Route path="/diagnosis/select" element={<DiagnosisSelect />} />
         <Route path="/diagnosis/1" element={<DiagnosisStep1 />} />
         <Route path="/diagnosis/3" element={<DiagnosisStep2 />} />
         <Route path="/diagnosis/4" element={<DiagnosisStep3 />} />
         <Route path="/diagnosis/5" element={<DiagnosisStep4 />} />
         <Route path="/diagnosis/6" element={<DiagnosisStep5 />} />
+        <Route path="/diagnosis/psst-confirm" element={<DiagnosisPsstConfirm />} />
+        <Route path="/diagnosis/industry-code" element={<DiagnosisIndustryCode />} />
+        <Route path="/diagnosis/market-report" element={<DiagnosisMarketReport />} />
+        <Route path="/diagnosis/tech-report" element={<DiagnosisTechReport />} />
         <Route path="/diagnosis/7" element={<DiagnosisStep6 />} />
         <Route path="/diagnosis/8" element={<DiagnosisStep7 />} />
         <Route path="/diagnosis/9" element={<DiagnosisStep8 />} />

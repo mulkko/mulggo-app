@@ -296,6 +296,38 @@
   color: var(--color-error-text);
 }
 
+/* ===== PSST 확정(11) 요약 카드 (Q1~Q6 리캡, 누르면 해당 Q 화면으로 이동) ===== */
+.confirmCard {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-inset-card);
+}
+
+.confirmCard:hover {
+  box-shadow: var(--shadow-inset-teal-strong);
+}
+
+.confirmCardLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+}
+
+.confirmCardValue {
+  font-size: 13px;
+  color: var(--color-ink-charcoal);
+  line-height: 1.5;
+}
+
 /* ===== 제출 결과 (구체화 진단4 제출 후) ===== */
 .resultCard {
   width: 100%;

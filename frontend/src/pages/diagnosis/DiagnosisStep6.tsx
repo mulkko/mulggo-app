@@ -19,14 +19,17 @@ function DiagnosisStep6() {
   useEffect(() => {
     const answers = getDiagnosisAnswers();
     if (!answers.sido || !answers.sigungu || !answers.dong) {
-      navigate("/diagnosis/6", { replace: true });
+      // Q6(지역·규모) 다음엔 11(PSST 확정)→12(업종코드 매칭)→13(상권분석 리포트)이
+      // 이어지는데, 그 화면들도 같은 슬롯(sido/sigungu/dong)을 가드로 쓰므로 여기서는
+      // 13으로만 보내도 없으면 알아서 Q6까지 되돌아간다.
+      navigate("/diagnosis/market-report", { replace: true });
       return;
     }
     setInitialValue(answers.target ?? "");
     setReady(true);
   }, [navigate]);
 
-  const handleBack = () => navigate("/diagnosis/6");
+  const handleBack = () => navigate("/diagnosis/market-report");
 
   const handleSubmit = (value: string) => {
     saveDiagnosisAnswers({ target: value });

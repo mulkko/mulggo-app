@@ -12,6 +12,7 @@ from backend.api.test_ocr import router as test_ocr_router
 from backend.api.analysis import router as analysis_router
 from backend.api.diagnosis import router as diagnosis_router
 from backend.api.idea_card_test import router as idea_card_test_router
+from backend.api.industry_code import router as industry_code_router, warm_industry_matcher
 from backend.api.ksic import router as ksic_router
 from backend.api.matching import router as matching_router
 from backend.api.mypage import router as mypage_router
@@ -41,10 +42,23 @@ app.include_router(test_ocr_router)
 app.include_router(analysis_router)
 app.include_router(diagnosis_router)
 app.include_router(idea_card_test_router)
+app.include_router(industry_code_router)
 app.include_router(ksic_router)
 app.include_router(matching_router)
 app.include_router(mypage_router)
 app.include_router(support_router)
+
+
+@app.on_event("startup")
+def _warm_industry_matcher() -> None:
+    # 모델 GPU 로드 등 ~10초 - 첫 요청이 그 시간을 기다리지 않도록 서버 기동 시 1회 예열.
+    # chroma_db는 커서 git에 안 올라가 있어(.gitignore) 없는 개발 환경에서는 예열이
+    # 실패할 수 있는데, 그래도 다른 기능은 그대로 떠야 하므로 실패를 삼킨다 -
+    # 실제로 /api/industry-code를 호출할 때 그 시점에 다시 에러가 난다.
+    try:
+        warm_industry_matcher()
+    except Exception as e:  # noqa: BLE001
+        print(f"[industry_code] 예열 실패 (요청 시점에 재시도됨): {e}")
 
 
 def main():

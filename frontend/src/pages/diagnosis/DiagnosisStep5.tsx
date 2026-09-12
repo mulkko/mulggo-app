@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
-import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import { consumeDiagnosisReturnTo, getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -85,7 +85,8 @@ function DiagnosisStep5() {
   const handleNext = () => {
     if (!canSubmit) return;
     saveDiagnosisAnswers({ sido, sigungu, dong });
-    navigate("/diagnosis/7");
+    const returnTo = consumeDiagnosisReturnTo();
+    navigate(returnTo ?? "/diagnosis/psst-confirm");
   };
 
   if (!ready) return null;
