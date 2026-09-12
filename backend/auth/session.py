@@ -30,6 +30,18 @@ def create_session(user_id: int) -> str:
     return token
 
 
+def delete_session(token: str) -> None:
+    """로그아웃 - 이 토큰 행을 auth_sessions에서 지워서 서버측에서도 즉시 무효화한다
+    (모듈 상단 주석의 설계 의도 그대로). 이미 없는 토큰이어도 조용히 넘어간다."""
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM auth_sessions WHERE token = %s", (token,))
+        connection.commit()
+    finally:
+        connection.close()
+
+
 def get_user_id_by_token(token: str) -> int | None:
     connection = get_connection()
     try:

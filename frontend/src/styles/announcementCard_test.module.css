@@ -1,0 +1,137 @@
+/* 지원사업(공고) 카드 공통 컴포넌트. 짝꿍: components/AnnouncementCard/AnnouncementCard.tsx
+   값은 webTokens.css 토큰만 사용한다. 스펙 출처: 프로토타입 "공고 매칭 리스트" 화면의 카드.
+   폭은 고정 px 없이 100%로 두어 뷰포트를 좁혀도 부모 폭에 맞춰 줄어든다. */
+
+.card {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-input);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.15s ease;
+}
+
+.card:hover,
+.card:focus-within,
+.card:active {
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* 카드 본문 — 클릭 영역 전체를 채운다 */
+.body {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-family-base);
+}
+
+.body:focus-visible {
+  outline: none;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 삭제(X) 버튼이 있을 때 상단 텍스트가 버튼 아래로 들어가지 않도록 여백 확보 */
+.topWithDelete {
+  padding-right: 22px;
+}
+
+.agency {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--color-deep-navy);
+}
+
+.dday {
+  white-space: nowrap;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-dday-text);
+  background: var(--color-dday-bg);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tagRow {
+  display: flex;
+  gap: 6px;
+}
+
+.tag {
+  font-size: 11px;
+  color: var(--color-teal-green);
+  background: var(--color-teal-mist);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+/* [임시] 채우기 가능한 서류가 있는 공고 뱃지 - .tag(해시태그 칩)와 동일한 민트 톤 재사용 */
+.fillableBadge {
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+  background: var(--color-teal-mist);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+/* 우측 상단 삭제(X) 버튼 (마이페이지 등에서만 노출) */
+.deleteBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-stone-gray);
+}
+
+.deleteBtn:hover {
+  background: var(--color-delete-hover);
+}
+
+.deleteBtn svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}

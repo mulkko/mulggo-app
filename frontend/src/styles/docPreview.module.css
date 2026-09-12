@@ -102,6 +102,55 @@
   line-height: 1.65;
 }
 
+/* ===== [실험용, 2026-09-11] "채워질 정보 미리보기" 카드 - DocPreview.tsx의
+   BizCertPreview 컴포넌트 전용. 실험 종료되면 이 블록도 같이 지우면 됨. ===== */
+.bizCertPreviewCard {
+  width: 100%;
+  max-width: 280px;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-inset-card);
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.bizCertPreviewTitle {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+}
+
+.bizCertPreviewList {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bizCertPreviewList > div {
+  display: flex;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.bizCertPreviewList dt {
+  flex-shrink: 0;
+  width: 84px;
+  color: var(--color-stone-gray);
+}
+
+.bizCertPreviewList dd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-ink-charcoal);
+  font-weight: 600;
+}
+
 /* ===== 하단 CTA ===== */
 .ctaBar {
   flex-shrink: 0;

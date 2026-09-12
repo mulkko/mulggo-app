@@ -354,6 +354,11 @@ function ProfileEdit() {
     navigate("/mypage");
   };
 
+  const handlePasswordChangeClick = () => {
+    // TODO: 비밀번호 변경 (현재/새 비밀번호 입력 폼 + 백엔드 검증) — 시간 부족으로
+    // 버튼만 존재, 기능은 없음(사용자 확인, 2026-09-12) - 아이디/비밀번호 찾기 스텁과 동일.
+  };
+
   const handlePhotoChange = () => {
     // TODO: 프로필 사진 변경 (이미지 선택/업로드) — 이번 범위 아님
   };
@@ -456,6 +461,9 @@ function ProfileEdit() {
             onChange={handleChange}
           />
           <TextField label="이메일" name="email" value={email} inter readOnly />
+          <button type="button" className={styles.avatarChange} onClick={handlePasswordChangeClick}>
+            비밀번호 변경
+          </button>
         </div>
 
         <div className={styles.divider} />

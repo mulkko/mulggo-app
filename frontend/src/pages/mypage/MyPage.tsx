@@ -5,7 +5,7 @@ import BottomNav from "../../components/BottomNav/BottomNav";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
-import { authHeaders, clearSession, getUserId } from "../../auth/session";
+import { authHeaders, getUserId, logout } from "../../auth/session";
 import { downloadFilledDocument } from "../../utils/downloadFilledDoc";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -16,7 +16,7 @@ const FALLBACK_USER_ID = 27;
 interface ProfileSummary {
   name: string;
   profile_type: string | null;
-  region: string | null;
+  regions: string[] | null;
 }
 
 /**
@@ -41,8 +41,11 @@ interface ProfileSummary {
  * [2026-09-10] 나머지 2개 섹션(분석 리포트/지원내역)은 대응 테이블이 실제로 0건이라
  * (idea_refinement_sessions/apply_status - fetch해도 항상 빈 배열) API 연동 자체를
  * 안 만들고, 그냥 빈 배열로 시작해서 각 섹션에 안내 문구("~이 없습니다")만 보여준다
- * (사용자 확인). 더미데이터는 MyPage.tsx.bak에 남겨뒀다 - 나중에 진짜 테이블이
- * 채워지면 그 파일의 카드 모양을 참고해서 연동할 것.
+ * (사용자 확인). 더미데이터는 MyPage.tsx.bak에 남겨뒀다.
+ * [2026-09-12] 분석 리포트는 실제로 채워지기 시작해서(backend/api/diagnosis.py의
+ * POST /api/diagnosis/start가 idea_refinement_sessions에 저장) backend/api/
+ * mypage.py(GET /reports) 연동함(사용자 확인) - 지원내역(apply_status)은 아직
+ * 0건이라 그대로 미구현.
  *
  * 삭제(X) 버튼은 "로컬 state에서 해당 항목 제거"만 하는 임시 동작(새로고침하면
  * 사라짐) - 실제 서버 삭제 API는 없음. 화면 이동은 TODO 주석으로만 표시.
@@ -152,6 +155,18 @@ function MyPage() {
       .catch(() => {
         /* 조회 실패 시 빈 목록 그대로 */
       });
+
+    // [2026-09-12] 분석 리포트도 실데이터 연동함 - idea_refinement_sessions에 상권/
+    // 기술창업 분석이 저장되기 시작해서(backend/api/diagnosis.py::start_diagnosis)
+    // 더 이상 항상 빈 배열이 아니다. 위 두 섹션과 동일하게 로그인 세션 기준.
+    fetch(`${API_BASE_URL}/api/mypage/reports`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((res: { success: boolean; data?: AnalysisReport[] }) => {
+        if (res.success && res.data) setReports(res.data);
+      })
+      .catch(() => {
+        /* 조회 실패 시 빈 목록 그대로 */
+      });
   }, []);
 
   const removeById =
@@ -199,8 +214,8 @@ function MyPage() {
     if (error) setFillError(error);
   };
 
-  const handleLogout = () => {
-    clearSession();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -251,7 +266,9 @@ function MyPage() {
           <span className={styles.profileInfo}>
             <span className={styles.profileName}>{profile ? `${profile.name} 님` : "김창업 님"}</span>
             <span className={styles.profileSub}>
-              {profile ? [profile.profile_type, profile.region].filter(Boolean).join(" · ") || "정보 없음" : "예비창업자 · 마포구"}
+              {profile
+                ? [profile.profile_type, profile.regions?.join(", ") || null].filter(Boolean).join(" · ") || "정보 없음"
+                : "예비창업자 · 서울특별시"}
             </span>
           </span>
           <span className={styles.profileArrow} aria-hidden="true">

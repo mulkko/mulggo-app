@@ -28,6 +28,10 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # 패키지로 임포트돼도 bare import 되게 (industry_matcher.py와 동일 패턴)
 from industry_matcher import match_business_code, warm_up
 
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]  # .../industry_code_matching/ml/backend/<root>
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))  # 스크립트로 단독 실행해도 backend.db.connection 임포트되게
+
 # result_state 내부값 -> 프론트 표시용
 _STATE = {
     "추천_가능": "추천",

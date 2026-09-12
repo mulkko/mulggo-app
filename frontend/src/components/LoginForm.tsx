@@ -142,6 +142,9 @@ function LoginForm({ variant }: LoginFormProps) {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+          {/* [2026-09-12, 사용자 확인] 시간 부족으로 기능 없이 버튼만 - "비밀번호를
+              잊으셨나요?"와 동일하게 눌러도 아무 동작 없는 자리표시자. */}
+          <a href="#" className={styles.forgot}>아이디를 잊으셨나요?</a>
           <a href="#" className={styles.forgot}>비밀번호를 잊으셨나요?</a>
           <button type="submit" className={styles.submitBtn}>로그인</button>
         </form>

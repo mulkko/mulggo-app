@@ -734,3 +734,56 @@
 .onboardingCta:hover {
   background: var(--color-light-teal-hover-strong);
 }
+
+/* ===== 14. 전체화면 로딩 오버레이 미리보기 (실제 화면은 position: fixed,
+   여기선 스타일가이드 페이지 안에 넣어 보여줘야 해서 static으로만 다름 — 그 외
+   색상/radius/spinner 스펙은 diagnosis.module.css .loadingOverlay 등과 동일) ===== */
+.loadingOverlayPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: var(--color-scrim);
+  border-radius: var(--radius-input);
+}
+
+.loadingBoxPreview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 32px 24px;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
+  text-align: center;
+}
+
+.spinnerPreview {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border-web);
+  border-top-color: var(--color-navy-sphere);
+  border-radius: 50%;
+  animation: styleGuideSpin 0.8s linear infinite;
+}
+
+@keyframes styleGuideSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingTextPreview {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
+.loadingHintPreview {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  color: var(--color-stone-gray);
+}

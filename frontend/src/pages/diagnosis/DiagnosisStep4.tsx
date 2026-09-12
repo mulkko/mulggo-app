@@ -8,6 +8,10 @@ import { consumeDiagnosisReturnTo, getDiagnosisAnswers, saveDiagnosisAnswers, ty
  * 사업구체화 진단 - 필수 질문 5/6 (Q5 · 매장 운영 형태). 슬롯: storeType.
  * 지역·규모(Q6)는 별도 화면(DiagnosisStep5)으로 분리돼 있다 — 매장형태 하나만 고르면
  * 바로 다음으로 넘어간다.
+ *
+ * [2026-09-11] 여기선 백엔드를 부르지 않는다 - 설계문서("물꼬_사업구체화_지표결합_
+ * 설계안.docx") 기준 업종코드 매칭·리포트 생성은 6번째(마지막 필수) 질문인 지역
+ * 제출 시점(DiagnosisStep5)에 한 번에 이뤄진다.
  */
 function DiagnosisStep4() {
   const navigate = useNavigate();

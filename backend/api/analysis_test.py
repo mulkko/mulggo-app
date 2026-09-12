@@ -100,7 +100,10 @@ def get_market_report(sido: str, sigungu: str, dong: str, ksic_code: str | None 
     """
     상권 분석 리포트. 필수: sido/sigungu/dong (드롭다운 선택값).
     ksic_code를 같이 주면 그 업종 기준 동일업종 밀집도까지 계산한다(안 주면 null).
+    콤마로 여러 개 줄 수 있다(예: "56221,56229") - matching.py의 ksic 파라미터와 동일한
+    관례. 업종코드 매칭이 후보를 여러 개(대표+부가) 낼 수 있어서 필요.
     """
+    ksic_codes = [c.strip() for c in ksic_code.split(",") if c.strip()] if ksic_code else None
     try:
         resident = population.get_resident_population(_load_administrative_dong(), _load_resident_population(), sido, sigungu, dong)
         footfall = population.compute_footfall_score(_load_living_population(), sido, sigungu, dong)
@@ -117,17 +120,15 @@ def get_market_report(sido: str, sigungu: str, dong: str, ksic_code: str | None 
         return _error(400, str(e), "REGION_NOT_FOUND")
 
     total_nearby_count = len(nearby)
-    # [2026-09-12] 4 -> 10 (사용자 확인) - DiagnosisReport.tsx의 도넛 차트가 상위 4개는
-    # 색+분리(exploded)로, 5~10위는 회색 그러데이션으로 같이 보여준다.
-    industry_dist = industry_mix.get_industry_distribution(nearby, level="상권업종소분류명", top_n=10)
+    industry_dist = industry_mix.get_industry_distribution(nearby, level="상권업종소분류명", top_n=4)
 
     density_grid = None
-    if ksic_code:
+    if ksic_codes:
         center_lat, center_lon = density.get_dong_center(district_df, sido, sigungu, dong)
-        same_industry_count = density.count_same_industry(nearby, target_codes=ksic_code)
+        same_industry_count = density.count_same_industry(nearby, target_codes=ksic_codes)
         density_grid = {
             "same_industry_count": same_industry_count,
-            "grid": density.compute_density_grid(nearby, center_lat, center_lon, target_codes=ksic_code),
+            "grid": density.compute_density_grid(nearby, center_lat, center_lon, target_codes=ksic_codes),
         }
 
     return JSONResponse(content={
@@ -160,9 +161,11 @@ def _load_venture_companies() -> pd.DataFrame:
 
 @router.get("/tech-startup")
 def get_tech_startup_report(ksic_code: str) -> JSONResponse:
-    """기술창업 분석 리포트. 유사 벤처기업 수 / 최근 투자유형 카운트 / 인증유형 구성 / 밀집도."""
+    """기술창업 분석 리포트. 유사 벤처기업 수 / 최근 투자유형 카운트 / 인증유형 구성 / 밀집도.
+    ksic_code는 콤마로 여러 개 줄 수 있다(/market과 동일 관례)."""
+    ksic_codes = [c.strip() for c in ksic_code.split(",") if c.strip()]
     venture_df = _load_venture_companies()
-    similar = venture.count_similar_venture_companies(venture_df, target_codes=ksic_code)
+    similar = venture.count_similar_venture_companies(venture_df, target_codes=ksic_codes)
 
     if len(similar) == 0:
         return JSONResponse(content={

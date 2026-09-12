@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
-import { consumeDiagnosisReturnTo, getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -19,6 +19,13 @@ const toSelectSheetOptions = (values: string[]) => values.map((v) => ({ label: v
 /**
  * 사업구체화 진단 - 필수 질문 6/6 (Q6 · 지역·규모, 필수질문 구간의 마지막). 슬롯: sido/sigungu/dong.
  * 이 화면을 끝으로 "AI 제안" 6단계가 끝나고, 이후 선택 질문(Q7~Q10)으로 이어진다.
+ *
+ * [2026-09-12] 업종코드 매칭(POST /api/diagnosis/start) 트리거를 여기서 "질응답 내용
+ * 정리"(DiagnosisAnswerSummary) 화면의 버튼으로 옮김(사용자 확인) - 여기는 이제
+ * sido/sigungu/dong만 저장하고 바로 다음 화면으로 넘어간다. 이유: Q1~Q6 답변을 먼저
+ * 요약으로 보여준 다음에 "분석 시작"을 누르게 하는 게 자연스럽다는 판단 - 분석
+ * 시작 이후 흐름(업종코드 매칭 → 결과 화면 → 백그라운드 상권/기술창업 분석 폴링)은
+ * DiagnosisAnswerSummary.tsx 상단 주석 참고, 그대로 유지.
  */
 function DiagnosisStep5() {
   const navigate = useNavigate();
@@ -85,8 +92,7 @@ function DiagnosisStep5() {
   const handleNext = () => {
     if (!canSubmit) return;
     saveDiagnosisAnswers({ sido, sigungu, dong });
-    const returnTo = consumeDiagnosisReturnTo();
-    navigate(returnTo ?? "/diagnosis/psst-confirm");
+    navigate("/diagnosis/summary");
   };
 
   if (!ready) return null;
