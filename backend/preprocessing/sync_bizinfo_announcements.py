@@ -353,6 +353,15 @@ def _get_notice_full_text_with_fallback(print_flpth_nm: str | None, flpth_nm: st
     쪽 첨부 4개 중 1개만 정상인데 대표로 지정된 게 하필 나머지였고, flpth_nm 쪽은
     4개 다 정상이었음. 대표 파일이 비거나 실패하면 flpth_nm의 첨부를 순서대로
     시도해서 처음 성공하는 걸 쓴다."""
+    # [2026-09-12] pandas가 이 컬럼 전체가 NULL인 배치에서 dtype을 float64로 잡아서
+    # 값이 문자열이 아니라 float('nan')으로 오는 경우가 있다 - `if x:` 만으론 못 거른다
+    # (nan은 파이썬에서 참으로 취급됨, 실측: raw_bizinfo_id=5에서 매번 여기서 죽어서
+    # "전체 재검증"이 3건 이후로 항상 중단됐음). isinstance로 진짜 문자열만 통과시킨다.
+    if not isinstance(print_flpth_nm, str):
+        print_flpth_nm = None
+    if not isinstance(flpth_nm, str):
+        flpth_nm = None
+
     candidates = []
     if print_flpth_nm:
         candidates.append(print_flpth_nm)
