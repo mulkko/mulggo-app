@@ -36,6 +36,7 @@ import DiagnosisTechReport from "./pages/diagnosis/DiagnosisTechReport";
 import DiagnosisStep7 from "./pages/diagnosis/DiagnosisStep7";
 import DiagnosisStep8 from "./pages/diagnosis/DiagnosisStep8";
 import DiagnosisStep9 from "./pages/diagnosis/DiagnosisStep9";
+import DiagnosisReportSummaryPreview from "./pages/diagnosis/DiagnosisReportSummaryPreview";
 
 /**
  * [임시/디버그] 지금 로그인된 사람이 누구인지 확인용 - 확인 끝나면 지울 것.
@@ -130,6 +131,7 @@ function App() {
         <Route path="/diagnosis/10" element={<DiagnosisStep9 />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
+        <Route path="/dev/report-summary-preview" element={<DiagnosisReportSummaryPreview />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />
         <Route
           path="/admin"

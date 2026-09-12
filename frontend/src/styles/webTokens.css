@@ -203,4 +203,24 @@
      라디오 원 테두리 색 --color-border-dashed(rgba(139,141,147,.3)), 선택 dot 색 --color-deep-navy,
      제목 --color-ink-charcoal, 설명 --color-stone-gray */
   --shadow-inset-teal-strong: inset 0 0 0 1.5px #3fb6a8; /* 라디오카드 hover 테두리 (--shadow-inset-teal은 1px라 재사용 불가) */
+
+  /* ===== 사업구체화 리포트 요약 화면 전용 (13-1/14-2, is.reportASum/is.reportBSum) ===== */
+  /* 재사용: 서브헤더/CTA 배경 --color-light-teal, "MULKKO REPORT" 텍스트·수익모델 아이콘 배경
+     --color-deep-navy, 보유역량 아이콘 배경 --color-tab-active-icon, 라벨·설명·캡션 텍스트
+     --color-stone-gray, 헤딩 --color-ink-charcoal, 4축요약카드 테두리 --shadow-inset-neutral,
+     타깃 관점 카드 테두리 --shadow-inset-report, 수익모델 관점 카드 테두리 --shadow-inset-navy,
+     보유역량 활용 카드 테두리 --shadow-inset-amber, "이전" 버튼 테두리 --shadow-inset-gray-strong,
+     카드 radius --radius-card(14px), 버튼 radius --radius-cta(13px), 뱃지 radius --radius-pill 재사용 */
+  --color-purple-accent: #7c5cbf; /* 4축요약카드 "차별점" 아이콘 배경 */
+  --color-cta-hover-navy: #0b2170; /* "지원사업 매칭 보기 →" CTA 버튼 hover 배경 (--color-light-teal의 hover 상태) */
+  --color-caption-faint: #a9abb2; /* "AI가 답변을 바탕으로 만든 참고 아이디어예요" 캡션 텍스트 */
+  --color-card-target-bg: rgba(63, 182, 168, 0.06); /* "타깃 관점" 아이디어 카드 배경 */
+  --color-card-revenue-bg: rgba(21, 50, 140, 0.05); /* "수익모델 관점" 아이디어 카드 배경 */
+  --color-card-skill-bg: rgba(232, 169, 60, 0.08); /* "보유역량 활용" 아이디어 카드 배경 */
+  --color-badge-target-bg: #bfeae1; /* "타깃 관점" 뱃지 배경 */
+  --color-badge-target-text: #0b5a50; /* "타깃 관점" 뱃지 텍스트 */
+  --color-badge-revenue-bg: #c9d6f6; /* "수익모델 관점" 뱃지 배경 */
+  --color-badge-revenue-text: #102569; /* "수익모델 관점" 뱃지 텍스트 */
+  --color-badge-skill-bg: #f3da9b; /* "보유역량 활용" 뱃지 배경 */
+  --color-badge-skill-text: #714800; /* "보유역량 활용" 뱃지 텍스트 */
 }

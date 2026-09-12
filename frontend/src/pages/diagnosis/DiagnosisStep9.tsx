@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import DiagnosisTextQuestion from "./DiagnosisTextQuestion";
+import DiagnosisReportSummary from "./DiagnosisReportSummary";
 import { authHeaders } from "../../auth/session";
 import { clearDiagnosisAnswers, getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 
@@ -35,6 +36,7 @@ function DiagnosisStep9() {
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [cards, setCards] = useState<IdeaCard[]>([]);
+  const [summary, setSummary] = useState({ target: "", differentiator: "", revenueModel: "", coreSkill: "" });
 
   useEffect(() => {
     const answers = getDiagnosisAnswers();
@@ -47,7 +49,6 @@ function DiagnosisStep9() {
   }, [navigate]);
 
   const handleBack = () => navigate("/diagnosis/9");
-  const handleFinish = () => navigate("/home");
 
   const handleSubmit = async (value: string) => {
     if (submitting) return;
@@ -85,6 +86,12 @@ function DiagnosisStep9() {
         return;
       }
       setCards(data.data?.cards ?? []);
+      setSummary({
+        target: answers.target || "",
+        differentiator: answers.differentiator || "",
+        revenueModel: answers.revenueModel || "",
+        coreSkill: value,
+      });
       setSubmitted(true);
       clearDiagnosisAnswers();
     } catch {
@@ -98,28 +105,14 @@ function DiagnosisStep9() {
 
   if (submitted) {
     return (
-      <div className={`pageContainer ${styles.page}`}>
-        <DiagnosisHeader onBack={handleFinish} pct="100%" stepLabel="완료" />
-        <div className={styles.scrollArea}>
-          <h1 className={styles.questionTitle}>사업 구체화가 끝났어요!</h1>
-          <p className={styles.noticeText}>
-            답변이 저장됐어요. 업종코드 매칭·분석 리포트 연결은 준비 중이라, 완성되면
-            마이페이지에서 결과를 확인하실 수 있어요.
-          </p>
-          {cards.map((c, i) => (
-            <div key={i} className={styles.resultCard}>
-              <span className={styles.resultAxis}>{c.axis}</span>
-              <span className={styles.resultTitle}>{c.title}</span>
-              <span className={styles.resultDesc}>{c.description}</span>
-            </div>
-          ))}
-        </div>
-        <div className={styles.footer}>
-          <button type="button" className={styles.nextButton} style={{ width: "100%" }} onClick={handleFinish}>
-            홈으로
-          </button>
-        </div>
-      </div>
+      <DiagnosisReportSummary
+        variant="market"
+        target={summary.target}
+        differentiator={summary.differentiator}
+        revenueModel={summary.revenueModel}
+        coreSkill={summary.coreSkill}
+        cards={cards}
+      />
     );
   }
 
