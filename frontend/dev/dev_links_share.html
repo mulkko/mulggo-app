@@ -107,7 +107,7 @@
       <tr>
         <td>관리자 스타일 가이드</td>
         <td><a href="http://192.168.0.160:5173/style-guide" target="_blank">http://192.168.0.160:5173/style-guide</a></td>
-        <td>2026-09-03</td>
+        <td>2026-09-05</td>
         <td>2026-09-07</td>
         <td></td>
         <td></td>
@@ -116,7 +116,7 @@
         <td>사용자 스타일 가이드</td>
         <td><a href="http://192.168.0.160:5173/dev/web-style-guide" target="_blank">http://192.168.0.160:5173/dev/web-style-guide</a></td>
         <td>2026-09-06</td>
-        <td>2026-09-09</td>
+        <td>2026-09-11</td>
         <td></td>
         <td></td>
       </tr>
@@ -134,7 +134,7 @@
       <tr>
         <td>로그인</td>
         <td><a href="http://192.168.0.160:5173/login" target="_blank">http://192.168.0.160:5173/login</a></td>
-        <td>2026-09-03</td>
+        <td>2026-09-05</td>
         <td>2026-09-10</td>
         <td class="done">2026-09-07</td>
         <td>90%</td>
@@ -142,7 +142,7 @@
       <tr>
         <td>회원가입</td>
         <td><a href="http://192.168.0.160:5173/signup" target="_blank">http://192.168.0.160:5173/signup</a></td>
-        <td>2026-09-03</td>
+        <td>2026-09-05</td>
         <td>2026-09-10</td>
         <td class="done">2026-09-09</td>
         <td>85%</td>
@@ -151,7 +151,7 @@
         <td>회원가입_완료</td>
         <td><a href="http://192.168.0.160:5173/onboarding" target="_blank">http://192.168.0.160:5173/onboarding</a></td>
         <td>2026-09-08</td>
-        <td>2026-09-10</td>
+        <td>2026-09-11</td>
         <td class="done">2026-09-10</td>
         <td>85%</td>
       </tr>
@@ -159,7 +159,7 @@
         <td>홈</td>
         <td><a href="http://192.168.0.160:5173/home" target="_blank">http://192.168.0.160:5173/home</a></td>
         <td>2026-09-08</td>
-        <td>2026-09-10</td>
+        <td>2026-09-11</td>
         <td>-</td>
         <td>90%</td>
       </tr>
@@ -217,9 +217,8 @@
                 <li>ProfileEdit 프로필사진 변경</li>
                 <li>ProfileEdit 사업자등록증 재업로드</li>
                 <li>Signup 약관 실제 문구 (지금은 placeholder만 있음)</li>
-                <li>사업구체화 진단 결과 화면의 업종코드 매칭/분석 리포트 연결(팀 재작업 완료 후)</li>
-                <li>사업구체화 진단 제출 엔드포인트를 정식 API로 교체(지금은 /api/test/slot-filling 재사용, DB 미저장)</li>
               </ul>
+              <b>[2026-09-12 갱신]</b> 사업구체화 진단 흐름이 Q6(지역)까지 확장되고 정식 API(POST /api/diagnosis/start·/{id}/finish)로 교체됨 - 아래 "사용자용 화면 - 사업구체화" 표의 Q6~Q10·질응답 정리·분석 리포트 행 참고. Q9(수익모델) 앵커만 우수사례 매칭 기능 자체가 아직 없어 하드코딩 유지.
             </div>
           </details>
         </td>
@@ -231,14 +230,14 @@
         <td>진단방식선택</td>
         <td><a href="http://192.168.0.160:5173/diagnosis/choice" target="_blank">http://192.168.0.160:5173/diagnosis/choice</a></td>
         <td>2026-09-10</td>
-        <td>2026-09-10</td>
+        <td>2026-09-11</td>
         <td></td>
         <td></td>
       </tr>
       <tr>
         <td>Q1 - 텍스트 형식</td>
         <td><a href="http://192.168.0.160:5173/diagnosis/1" target="_blank">http://192.168.0.160:5173/diagnosis/1</a></td>
-        <td>2026-09-03</td>
+        <td>2026-09-10</td>
         <td>2026-09-11</td>
         <td></td>
         <td></td>
@@ -254,7 +253,7 @@
       <tr>
         <td>Q3 - 텍스트 형식</td>
         <td><a href="http://192.168.0.160:5173/diagnosis/3" target="_blank">http://192.168.0.160:5173/diagnosis/3</a></td>
-        <td>2026-09-03</td>
+        <td>2026-09-10</td>
         <td>2026-09-11</td>
         <td></td>
         <td></td>
@@ -262,26 +261,74 @@
       <tr>
         <td>Q4 - 텍스트 형식</td>
         <td><a href="http://192.168.0.160:5173/diagnosis/4" target="_blank">http://192.168.0.160:5173/diagnosis/4</a></td>
-        <td>2026-09-03</td>
         <td>2026-09-10</td>
+        <td>2026-09-11</td>
         <td></td>
         <td></td>
       </tr>
       <tr>
         <td>Q5 - 셀렉트 형식</td>
         <td><a href="http://192.168.0.160:5173/diagnosis/5" target="_blank">http://192.168.0.160:5173/diagnosis/5</a></td>
-        <td>2026-09-03</td>
         <td>2026-09-10</td>
+        <td>2026-09-11</td>
         <td class="done">2026-09-10</td>
         <td></td>
       </tr>
       <tr>
-        <td>Q6 - 지역 선택</td>
+        <td>Q6 - 셀렉트 형식(지역·규모, 필수질문 마지막)</td>
         <td><a href="http://192.168.0.160:5173/diagnosis/6" target="_blank">http://192.168.0.160:5173/diagnosis/6</a></td>
+        <td>2026-09-10</td>
+        <td>2026-09-12</td>
+        <td class="done">2026-09-12</td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>질응답 내용 정리 (Q1~Q6 답변 요약)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/summary" target="_blank">http://192.168.0.160:5173/diagnosis/summary</a></td>
         <td>2026-09-11</td>
-        <td>2026-09-11</td>
-        <td class="done">2026-09-11</td>
+        <td>2026-09-12</td>
         <td></td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>분석 리포트 (상권/기술창업 자동분기 + 그래프)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/report" target="_blank">http://192.168.0.160:5173/diagnosis/report</a></td>
+        <td>2026-09-11</td>
+        <td>2026-09-12</td>
+        <td></td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>Q7 - 텍스트 형식(선택질문, 타깃 - 실측 데이터 앵커)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/7" target="_blank">http://192.168.0.160:5173/diagnosis/7</a></td>
+        <td>2026-09-10</td>
+        <td>2026-09-12</td>
+        <td></td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>Q8 - 텍스트 형식(선택질문, 차별점 - 실측 데이터 앵커)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/8" target="_blank">http://192.168.0.160:5173/diagnosis/8</a></td>
+        <td>2026-09-10</td>
+        <td>2026-09-12</td>
+        <td></td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>Q9 - 텍스트 형식(선택질문, 수익모델 - 앵커 하드코딩 유지)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/9" target="_blank">http://192.168.0.160:5173/diagnosis/9</a></td>
+        <td>2026-09-10</td>
+        <td>2026-09-11</td>
+        <td></td>
+        <td>90%</td>
+      </tr>
+      <tr>
+        <td>Q10 - 텍스트 형식(선택질문, 보유역량 + 제출/완료)</td>
+        <td><a href="http://192.168.0.160:5173/diagnosis/10" target="_blank">http://192.168.0.160:5173/diagnosis/10</a></td>
+        <td>2026-09-10</td>
+        <td>2026-09-12</td>
+        <td class="done">2026-09-12</td>
+        <td>100%</td>
       </tr>
       <tr>
         <td>PSST 확정 - 중간</td>
@@ -301,7 +348,7 @@
       </tr>
       <tr>
         <td colspan="6" style="background:#bbb; font-weight:bold;">
-          [테스트] 업종코드매칭·분석리포트·매칭 연결 (TA2_diagnosis 병합 대기) — 아래 9개 파일, 원본은 HEAD로 복구됨, 라이브 페이지 아님(코드로만 존재)
+          [테스트, 2026-09-11 작업분 - 이후 위 Q6~Q10/질응답정리/분석리포트 행으로 정식 반영·병합 완료] 업종코드매칭·분석리포트·매칭 연결 — 아래 9개 파일은 그 작업 과정의 스크래치 파일, 라이브 페이지 아님(코드로만 존재)
         </td>
       </tr>
       <tr>
@@ -532,22 +579,22 @@
         <td>관리자 로그인</td>
         <td><a href="http://192.168.0.160:5173/admin/login" target="_blank">http://192.168.0.160:5173/admin/login</a></td>
         <td>2026-09-05</td>
-        <td>2026-09-07</td>
+        <td>2026-09-10</td>
         <td class="done">2026-09-07</td>
         <td>90%</td>
       </tr>
       <tr>
         <td>관리자메인</td>
         <td><a href="http://192.168.0.160:5173/admin" target="_blank">http://192.168.0.160:5173/admin</a></td>
-        <td>2026-09-03</td>
-        <td>2026-09-10</td>
+        <td>2026-09-05</td>
+        <td>2026-09-11</td>
         <td class="done">2026-09-10</td>
         <td>90%</td>
       </tr>
       <tr>
         <td>관리자 - 회원관리</td>
         <td><a href="http://192.168.0.160:5173/admin/members" target="_blank">http://192.168.0.160:5173/admin/members</a></td>
-        <td>2026-09-03</td>
+        <td>2026-09-05</td>
         <td>2026-09-06</td>
         <td class="done">2026-09-06</td>
         <td>100%</td>
@@ -556,7 +603,7 @@
         <td>관리자 - 통합 반영</td>
         <td><a href="http://192.168.0.160:5173/admin/announcements-sync" target="_blank">http://192.168.0.160:5173/admin/announcements-sync</a></td>
         <td>2026-09-08</td>
-        <td>2026-09-09</td>
+        <td>2026-09-11</td>
         <td class="done">2026-09-09</td>
         <td></td>
       </tr>

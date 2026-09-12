@@ -182,24 +182,6 @@
   box-sizing: border-box;
 }
 
-.bizThumb {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-thumb);
-  background: var(--color-white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-stone-gray);
-}
-
-.bizThumb svg {
-  width: 22px;
-  height: 22px;
-  display: block;
-}
-
 .bizUploadText {
   flex: 1;
   min-width: 0;
@@ -285,4 +267,57 @@
 
 .saveButton:hover {
   background: var(--color-light-teal-hover-strong);
+}
+
+/* ===== 사업자등록증 재등록 팝업 (pages/onboarding/Onboarding.tsx의 동일 패턴 재사용) ===== */
+.bizPopupOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--color-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.bizPopupCard {
+  width: 100%;
+  max-width: 360px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-modal);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bizPopupTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-ink-charcoal);
+}
+
+.bizPopupSub {
+  margin-top: -10px;
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+  line-height: 1.5;
+}
+
+.bizPopupCancelBtn {
+  height: 46px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-inset-gray);
+  color: var(--color-ink-charcoal);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
 }

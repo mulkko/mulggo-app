@@ -264,7 +264,10 @@ CREATE TABLE IF NOT EXISTS biz_registration_docs (
     entity_type_code VARCHAR(10) NOT NULL REFERENCES entity_types(code),
     file_name TEXT NOT NULL,
     file_type VARCHAR(10),
-    storage_path TEXT NOT NULL,
+    -- [2026-09-11] OCR만 하고 원본 이미지는 디스크에 남기지 않기로 함(개인정보 최소화,
+    -- 사용자 확인) - 그래서 항상 NULL. 예전엔 data/uploads/biz_registration/에 실제
+    -- 파일을 저장하고 그 경로를 넣었었음.
+    storage_path TEXT,
     biz_no VARCHAR(12) NOT NULL,
     corp_no VARCHAR(14),
     company_name VARCHAR(100) NOT NULL,
@@ -404,12 +407,20 @@ CREATE TABLE IF NOT EXISTS administrative_dong (
 -- 정확한 값 종류(enum) 미확정, 지금은 diagnosis.py에서 "오프라인"/"온라인" 임시값.
 -- resolved_nts_codes/market_analysis/tech_analysis/best_practices_summary는 별도
 -- 진행 중인 업종코드 매칭·분석 기능이 채우는 자리 - diagnosis.py는 NULL로 둠.
+--
+-- [2026-09-11] resolved_ksic_codes 컬럼 추가 및 실 DB(Supabase) 반영 완료. 국세청업종코드
+-- (resolved_nts_codes)와 KSIC코드 체계가 서로 달라서(backend/ml/industry_code_matching
+-- 참고 - 매칭기는 국세청코드를 뱉고, DB nts_ksic_mapping 테이블로 KSIC코드를 함께 얻음)
+-- 같은 JSONB 안에 섞지 않고 컬럼을 분리했다 - analysis.py(/analysis/market,
+-- /analysis/tech-startup)와 matching.py(/api/matching?ksic=)가 전부 KSIC코드를 받기
+-- 때문에 이 컬럼 값을 바로 넘기면 된다.
 CREATE TABLE IF NOT EXISTS idea_refinement_sessions (
     session_id             BIGSERIAL PRIMARY KEY,
     profile_id              BIGINT NOT NULL REFERENCES business_profiles(profile_id),
     status                   VARCHAR(20) NOT NULL,          -- '진행중' / '완료'
     flow_type                VARCHAR(20),                   -- 'problem' / 'opportunity' (출발점 분기)
     resolved_nts_codes       JSONB,
+    resolved_ksic_codes      JSONB,                         -- 국세청코드에 연계된 KSIC코드 배열
     region                   TEXT,
     psst_problem             TEXT,                          -- 실제 의미: 시드(사업 아이템)
     psst_solution            TEXT,                          -- 실제 의미: 문제/기회 정의

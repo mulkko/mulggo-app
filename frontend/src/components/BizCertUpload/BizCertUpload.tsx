@@ -111,18 +111,30 @@ function loadKsicOptions(): Promise<KsicOption[]> {
 
 type KsicStep = "large" | "medium" | "detail";
 
+// [2026-09-11] 검색어를 의미 있는 조각(2글자 이상)으로 쪼갠다 - OCR 업태/종목 텍스트는
+// "커피 및 음료" 처럼 KSIC 세부업종명("커피전문점")과 통짜로는 안 겹치는 문구라, 부분
+// 문자열 통짜 비교 대신 토큰 단위로 겹치는 게 있으면 매치로 본다.
+function tokenizeQuery(text: string): string[] {
+  return Array.from(new Set(text.split(/[\s,·/및]+/).map((t) => t.trim()).filter((t) => t.length >= 2)));
+}
+
 function KsicSelectPopup({
   onSelect,
   onClose,
+  initialQuery = "",
 }: {
   onSelect: (code: string, name: string) => void;
   onClose: () => void;
+  // [2026-09-11] OCR로 읽은 업태/종목을 그대로 넘겨받아 검색창에 미리 채워둔다 -
+  // 사용자가 대분류/중분류를 몰라도 팝업을 열자마자 후보가 바로 보이게. 매치가
+  // 없거나 틀리면 검색어를 지우면 기존 3단계 캐스케이드로 돌아간다.
+  initialQuery?: string;
 }) {
   const [options, setOptions] = useState<KsicOption[] | null>(cachedKsicOptions);
   const [step, setStep] = useState<KsicStep>("large");
   const [large, setLarge] = useState<{ code: string; name: string } | null>(null);
   const [medium, setMedium] = useState<{ code: string; name: string } | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery.trim());
 
   useEffect(() => {
     if (!options) loadKsicOptions().then(setOptions);
@@ -147,24 +159,41 @@ function KsicSelectPopup({
         (o) => o.mediumCode,
       ).map((o) => ({ code: o.mediumCode, name: o.mediumName }))
     : [];
-  const detailOptions = (options ?? [])
-    .filter((o) => o.mediumCode === medium?.code)
-    .filter((o) => !query.trim() || o.name.includes(query.trim()));
+  const detailOptions = (options ?? []).filter((o) => o.mediumCode === medium?.code);
 
-  const title =
-    step === "large" ? "업종 선택 (1/3) · 대분류" : step === "medium" ? "업종 선택 (2/3) · 중분류" : "업종 선택 (3/3) · 세부업종";
+  // 검색어가 있으면(자동 채워진 OCR값 포함) 단계 이동 없이 전체 1,202건에서 바로 찾는다 -
+  // 결과는 "대분류 > 중분류 > 종목" 경로째로 보여줘서 계층 탐색 없이도 위치를 알 수 있다.
+  const searchTokens = tokenizeQuery(query);
+  const isSearching = searchTokens.length > 0;
+  // 사업자등록증 종목란은 보통 "소프트웨어개발"처럼 띄어쓰기 없이 인쇄되는데 KSIC
+  // 공식명은 "소프트웨어 개발"처럼 띄어쓰기가 있어 통짜로 비교하면 안 맞는다 -
+  // 양쪽 다 공백을 지우고 비교해서 띄어쓰기 차이를 무시한다.
+  const searchResults = isSearching
+    ? (options ?? []).filter((o) => {
+        const flatName = o.name.replace(/\s+/g, "");
+        return searchTokens.some((t) => flatName.includes(t));
+      })
+    : [];
+
+  const title = isSearching
+    ? `검색 결과 (${searchResults.length})`
+    : step === "large"
+      ? "업종 선택 (1/3) · 대분류"
+      : step === "medium"
+        ? "업종 선택 (2/3) · 중분류"
+        : "업종 선택 (3/3) · 세부업종";
 
   return (
-    <div className={styles.entityPopupOverlay} onClick={onClose}>
+    <div className={styles.ksicSheetOverlay} onClick={onClose}>
       <div
-        className={styles.ksicPopupCard}
+        className={styles.ksicSheetPanel}
         role="dialog"
         aria-modal="true"
         aria-label="업종 선택"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={styles.ksicPopupHead}>
-          {step !== "large" && (
+        <div className={styles.ksicSheetHead}>
+          {!isSearching && step !== "large" && (
             <button
               type="button"
               className={styles.ksicBackBtn}
@@ -174,27 +203,57 @@ function KsicSelectPopup({
               ←
             </button>
           )}
-          <p className={styles.entityPopupTitle}>{title}</p>
+          <p className={styles.ksicSheetTitle}>{title}</p>
+          <button type="button" className={styles.ksicSheetCloseBtn} onClick={onClose} aria-label="닫기">
+            ✕
+          </button>
         </div>
 
-        {(large || medium) && (
+        <div className={styles.ksicSearchWrap}>
+          <input
+            type="text"
+            className={styles.ksicSearchInput}
+            placeholder="종목/업종명으로 검색 (예: 커피, 소매, 제조)"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {query && (
+            <button
+              type="button"
+              className={styles.ksicSearchClearBtn}
+              onClick={() => setQuery("")}
+              aria-label="검색어 지우기"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {!isSearching && (large || medium) && (
           <p className={styles.ksicBreadcrumb}>
             {[large?.name, medium?.name].filter(Boolean).join(" > ")}
           </p>
         )}
 
-        {step === "detail" && (
-          <input
-            type="text"
-            className={styles.ksicSearchInput}
-            placeholder="업종명 검색"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        )}
-
         {!options ? (
           <p className={styles.ksicLoading}>업종 목록을 불러오는 중...</p>
+        ) : isSearching ? (
+          searchResults.length === 0 ? (
+            <p className={styles.ksicLoading}>검색 결과가 없어요. 검색어를 지우면 목록에서 고를 수 있어요.</p>
+          ) : (
+            <ul className={styles.ksicOptionList}>
+              {searchResults.map((o) => (
+                <li key={o.code}>
+                  <button type="button" className={styles.ksicOptionBtn} onClick={() => onSelect(o.code, o.name)}>
+                    <span className={styles.radio} aria-hidden="true" />
+                    <span className={styles.ksicResultPath}>
+                      {o.largeName} &gt; {o.mediumName} &gt; <strong>{o.name}</strong>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )
         ) : (
           <ul className={styles.ksicOptionList}>
             {step === "large" &&
@@ -209,6 +268,7 @@ function KsicSelectPopup({
                       setStep("medium");
                     }}
                   >
+                    <span className={styles.radio} aria-hidden="true" />
                     {o.name}
                   </button>
                 </li>
@@ -221,21 +281,22 @@ function KsicSelectPopup({
                     className={styles.ksicOptionBtn}
                     onClick={() => {
                       setMedium(o);
-                      setQuery("");
                       setStep("detail");
                     }}
                   >
+                    <span className={styles.radio} aria-hidden="true" />
                     {o.name}
                   </button>
                 </li>
               ))}
             {step === "detail" &&
               (detailOptions.length === 0 ? (
-                <p className={styles.ksicLoading}>검색 결과가 없어요.</p>
+                <p className={styles.ksicLoading}>세부업종이 없어요.</p>
               ) : (
                 detailOptions.map((o) => (
                   <li key={o.code}>
                     <button type="button" className={styles.ksicOptionBtn} onClick={() => onSelect(o.code, o.name)}>
+                      <span className={styles.radio} aria-hidden="true" />
                       {o.name}
                     </button>
                   </li>
@@ -575,7 +636,7 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
                   className={styles.entityValueBtn}
                   onClick={() => setEntityTypePopupOpen(true)}
                 >
-                  {fields.entity_type ?? "개인"}
+                  <span className={styles.entityValueText}>{fields.entity_type ?? "개인"}</span>
                   <Chevron />
                 </button>
               </div>
@@ -591,9 +652,11 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
                   className={fields.ksic_code ? styles.entityValueBtn : styles.entityValueBtnWarn}
                   onClick={() => setKsicPopupOpen(true)}
                 >
-                  {fields.ksic_name || "업종을 선택해주세요"}
+                  <span className={styles.entityValueText}>{fields.ksic_name || "업종을 선택해주세요"}</span>
                   <Chevron />
                 </button>
+                {/* [임시, 2026-09-11] 매칭 테스트용 - 코드값 눈으로 확인하려고 노출. 확인 끝나면 제거. */}
+                {fields.ksic_code && <p className={styles.ksicCodeDebug}>KSIC {fields.ksic_code}</p>}
               </div>
             )}
           </div>
@@ -639,6 +702,11 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
 
       {ksicPopupOpen && (
         <KsicSelectPopup
+          // [2026-09-11] 종목만 검색어로 - 업태(서비스업/제조업 등)는 국세청 대분류라
+          // 너무 뭉뚱그린 단어라서 같이 넣으면 "서비스"류 무관한 KSIC명까지 걸려
+          // 정작 중요한 종목 매치가 묻힌다(실측: 업태="서비스"+종목="소프트웨어개발"
+          // 검색 시 노이즈 확인). 종목이 비어있을 때만 업태로 대체.
+          initialQuery={fields.business_item || fields.business_category || ""}
           onSelect={(code, name) => {
             handleFieldChange("ksic_code", code);
             handleFieldChange("ksic_name", name);
