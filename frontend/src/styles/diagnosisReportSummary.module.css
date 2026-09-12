@@ -1,0 +1,295 @@
+/* 13-1/14-2 사업구체화 리포트 요약 (is.reportASum/is.reportBSum — 구조 완전 동일, 이전 버튼
+   목적지만 variant로 갈림). 값은 webTokens.css 토큰만 재사용 + 이 화면 전용 신규 토큰
+   (--color-purple-accent 등, webTokens.css 하단 섹션 참고). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-white);
+  font-family: var(--font-family-base);
+  color: var(--color-ink-charcoal);
+}
+
+/* ===== 헤더 ===== */
+.header {
+  flex-shrink: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 22px;
+  box-sizing: border-box;
+  background: var(--color-white);
+}
+
+.backButton {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-ink-charcoal);
+  line-height: 0;
+}
+
+.backButton svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.brandName {
+  flex: 1;
+  font-family: var(--font-family-logo), var(--font-family-base);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  color: var(--color-deep-navy);
+}
+
+.logoMark {
+  width: 28px;
+  flex-shrink: 0;
+  display: block;
+}
+
+/* ===== 서브헤더 ===== */
+.subHeader {
+  flex-shrink: 0;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  box-sizing: border-box;
+  background: var(--color-light-teal);
+  color: var(--color-white);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ===== 본문 ===== */
+.scrollArea {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 20px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ===== 4축 요약 카드 ===== */
+.summaryCard {
+  background: var(--color-white);
+  border-radius: var(--radius-input);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  box-shadow: var(--shadow-inset-neutral);
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summaryIcon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+  font-size: 11px;
+}
+
+.summaryIconTarget {
+  background: var(--color-light-teal);
+}
+
+.summaryIconDifferentiator {
+  background: var(--color-purple-accent);
+}
+
+.summaryIconRevenue {
+  background: var(--color-deep-navy);
+  font-weight: 700;
+}
+
+.summaryIconSkill {
+  background: var(--color-tab-active-icon);
+}
+
+.summaryText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summaryLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-stone-gray);
+}
+
+.summaryValue {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ===== 헤딩 블록 ===== */
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.headingTitle {
+  margin: 0;
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--color-ink-charcoal);
+}
+
+.headingDesc {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--color-stone-gray);
+  line-height: 1.5;
+}
+
+.headingAiNote {
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--color-caption-faint);
+}
+
+/* ===== 아이디어 카드 ===== */
+.ideaCard {
+  border-radius: var(--radius-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ideaCardTarget {
+  background: var(--color-card-target-bg);
+  box-shadow: var(--shadow-inset-report);
+}
+
+.ideaCardRevenue {
+  background: var(--color-card-revenue-bg);
+  box-shadow: var(--shadow-inset-navy);
+}
+
+.ideaCardSkill {
+  background: var(--color-card-skill-bg);
+  box-shadow: var(--shadow-inset-amber);
+}
+
+.ideaCardDefault {
+  background: var(--color-stone-mist);
+  box-shadow: var(--shadow-inset-neutral);
+}
+
+.ideaBadge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+}
+
+.ideaBadgeTarget {
+  background: var(--color-badge-target-bg);
+  color: var(--color-badge-target-text);
+}
+
+.ideaBadgeRevenue {
+  background: var(--color-badge-revenue-bg);
+  color: var(--color-badge-revenue-text);
+}
+
+.ideaBadgeSkill {
+  background: var(--color-badge-skill-bg);
+  color: var(--color-badge-skill-text);
+}
+
+.ideaBadgeDefault {
+  background: var(--color-stone-mist);
+  color: var(--color-stone-gray);
+}
+
+.ideaTitle {
+  margin: 0;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--color-ink-charcoal);
+}
+
+.ideaDesc {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+  line-height: 1.6;
+}
+
+.caption {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--color-stone-gray);
+  line-height: 1.6;
+}
+
+/* ===== 하단 버튼 2개 ===== */
+.footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px 20px;
+  box-sizing: border-box;
+}
+
+.prevButton {
+  height: 48px;
+  padding: 0 24px;
+  border: none;
+  border-radius: var(--radius-cta);
+  background: var(--color-white);
+  box-shadow: var(--shadow-inset-gray-strong);
+  color: var(--color-ink-charcoal);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.matchButton {
+  flex: 1;
+  height: 48px;
+  border: none;
+  border-radius: var(--radius-cta);
+  background: var(--color-light-teal);
+  color: var(--color-white);
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.matchButton:hover {
+  background: var(--color-cta-hover-navy);
+}

@@ -82,6 +82,22 @@ const IDEACHOICE_COLORS = [
   { name: "Navy Mist", hex: "#E7ECF8", usage: '"정밀 구체화" 카드 pill 배경 (Teal Mist의 네이비 버전)', varName: "--color-navy-mist" },
 ];
 
+// 사업구체화 리포트 요약 화면(13-1/14-2, is.reportASum/is.reportBSum)에서 추가된 색상 토큰
+const REPORTSUMMARY_COLORS = [
+  { name: "Purple Accent", hex: "#7C5CBF", usage: "4축요약카드 \"차별점\" 아이콘 배경", varName: "--color-purple-accent" },
+  { name: "CTA Hover Navy", hex: "#0B2170", usage: '"지원사업 매칭 보기 →" CTA 버튼 hover 배경', varName: "--color-cta-hover-navy" },
+  { name: "Caption Faint", hex: "#A9ABB2", usage: "AI 참고 캡션 텍스트", varName: "--color-caption-faint" },
+  { name: "Card Target BG", hex: "rgba(63,182,168,.06)", usage: '"타깃 관점" 아이디어 카드 배경', varName: "--color-card-target-bg" },
+  { name: "Card Revenue BG", hex: "rgba(21,50,140,.05)", usage: '"수익모델 관점" 아이디어 카드 배경', varName: "--color-card-revenue-bg" },
+  { name: "Card Skill BG", hex: "rgba(232,169,60,.08)", usage: '"보유역량 활용" 아이디어 카드 배경', varName: "--color-card-skill-bg" },
+  { name: "Badge Target BG", hex: "#BFEAE1", usage: '"타깃 관점" 뱃지 배경', varName: "--color-badge-target-bg" },
+  { name: "Badge Target Text", hex: "#0B5A50", usage: '"타깃 관점" 뱃지 텍스트', varName: "--color-badge-target-text" },
+  { name: "Badge Revenue BG", hex: "#C9D6F6", usage: '"수익모델 관점" 뱃지 배경', varName: "--color-badge-revenue-bg" },
+  { name: "Badge Revenue Text", hex: "#102569", usage: '"수익모델 관점" 뱃지 텍스트', varName: "--color-badge-revenue-text" },
+  { name: "Badge Skill BG", hex: "#F3DA9B", usage: '"보유역량 활용" 뱃지 배경', varName: "--color-badge-skill-bg" },
+  { name: "Badge Skill Text", hex: "#714800", usage: '"보유역량 활용" 뱃지 텍스트', varName: "--color-badge-skill-text" },
+];
+
 function WebStyleGuide() {
   return (
     <div className={styles.page}>
@@ -659,6 +675,41 @@ function WebStyleGuide() {
         <p className={styles.subheading}>추가 shadow 토큰</p>
         <div className={styles.specList}>
           <div className={styles.specRow}><span>--shadow-inset-gray-strong-hover</span><span>inset 0 0 0 1.5px #8B8D93 ("이전" 버튼 hover)</span></div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>14. 사업구체화 리포트 요약 (13-1/14-2, is.reportASum/is.reportBSum)</h2>
+        </div>
+
+        <p className={styles.subheading}>추가 색상 토큰</p>
+        <div className={styles.colorGrid}>
+          {REPORTSUMMARY_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.subheading}>
+          서브헤더·CTA 배경은 --color-light-teal, "MULKKO REPORT" 텍스트·수익모델 아이콘 배경은
+          --color-deep-navy, 보유역량 아이콘 배경은 --color-tab-active-icon, 라벨·설명·캡션 텍스트는
+          --color-stone-gray, 헤딩은 --color-ink-charcoal 재사용.
+        </p>
+
+        <p className={styles.subheading}>추가 radius / shadow 토큰 (전부 재사용, 신규 없음)</p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--shadow-inset-neutral</span><span>4축요약카드 테두리</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-report</span><span>"타깃 관점" 아이디어 카드 테두리</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-navy</span><span>"수익모델 관점" 아이디어 카드 테두리</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-amber</span><span>"보유역량 활용" 아이디어 카드 테두리</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-gray-strong</span><span>"이전" 버튼 테두리</span></div>
+          <div className={styles.specRow}><span>--radius-card / --radius-cta / --radius-pill</span><span>아이디어 카드 14px / 하단 버튼 13px / 뱃지 99px</span></div>
         </div>
       </section>
     </div>
