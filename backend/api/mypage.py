@@ -14,14 +14,13 @@
 # 게 맞다고 판단(다른 프로필 API는 세션 연동 전에 만들어진 것들이라 그대로 둠).
 
 import json
-import os
 from datetime import date
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from backend.api.auth import UPLOAD_DIR, _validate_biz_cert_file
+from backend.api.auth import _validate_biz_cert_file
 from backend.api.matching import _format_dday
 from backend.auth.session import get_current_user_id
 from backend.auth.signup import save_biz_cert_data
@@ -41,9 +40,10 @@ def get_profile(user_id: int) -> JSONResponse:
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT u.name, u.email, bp.profile_type, bp.entity_type_code, et.name,
+            SELECT u.name, u.email, bp.profile_id, bp.profile_type, bp.entity_type_code, et.name,
                    bp.business_name, bp.industry_text, bp.region, bp.business_age_months,
                    bp.annual_revenue, bp.employee_count, bp.founder_age_group,
+                   bp.profile_attributes->>'company_size' AS company_size,
                    EXISTS (
                        SELECT 1 FROM biz_registration_docs d
                        WHERE d.profile_id = bp.profile_id
@@ -56,15 +56,35 @@ def get_profile(user_id: int) -> JSONResponse:
             (user_id,),
         )
         row = cur.fetchone()
+        if row is None:
+            return _error(404, f"user_id={user_id} 회원을 찾을 수 없습니다.", "USER_NOT_FOUND")
+
+        (name, email, profile_id, profile_type, entity_type_code, entity_type_name, business_name,
+         industry_text, region, business_age_months, annual_revenue, employee_count,
+         founder_age_group, company_size, has_biz_cert) = row
+
+        # 사업자등록증 등록 시 검색/확정한 업종코드(KSIC) - business_profiles.industry_text와는
+        # 별개 테이블(profile_business_types)이라 따로 조회. 여러 번 재등록했으면 가장 최근
+        # 것(business_type_id 최댓값)을 쓴다 - is_primary는 재등록 시 갱신 안 되는 문제가
+        # 있어(2026-09-11 확인) 믿을 수 없음.
+        ksic_code = ksic_name = None
+        if profile_id is not None:
+            cur.execute(
+                """
+                SELECT pbt.ksic_code, kc.name
+                FROM profile_business_types pbt
+                LEFT JOIN ksic_codes kc ON kc.code = pbt.ksic_code
+                WHERE pbt.profile_id = %s AND pbt.ksic_code IS NOT NULL
+                ORDER BY pbt.business_type_id DESC
+                LIMIT 1
+                """,
+                (profile_id,),
+            )
+            ksic_row = cur.fetchone()
+            if ksic_row:
+                ksic_code, ksic_name = ksic_row
     finally:
         conn.close()
-
-    if row is None:
-        return _error(404, f"user_id={user_id} 회원을 찾을 수 없습니다.", "USER_NOT_FOUND")
-
-    (name, email, profile_type, entity_type_code, entity_type_name, business_name,
-     industry_text, region, business_age_months, annual_revenue, employee_count,
-     founder_age_group, has_biz_cert) = row
 
     return JSONResponse(content={
         "success": True,
@@ -81,6 +101,9 @@ def get_profile(user_id: int) -> JSONResponse:
             "annual_revenue": annual_revenue,
             "employee_count": employee_count,
             "founder_age_group": founder_age_group,
+            "company_size": company_size,
+            "ksic_code": ksic_code,
+            "ksic_name": ksic_name,
             "has_biz_cert": bool(has_biz_cert),
         },
     })
@@ -96,6 +119,7 @@ class ProfileUpdateRequest(BaseModel):
     employee_count: int | None = None
     founder_age_group: str | None = None
     entity_type_code: str | None = None
+    company_size: str | None = None
 
 
 @router.put("/profile")
@@ -109,6 +133,12 @@ def update_profile(user_id: int, payload: ProfileUpdateRequest) -> JSONResponse:
 
     # name은 business_profiles가 아니라 users 테이블 컬럼이라 따로 뺀다.
     name = fields.pop("name", None)
+    # company_size(중소/소상공인/창업벤처)는 전용 컬럼이 아니라 business_profiles.
+    # profile_attributes(JSONB, 그동안 미사용)에 키 하나로 넣는다 - 이 하나만 위해
+    # 컬럼을 새로 만들지 않음(2026-09-11, 사용자 확인). 요청에 아예 없으면(sentinel)
+    # 건드리지 않는다 - exclude_unset과 동일한 원칙.
+    _unset = object()
+    company_size = fields.pop("company_size", _unset)
 
     conn = get_connection()
     try:
@@ -119,6 +149,18 @@ def update_profile(user_id: int, payload: ProfileUpdateRequest) -> JSONResponse:
 
         if name is not None:
             cur.execute("UPDATE users SET name = %s WHERE user_id = %s", (name, user_id))
+
+        if company_size is not _unset:
+            cur.execute(
+                """
+                UPDATE business_profiles
+                SET profile_attributes = COALESCE(profile_attributes, '{}'::jsonb)
+                        || jsonb_build_object('company_size', %s),
+                    updated_at = now()
+                WHERE user_id = %s
+                """,
+                (company_size, user_id),
+            )
 
         if fields:
             set_clause = ", ".join(f"{col} = %s" for col in fields)
@@ -150,12 +192,9 @@ def add_biz_cert(user_id: int, file: UploadFile = File(...), biz_cert_data: str 
     except (json.JSONDecodeError, TypeError):
         return _error(400, "잘못된 사업자등록증 데이터입니다.", "INVALID_FIELDS")
 
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    save_path = os.path.join(UPLOAD_DIR, f"{user_id}_{file.filename}")
-    with open(save_path, "wb") as f:
-        f.write(content)
-
-    save_biz_cert_data(user_id, save_path, file.filename or "", fields)
+    # [2026-09-11] biz_cert_data가 이미 OCR 확정값이라 이미지를 디스크에 저장할 이유가
+    # 없음(사용자 확인, 개인정보 최소화) - 값만 저장, 원본 파일은 버림.
+    save_biz_cert_data(user_id, None, file.filename or "", fields)
 
     return JSONResponse(content={"success": True, "data": {"user_id": user_id}})
 

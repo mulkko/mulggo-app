@@ -148,12 +148,16 @@ def signup(
 # ══════════════════════════════════════════════════════
 # 사업자등록증 정보 → DB 저장
 # ══════════════════════════════════════════════════════
-def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fields: dict) -> None:
+def save_biz_cert_data(user_id: int, file_path: str | None, original_filename: str, fields: dict) -> None:
     """확정된 사업자등록증 정보(fields)를 DB에 저장.
     fields: {company_name, ceo_name, biz_no, corp_no, open_date, birth_date, business_address,
     entity_type, business_category, business_item} (뒤 2개는 업태/종목 — 없어도 됨).
     (직접 OCR을 돌린 결과든, 사용자가 확인/수정 팝업에서 확정한 값이든 같은 형태).
-    실패해도 회원가입 자체엔 영향 없음(로그만 남김) — 백그라운드에서 호출됨."""
+    실패해도 회원가입 자체엔 영향 없음(로그만 남김) — 백그라운드에서 호출됨.
+
+    [2026-09-11] file_path는 이제 항상 None - OCR로 값만 뽑고 원본 이미지는 디스크에
+    안 남기기로 함(사용자 확인, 개인정보 최소화). storage_path 컬럼도 그래서 nullable로
+    바꿈. 호출부(process_biz_cert_ocr)가 OCR 끝나면 파일을 직접 지운다."""
     entity_type_code = "corporate" if fields.get("entity_type") == "법인" else "individual"
 
     connection = get_connection()
@@ -228,6 +232,16 @@ def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fie
         # 모양으로 들어온다(/api/auth/biz-cert-ocr 응답 또는 BizCertUpload 확인 팝업 수정값).
         ksic_code = fields.get("ksic_code") or None
         if business_category or business_item or ksic_code:
+            # [2026-09-12] 재업로드(재등록) 시 기존 행을 그대로 두고 is_primary=true인
+            # 새 행만 추가하면, 같은 profile_id에 is_primary=true가 여러 개 남아서
+            # "현재 업종이 뭔지" 조회(matching.py::_lookup_profile_ksic_code(), 최초
+            # ORDER BY is_primary DESC LIMIT 1)가 어느 걸 고를지 보장이 안 됐다(실측
+            # 확인한 버그) - 새로 확정하기 전에 기존 행을 전부 false로 내려서 새 행만
+            # 유일한 is_primary=true가 되게 한다.
+            cursor.execute(
+                "UPDATE profile_business_types SET is_primary = false WHERE profile_id = %s",
+                (profile_id,),
+            )
             cursor.execute(
                 """
                 INSERT INTO profile_business_types
@@ -247,36 +261,43 @@ def save_biz_cert_data(user_id: int, file_path: str, original_filename: str, fie
 
 def process_biz_cert_ocr(user_id: int, file_path: str, original_filename: str) -> None:
     """레거시 경로: 확인/수정 팝업 없이 파일만 온 경우, 백그라운드에서 직접 OCR 돌리고 저장.
-    (정상 경로는 /api/auth/biz-cert-ocr로 먼저 확인받은 뒤 save_biz_cert_data를 씀)"""
+    (정상 경로는 /api/auth/biz-cert-ocr로 먼저 확인받은 뒤 save_biz_cert_data를 씀)
+
+    [2026-09-11] OCR에만 file_path(임시로 디스크에 저장된 원본)를 쓰고, 끝나면(성공/실패
+    무관) 바로 지운다 - 이미지 자체는 저장할 이유가 없음(사용자 확인)."""
     from backend.assistant.biz_cert_ocr import extract_biz_cert, get_cached_vision_model
 
     try:
-        model, processor = get_cached_vision_model()
-        entity_type, biz_cert = extract_biz_cert(file_path, model, processor)
-    except Exception as e:
-        print(f"[biz_cert OCR 실패] user_id={user_id}: {e}")
-        return
+        try:
+            model, processor = get_cached_vision_model()
+            entity_type, biz_cert = extract_biz_cert(file_path, model, processor)
+        except Exception as e:
+            print(f"[biz_cert OCR 실패] user_id={user_id}: {e}")
+            return
 
-    fields = {
-        "company_name": biz_cert.get("corp_name") or biz_cert.get("trade_name") or "",
-        "ceo_name": biz_cert.get("ceo_name", ""),
-        "biz_no": biz_cert.get("biz_no", ""),
-        "corp_no": biz_cert.get("corp_no", ""),
-        "open_date": biz_cert.get("open_date", ""),
-        "birth_date": biz_cert.get("birth_date", ""),
-        "business_address": biz_cert.get("address_basic", ""),
-        "entity_type": entity_type,
-    }
+        fields = {
+            "company_name": biz_cert.get("corp_name") or biz_cert.get("trade_name") or "",
+            "ceo_name": biz_cert.get("ceo_name", ""),
+            "biz_no": biz_cert.get("biz_no", ""),
+            "corp_no": biz_cert.get("corp_no", ""),
+            "open_date": biz_cert.get("open_date", ""),
+            "birth_date": biz_cert.get("birth_date", ""),
+            "business_address": biz_cert.get("address_basic", ""),
+            "entity_type": entity_type,
+        }
 
-    # 확인 팝업을 안 거치는 경로라 여기서 직접 업태/종목까지 뽑아서 넘긴다.
-    try:
-        from backend.assistant.category_ocr import extract_categories
+        # 확인 팝업을 안 거치는 경로라 여기서 직접 업태/종목까지 뽑아서 넘긴다.
+        try:
+            from backend.assistant.category_ocr import extract_categories
 
-        groups = extract_categories(file_path, qwen=(model, processor))
-        if groups:
-            fields["business_category"] = groups[0].get("업태", "") or ""
-            fields["business_item"] = ", ".join(i for i in groups[0].get("종목", []) if i.strip())
-    except Exception as e:
-        print(f"[업태/종목 추출 실패] user_id={user_id}: {e}")
+            groups = extract_categories(file_path, qwen=(model, processor))
+            if groups:
+                fields["business_category"] = groups[0].get("업태", "") or ""
+                fields["business_item"] = ", ".join(i for i in groups[0].get("종목", []) if i.strip())
+        except Exception as e:
+            print(f"[업태/종목 추출 실패] user_id={user_id}: {e}")
 
-    save_biz_cert_data(user_id, file_path, original_filename, fields)
+        save_biz_cert_data(user_id, None, original_filename, fields)
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
