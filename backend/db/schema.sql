@@ -239,6 +239,18 @@ CREATE TABLE IF NOT EXISTS entity_types (
 
 -- 가입 시 user_id만 채워서 생성됨 (profile_type='예비창업자').
 -- 사업자등록증 OCR 성공 시 UPDATE로 profile_type='기존사업자', entity_type_code, business_name 등이 채워짐.
+--
+-- [2026-09-12] region TEXT -> regions TEXT[] 전환 (사용자 확인) - 하나의 컬럼이
+-- profile_type에 따라 의미가 다르게 쓰인다: 기존사업자는 사업자등록증 business_address에서
+-- 자동으로 뽑은 시/도(사실, backend/auth/signup.py::derive_sido_from_address), 예비창업자는
+-- 사업자등록증이 없어 자동으로 채울 게 없으니 사용자가 직접 고른 희망 지역(선호) - 둘 다
+-- "여러 개일 수 있다"는 공통점이 있어(법인은 본점/사업장 시/도가 다를 수 있고, 예비창업자는
+-- 애초에 여러 지역에 관심 가질 수 있음) 배열로 통일했다. announcements.regions(TEXT[])와
+-- 동일 패턴 - 매칭 시 `&&`(배열 겹침) 연산자로 비교.
+-- 실제 Supabase DB는 이 CREATE TABLE 재실행 안 되므로 별도로 마이그레이션 실행 필요:
+--   ALTER TABLE business_profiles RENAME COLUMN region TO regions;
+--   ALTER TABLE business_profiles ALTER COLUMN regions TYPE TEXT[]
+--     USING (CASE WHEN regions IS NULL THEN NULL ELSE ARRAY[regions] END);
 CREATE TABLE IF NOT EXISTS business_profiles (
     profile_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(user_id),
@@ -246,7 +258,7 @@ CREATE TABLE IF NOT EXISTS business_profiles (
     entity_type_code VARCHAR(10) REFERENCES entity_types(code), -- OCR 성공 전까지 NULL
     business_name TEXT,
     industry_text TEXT,
-    region TEXT,
+    regions TEXT[],
     business_age_months INT,
     annual_revenue BIGINT,
     employee_count INT,
@@ -264,7 +276,10 @@ CREATE TABLE IF NOT EXISTS biz_registration_docs (
     entity_type_code VARCHAR(10) NOT NULL REFERENCES entity_types(code),
     file_name TEXT NOT NULL,
     file_type VARCHAR(10),
-    storage_path TEXT NOT NULL,
+    -- [2026-09-11] OCR만 하고 원본 이미지는 디스크에 남기지 않기로 함(개인정보 최소화,
+    -- 사용자 확인) - 그래서 항상 NULL. 예전엔 data/uploads/biz_registration/에 실제
+    -- 파일을 저장하고 그 경로를 넣었었음.
+    storage_path TEXT,
     biz_no VARCHAR(12) NOT NULL,
     corp_no VARCHAR(14),
     company_name VARCHAR(100) NOT NULL,
@@ -404,12 +419,20 @@ CREATE TABLE IF NOT EXISTS administrative_dong (
 -- 정확한 값 종류(enum) 미확정, 지금은 diagnosis.py에서 "오프라인"/"온라인" 임시값.
 -- resolved_nts_codes/market_analysis/tech_analysis/best_practices_summary는 별도
 -- 진행 중인 업종코드 매칭·분석 기능이 채우는 자리 - diagnosis.py는 NULL로 둠.
+--
+-- [2026-09-11] resolved_ksic_codes 컬럼 추가 및 실 DB(Supabase) 반영 완료. 국세청업종코드
+-- (resolved_nts_codes)와 KSIC코드 체계가 서로 달라서(backend/ml/industry_code_matching
+-- 참고 - 매칭기는 국세청코드를 뱉고, DB nts_ksic_mapping 테이블로 KSIC코드를 함께 얻음)
+-- 같은 JSONB 안에 섞지 않고 컬럼을 분리했다 - analysis.py(/analysis/market,
+-- /analysis/tech-startup)와 matching.py(/api/matching?ksic=)가 전부 KSIC코드를 받기
+-- 때문에 이 컬럼 값을 바로 넘기면 된다.
 CREATE TABLE IF NOT EXISTS idea_refinement_sessions (
     session_id             BIGSERIAL PRIMARY KEY,
     profile_id              BIGINT NOT NULL REFERENCES business_profiles(profile_id),
     status                   VARCHAR(20) NOT NULL,          -- '진행중' / '완료'
     flow_type                VARCHAR(20),                   -- 'problem' / 'opportunity' (출발점 분기)
     resolved_nts_codes       JSONB,
+    resolved_ksic_codes      JSONB,                         -- 국세청코드에 연계된 KSIC코드 배열
     region                   TEXT,
     psst_problem             TEXT,                          -- 실제 의미: 시드(사업 아이템)
     psst_solution            TEXT,                          -- 실제 의미: 문제/기회 정의

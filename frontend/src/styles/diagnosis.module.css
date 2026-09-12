@@ -328,38 +328,3 @@
   line-height: 1.5;
 }
 
-/* ===== 제출 결과 (구체화 진단4 제출 후) ===== */
-.resultCard {
-  width: 100%;
-  box-sizing: border-box;
-  background: var(--color-teal-mist);
-  border-radius: var(--radius-cta);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.resultAxis {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-teal-green);
-}
-
-.resultTitle {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--color-ink-charcoal);
-}
-
-.resultDesc {
-  font-size: 12.5px;
-  color: var(--color-ink-charcoal);
-  line-height: 1.5;
-}
-
-.noticeText {
-  margin: 0;
-  font-size: 12px;
-  color: var(--color-stone-gray);
-}

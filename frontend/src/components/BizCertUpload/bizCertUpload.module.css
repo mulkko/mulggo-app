@@ -271,6 +271,18 @@
   background: var(--color-stone-mist);
 }
 
+/* [2026-09-11] flex row 안 텍스트 - 긴 KSIC 업종명이 들어오면 min-width 기본값(auto)
+   때문에 줄바꿈되면서 버튼 고정 height를 넘어 흘러넘쳤음(사용자 확인) - flex:1로
+   남은 폭을 차지하고 min-width:0으로 줄여서 한 줄 말줄임 처리. */
+.entityValueText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
 /* [2026-09-11] 업종(KSIC) 미선택 상태 - .entityValueBtn과 동일하지만 확인 필요를
    빨간 테두리로도 보여줌(다른 필수 항목의 .inputWarn과 톤을 맞춤). */
 .entityValueBtnWarn {
@@ -279,25 +291,40 @@
   color: var(--color-error-text);
 }
 
-/* ===== 업종(KSIC) 선택 팝업 — 대분류/중분류/세세분류 3단계 캐스케이드 =====
-   entityPopupOverlay(오버레이)는 그대로 재사용, 카드만 더 크게(목록이 길어서). */
-.ksicPopupCard {
-  width: 100%;
-  max-width: calc(var(--mobile-frame-width) - 2 * var(--spacing-outer));
-  max-height: 70vh;
+/* ===== 업종(KSIC) 선택 — 대분류/중분류/세세분류 3단계 캐스케이드 =====
+   [2026-09-11] MatchingList.tsx의 지역/업종/정렬 "시트 팝업"(하단에서 올라오는 +
+   라디오 리스트)과 같은 형식으로 통일 - 태그 구조(ul>li>button)는 그대로 두고
+   겉모습만 그 패턴을 따름(가운데 뜨는 모달 대신 하단 시트). */
+.ksicSheetOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250; /* .overlay(확인/수정 팝업) 위에 뜨므로 그보다 높게 */
+  background: var(--color-scrim);
   display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  background: var(--color-white);
-  border-radius: var(--radius-input);
-  padding: 16px;
-  box-shadow: var(--shadow-app);
+  align-items: flex-end;
+  justify-content: center;
 }
 
-.ksicPopupHead {
+.ksicSheetPanel {
+  width: 100%;
+  max-width: var(--mobile-frame-width);
+  /* 결과 개수 따라 max-height면 검색할 때마다 패널 높이가 출렁여서(사용자 확인,
+     2026-09-11) 고정 height로 - 내용은 안의 ksicOptionList가 스크롤로 처리. */
+  height: 75vh;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-modal) var(--radius-modal) 0 0;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+}
+
+.ksicSheetHead {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 16px 20px 0;
 }
 
 .ksicBackBtn {
@@ -311,18 +338,39 @@
   cursor: pointer;
 }
 
+.ksicSheetTitle {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-ink-charcoal);
+}
+
+.ksicSheetCloseBtn {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 4px;
+  font-size: 15px;
+  color: var(--color-stone-gray);
+  cursor: pointer;
+}
+
 .ksicBreadcrumb {
-  margin: -4px 0 8px;
+  margin: 4px 20px 0;
   font-size: var(--font-size-caption);
   color: var(--color-teal-green);
 }
 
+.ksicSearchWrap {
+  position: relative;
+  margin: 8px 20px 0;
+}
+
 .ksicSearchInput {
-  width: 100%;
   box-sizing: border-box;
+  width: 100%;
   height: var(--input-height-min);
-  margin-bottom: 8px;
-  padding: var(--input-padding-y-min) var(--input-padding-x-min);
+  padding: var(--input-padding-y-min) 32px var(--input-padding-y-min) var(--input-padding-x-min);
   border: 1px solid var(--color-stone-gray);
   border-radius: var(--radius-input);
   font-family: var(--font-family-base);
@@ -330,27 +378,63 @@
   color: var(--color-ink-charcoal);
 }
 
+.ksicSearchClearBtn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  padding: 4px;
+  font-size: 13px;
+  color: var(--color-stone-gray);
+  cursor: pointer;
+}
+
 .ksicLoading {
+  margin: 12px 20px;
   color: var(--color-stone-gray);
   font-size: var(--font-size-caption);
 }
 
 .ksicOptionList {
+  list-style: none;
   flex: 1;
   min-height: 0;
+  margin: 8px 0 0;
+  padding: 0 20px 20px;
   overflow-y: auto;
-  border-top: 1px solid var(--color-border-web);
+}
+
+.ksicCodeDebug {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-stone-gray);
+}
+
+.ksicResultPath {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-stone-gray);
+}
+
+.ksicResultPath strong {
+  color: var(--color-ink-charcoal);
+  font-weight: 700;
 }
 
 .ksicOptionBtn {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   border: none;
-  border-bottom: 1px solid var(--color-border-web);
   background: none;
   padding: 12px 4px;
   font-family: var(--font-family-base);
-  font-size: var(--font-size-body);
+  font-size: 14px;
   color: var(--color-ink-charcoal);
   text-align: left;
   cursor: pointer;

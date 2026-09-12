@@ -347,7 +347,11 @@ def _run_sync(
                 stdout=log_file,
                 stderr=subprocess.STDOUT,
                 cwd=str(PROJECT_ROOT),
-                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                # [2026-09-12] PYTHONUNBUFFERED 없으면 stdout이 파일로 리다이렉트될 때
+                # 파이썬이 완전 버퍼링을 써서, 처리 건수가 적으면(예: limit=10) 프로세스가
+                # 끝나야 로그가 한꺼번에 씌어짐 - 화면이 폴링 중이어도 중간 진행상황이
+                # 안 보이던 원인(실측 확인). 이제 줄 단위로 바로바로 파일에 씀.
+                env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"},
             )
             returncode = completed.returncode
             ended = datetime.now().isoformat(timespec="seconds")
