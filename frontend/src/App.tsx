@@ -15,6 +15,7 @@ import AdminRoute from "./pages/admin/AdminRoute";
 import AdminStyleGuide from "./components/AdminStyleGuide/AdminStyleGuide";
 import WebStyleGuide from "./components/WebStyleGuide/WebStyleGuide";
 import MatchingList from "./pages/matching/MatchingList";
+import MatchingListDraft from "./pages/matching/MatchingListDraft";
 import MatchingDetail from "./pages/matching/MatchingDetail";
 import DocPreview from "./pages/matching/DocPreview";
 import FilterPage from "./pages/matching/FilterPage";
@@ -107,6 +108,8 @@ function App() {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/diagnosis/choice" element={<DiagnosisChoice />} />
         <Route path="/matching" element={<MatchingList />} />
+        {/* [DRAFT] 업종맞춤/업종무관 2그룹 분리 검토용 - MatchingList.tsx 원본은 그대로 둔 사본 */}
+        <Route path="/matching-draft" element={<MatchingListDraft />} />
         <Route path="/matching/filter" element={<FilterPage />} />
         <Route path="/matching/:id" element={<MatchingDetail />} />
         <Route path="/matching/:id/doc-preview" element={<DocPreview />} />
