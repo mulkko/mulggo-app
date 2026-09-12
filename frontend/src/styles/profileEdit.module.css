@@ -182,6 +182,26 @@
   box-sizing: border-box;
 }
 
+/* [2026-09-12] 이미지 썸네일 자리 대신 문서 아이콘 - DocPreview.tsx .iconCircle/.docIcon과
+   같은 톤(원형 배경 + 회색 stroke 아이콘), 크기만 이 목록 행에 맞게 44px로 축소. */
+.bizThumb {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-stone-gray);
+}
+
+.bizThumb svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 .bizUploadText {
   flex: 1;
   min-width: 0;
@@ -232,6 +252,36 @@
   height: 16px;
   pointer-events: none;
   color: var(--color-stone-gray);
+}
+
+/* ===== 지역 칩 (사업장 지역, 여러 개 추가/삭제) - filterPage.module.css .chip과
+   동일 톤(teal-mist 배경 + teal-green 텍스트) 재사용, ✕ 삭제 버튼만 추가 ===== */
+.regionChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.regionChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-teal-mist);
+  color: var(--color-teal-green);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 8px 5px 11px;
+  border-radius: var(--radius-pill);
+}
+
+.regionChipRemove {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
 }
 
 /* ===== 한 줄 2필드 (업력 / 직원수) ===== */

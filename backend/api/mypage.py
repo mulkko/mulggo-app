@@ -5,13 +5,16 @@
 # user_id를 쿼리 파라미터로 직접 받는다. 로그인 세션이 붙으면 이 파라미터를
 # 그 세션에서 채우도록 프론트만 바꾸면 되고, 이 API 자체는 안 바뀐다.
 #
-# business_profiles만 연동한다 - apply_status/idea_refinement_sessions는 실제 DB에
-# 0건이라(연동해도 항상 빈 목록) 지금 범위에서 제외함(사용자 확인, 2026-09-09).
+# business_profiles만 연동한다 - apply_status는 실제 DB에 0건이라(연동해도 항상 빈
+# 목록) 지금 범위에서 제외함(사용자 확인, 2026-09-09).
 # [2026-09-10] bookmarks(찜하기), fill-history(채우기 이용내역)는 연동함 - 다른 프로필
 # API와 달리 user_id를 쿼리 파라미터가 아니라 로그인 세션(Depends(get_current_user_id))
 # 으로 받는다. 찜하기 토글/채우기(POST .../bookmark, GET .../fill)가 backend/api/
 # matching.py에 이미 세션 기준으로 만들어져 있어서 같은 기능끼리는 인증 방식을 맞추는
 # 게 맞다고 판단(다른 프로필 API는 세션 연동 전에 만들어진 것들이라 그대로 둠).
+# [2026-09-12] idea_refinement_sessions도 diagnosis.py(POST /api/diagnosis/start)가
+# 실제로 채우기 시작하면서 연동함(GET /reports) - bookmarks/fill-history와 같은 이유로
+# 로그인 세션 기준.
 
 import json
 from datetime import date
@@ -41,7 +44,7 @@ def get_profile(user_id: int) -> JSONResponse:
         cur.execute(
             """
             SELECT u.name, u.email, bp.profile_id, bp.profile_type, bp.entity_type_code, et.name,
-                   bp.business_name, bp.industry_text, bp.region, bp.business_age_months,
+                   bp.business_name, bp.industry_text, bp.regions, bp.business_age_months,
                    bp.annual_revenue, bp.employee_count, bp.founder_age_group,
                    bp.profile_attributes->>'company_size' AS company_size,
                    EXISTS (
@@ -60,7 +63,7 @@ def get_profile(user_id: int) -> JSONResponse:
             return _error(404, f"user_id={user_id} 회원을 찾을 수 없습니다.", "USER_NOT_FOUND")
 
         (name, email, profile_id, profile_type, entity_type_code, entity_type_name, business_name,
-         industry_text, region, business_age_months, annual_revenue, employee_count,
+         industry_text, regions, business_age_months, annual_revenue, employee_count,
          founder_age_group, company_size, has_biz_cert) = row
 
         # 사업자등록증 등록 시 검색/확정한 업종코드(KSIC) - business_profiles.industry_text와는
@@ -96,7 +99,7 @@ def get_profile(user_id: int) -> JSONResponse:
             "entity_type_name": entity_type_name,
             "business_name": business_name,
             "industry_text": industry_text,
-            "region": region,
+            "regions": regions,
             "business_age_months": business_age_months,
             "annual_revenue": annual_revenue,
             "employee_count": employee_count,
@@ -113,7 +116,7 @@ class ProfileUpdateRequest(BaseModel):
     name: str | None = None
     business_name: str | None = None
     industry_text: str | None = None
-    region: str | None = None
+    regions: list[str] | None = None
     business_age_months: int | None = None
     annual_revenue: int | None = None
     employee_count: int | None = None
@@ -275,4 +278,52 @@ def list_fill_history(user_id: int = Depends(get_current_user_id)) -> JSONRespon
         }
         for application_id, attachment_id, file_name, title, apply_end_date, exported_at in rows
     ]
+    return JSONResponse(content={"success": True, "data": data})
+
+
+@router.get("/reports")
+def list_reports(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
+    """마이페이지 "나의 분석 리포트" 목록. idea_refinement_sessions 중 상권/기술창업
+    분석이 끝난 세션(market_analysis 또는 tech_analysis가 채워짐 - backend/api/
+    diagnosis.py::_run_report_in_background가 채운다)만 보여준다. 업종명은 저장 시점에
+    같이 안 남겨서(테이블엔 KSIC/국세청코드만 있음) resolved_nts_codes[0]을
+    nts_industry_codes에서 다시 찾아 붙인다."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        if row is None:
+            return JSONResponse(content={"success": True, "data": []})
+        profile_id = row[0]
+
+        cur.execute(
+            """
+            SELECT session_id, resolved_nts_codes, psst_problem, created_at
+            FROM idea_refinement_sessions
+            WHERE profile_id = %s AND (market_analysis IS NOT NULL OR tech_analysis IS NOT NULL)
+            ORDER BY created_at DESC
+            """,
+            (profile_id,),
+        )
+        rows = cur.fetchall()
+
+        data = []
+        for session_id, nts_codes, seed_interest, created_at in rows:
+            industry_name = None
+            if nts_codes:
+                cur.execute("SELECT name FROM nts_industry_codes WHERE code = %s", (nts_codes[0],))
+                found = cur.fetchone()
+                industry_name = found[0] if found else None
+            data.append(
+                {
+                    "id": str(session_id),
+                    "industry": industry_name or "업종 미확인",
+                    "summary": seed_interest or "-",
+                    "createdAt": created_at.strftime("%Y.%m.%d"),
+                }
+            )
+    finally:
+        conn.close()
+
     return JSONResponse(content={"success": True, "data": data})

@@ -60,7 +60,7 @@ interface ProfileApiData {
   entity_type_name: string | null;
   business_name: string | null;
   industry_text: string | null;
-  region: string | null;
+  regions: string[] | null;
   business_age_months: number | null;
   annual_revenue: number | null;
   employee_count: number | null;
@@ -75,7 +75,7 @@ interface ProfileForm {
   name: string;
   bizName: string;
   industryDesc: string;
-  region: string;
+  regions: string[];
   monthsInBusiness: string;
   employees: string;
   annualRevenue: string;
@@ -94,7 +94,7 @@ const INITIAL_FORM: ProfileForm = {
   name: "김창업",
   bizName: "",
   industryDesc: "",
-  region: "미선택",
+  regions: [],
   monthsInBusiness: "0",
   employees: "0",
   annualRevenue: "0원",
@@ -102,9 +102,30 @@ const INITIAL_FORM: ProfileForm = {
   companySize: "미선택",
 };
 
-// "미선택"은 저장 시 null로 보냄 - REGION_OPTIONS/AGE_GROUP_OPTIONS 둘 다 첫 옵션.
-const REGION_OPTIONS = ["미선택", "마포구", "서대문구", "은평구"];
-const AGE_GROUP_OPTIONS = ["미선택", "20대", "30대", "40대", "50대 이상"];
+// [2026-09-12] "사업장 지역" 하나(문자열)에서 여러 개(칩) 방식으로 전환 - 사용자 확인.
+// 기존사업자는 사업자등록증 business_address에서 자동으로 뽑은 시/도가 기본으로 들어가고
+// (사실 기반), 예비창업자는 자동으로 채울 사업자등록증 자체가 없으니 처음엔 빈 채로 시작해
+// 사용자가 직접 "지원받고 싶은 지역"을 칩으로 추가한다(선호 기반) - 둘 다 여러 개일 수
+// 있어서(법인은 본점·사업장 시/도가 다를 수 있고, 예비창업자는 애초에 여러 지역에 관심
+// 가질 수 있음) DB도 배열(regions TEXT[])로 바꿈. 이전엔 마포구/서대문구/은평구(구 단위)
+// 3개짜리 셀렉트였는데, 실제 공고 매칭 필터(announcements.regions)가 구 단위를 아예 안
+// 담고 시/도까지만 있어서(matching.py 참고) 그 단위에 맞는 시/도 17개로 교체.
+// backend/auth/signup.py::SIDO_NAMES와 반드시 동일한 목록으로 유지할 것.
+const SIDO_OPTIONS = [
+  "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시", "대전광역시",
+  "울산광역시", "세종특별자치시", "경기도", "강원특별자치도", "충청북도", "충청남도",
+  "전북특별자치도", "전라남도", "경상북도", "경상남도", "제주특별자치도",
+];
+
+// backend/auth/signup.py::derive_sido_from_address()와 동일 로직 - 사업자등록증
+// OCR 확인 즉시 화면에 반영하려고 프론트에서도 미리 계산한다(백엔드 저장 완료를
+// 기다렸다가 재조회하지 않음, bizName/ksic_code와 동일한 낙관적 업데이트 패턴).
+function deriveSidoFromAddress(address: string | undefined): string | null {
+  if (!address) return null;
+  const text = address.trim();
+  return SIDO_OPTIONS.find((sido) => text.startsWith(sido)) ?? null;
+}
+const AGE_GROUP_OPTIONS = ["미선택", "10대", "20대", "30대", "40대", "50대 이상"];
 // "미선택"은 저장 시 null로 보냄(company_size 초기화). 소상공인기본법상
 // 상시근로자수·매출 기준(제조업 등은 10인 미만, 그 외 5인 미만)을 직접 계산해
 // 자동 채우는 로직은 다음 과제 - 지금은 사용자가 직접 고른다.
@@ -252,7 +273,7 @@ function ProfileEdit() {
           // 아래에서 숨기지만, 안전하게 데이터도 맞춰둔다.
           bizName: d.business_name ?? "",
           industryDesc: d.industry_text ?? "",
-          region: d.region ?? "미선택",
+          regions: d.regions ?? [],
           monthsInBusiness: d.business_age_months != null ? String(d.business_age_months) : "",
           employees: d.employee_count != null ? String(d.employee_count) : "",
           annualRevenue: d.annual_revenue != null ? String(d.annual_revenue) : "",
@@ -291,6 +312,16 @@ function ProfileEdit() {
     if (fields.company_name) {
       setForm((prev) => ({ ...prev, bizName: fields.company_name }));
     }
+    // [2026-09-12] 사업장 지역 - business_address에서 뽑아낸 시/도로 자동 채움.
+    // 못 뽑으면(주소 미인식 등) 기존 선택값 그대로 둔다. 뽑혔으면 기존 칩을 지우지
+    // 않고 없을 때만 추가 - 사용자가 직접 추가해둔 다른 지역(칩)을 재등록 때마다
+    // 덮어써서 날리면 안 됨.
+    const derivedRegion = deriveSidoFromAddress(fields.business_address);
+    if (derivedRegion) {
+      setForm((prev) =>
+        prev.regions.includes(derivedRegion) ? prev : { ...prev, regions: [...prev.regions, derivedRegion] },
+      );
+    }
     if (fields.ksic_code) {
       setKsicCode(fields.ksic_code);
       setKsicName(fields.ksic_name || null);
@@ -306,6 +337,17 @@ function ProfileEdit() {
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // [2026-09-12] 지역 칩 추가/삭제 - 드롭다운에서 고르면 즉시 칩으로 추가되고
+  // 드롭다운은 다시 placeholder로 돌아간다(select 자체를 값 저장소로 안 씀).
+  const addRegion = (sido: string) => {
+    if (!sido) return;
+    setForm((prev) => (prev.regions.includes(sido) ? prev : { ...prev, regions: [...prev.regions, sido] }));
+  };
+
+  const removeRegion = (sido: string) => {
+    setForm((prev) => ({ ...prev, regions: prev.regions.filter((r) => r !== sido) }));
   };
 
   const handleBack = () => {
@@ -328,10 +370,10 @@ function ProfileEdit() {
     // 예비창업자는 상호명/업력/직원수/연매출 입력창 자체를 안 보여주므로, 저장 요청에도
     // 안 실어보낸다(키를 아예 빼면 백엔드가 exclude_unset으로 그 컬럼은 안 건드림) -
     // 안 그러면 화면에 안 보이는 필드의 빈 값(""→null)이 조용히 덮어써질 수 있음.
-    const body: Record<string, string | number | null> = {
+    const body: Record<string, string | number | string[] | null> = {
       name: form.name || null,
       industry_text: form.industryDesc || null,
-      region: form.region !== "미선택" ? form.region : null,
+      regions: form.regions.length > 0 ? form.regions : null,
       founder_age_group: form.ownerAgeGroup !== "미선택" ? form.ownerAgeGroup : null,
     };
     if (!isProspective) {
@@ -440,9 +482,24 @@ function ProfileEdit() {
               className={styles.bizUpload}
               onClick={handleBizCertClick}
             >
-              {/* [2026-09-12] 원래 있던 이미지 썸네일 아이콘(.bizThumb) 제거 - 원본
-                  이미지는 저장 안 하는 정책(schema.sql storage_path 주석 참고)이라
-                  "이미지가 있는 것처럼" 보이는 자리 자체가 오해 소지라 문구만 남김. */}
+              {/* [2026-09-12] 이미지 썸네일처럼 보이던 아이콘은 빼고(원본 이미지는 저장 안
+                  함), 대신 서류 자체를 뜻하는 문서 아이콘으로 교체 - DocPreview.tsx의
+                  .docIcon(서류 미리보기 화면)과 동일한 svg 재사용. */}
+              <span className={styles.bizThumb} aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                  <path d="M14 3v5h5" />
+                  <path d="M9 13h6" />
+                  <path d="M9 17h6" />
+                </svg>
+              </span>
               <span className={styles.bizUploadText}>
                 <span className={styles.bizUploadTitle}>사업자등록증 업로드</span>
                 <span className={styles.bizUploadSub}>사진 또는 PDF</span>
@@ -477,13 +534,46 @@ function ProfileEdit() {
             />
           )}
 
-          <SelectField
-            label="사업장 지역"
-            name="region"
-            value={form.region}
-            options={REGION_OPTIONS}
-            onChange={handleChange}
-          />
+          {/* [2026-09-12] 문자열 하나(SelectField) 대신 칩 목록 - 기존사업자는 사업자
+              등록증에서 자동으로 채워진 지역이 기본으로 들어있고(사실), 예비창업자는
+              빈 채로 시작해 지원받고 싶은 지역을 직접 추가한다(선호). 둘 다 여러 개 가능. */}
+          <div className={styles.field}>
+            <span className={styles.label}>사업장 지역</span>
+            {form.regions.length > 0 && (
+              <div className={styles.regionChipList}>
+                {form.regions.map((sido) => (
+                  <span key={sido} className={styles.regionChip}>
+                    {sido}
+                    <button
+                      type="button"
+                      className={styles.regionChipRemove}
+                      onClick={() => removeRegion(sido)}
+                      aria-label={`${sido} 삭제`}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className={styles.selectWrap}>
+              <select
+                className={styles.select}
+                value=""
+                onChange={(e) => addRegion(e.target.value)}
+              >
+                <option value="" disabled>
+                  지역 추가
+                </option>
+                {SIDO_OPTIONS.filter((sido) => !form.regions.includes(sido)).map((sido) => (
+                  <option key={sido} value={sido}>
+                    {sido}
+                  </option>
+                ))}
+              </select>
+              <Chevron />
+            </div>
+          </div>
 
           {isProspective ? (
             <p className={styles.groupSub}>
