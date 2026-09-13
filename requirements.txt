@@ -1,9 +1,9 @@
 setuptools
 langchain
-pandas
-scikit-learn
-python-dotenv
-requests
+pandas==2.3.3      # ksic_core(업종코드 분류기)가 이 버전으로 테스트됨
+scikit-learn==1.7.2  # ksic_core ML Gate Champion 아티팩트 로드/추론에 이 버전 필요
+python-dotenv==1.1.0  # ksic_core(llm_resolver.py 등)가 이 버전으로 테스트됨
+requests==2.32.5   # ksic_core 첨부파일 다운로드 등에서 이 버전으로 테스트됨
 beautifulsoup4
 fastapi
 uvicorn
@@ -12,11 +12,12 @@ psycopg2-binary
 python-multipart  # 파일 업로드 처리 (FastAPI UploadFile, backend/api/test_ocr.py)
 bcrypt            # 비밀번호 해싱 (backend/auth/login.py, signup.py)
 
-openai            # 고객센터 챗봇(backend/customer_chatbot/) + 아이디어 카드 생성(backend/chatbot/) LLM 호출
+openai==3.7.0     # 고객센터 챗봇(backend/customer_chatbot/) + 아이디어 카드 생성(backend/chatbot/) LLM 호출
+                  # + ksic_core(업종코드 분류기) LLM Resolver/Verifier — 이 버전으로 테스트됨
 
 # --- AI 신청서 어시스턴트 (backend/assistant/) ---
 openpyxl          # 필드매핑 xlsx 로드 (biz_cert_ocr.py)
-pymupdf           # 사업자등록증 PDF -> 이미지 변환
+pymupdf==1.28.2   # 사업자등록증 PDF -> 이미지 변환 (+ ksic_core 첨부파일 PDF 추출, 이 버전으로 테스트됨)
 opencv-python-headless  # 이미지 전처리 (category_ocr.py, biz_cert_quality.py)
 lxml              # 신청서 HWPX 표 파싱·값 입력 (hwpx_fill.py) — 네임스페이스 보존
 langchain-core    # '대표자' 계열 라벨 판별 체인 (label_llm.py) — 로컬 Qwen 재사용, langchain 에 딸려 설치됨
@@ -26,9 +27,28 @@ langchain-core    # '대표자' 계열 라벨 판별 체인 (label_llm.py) — �
 #   pip install "transformers>=4.49" qwen-vl-utils accelerate   # 기본정보 OCR (Qwen2.5-VL)
 #   pip install easyocr                                          # 업태·종목 표 OCR (category_ocr.py)
 
-# --- 업종코드 매칭 (backend/ml/industry_code_matching) ---
+# --- 업종코드 매칭 구버전 (backend/ml/industry_code_matching, 폐기 예정) ---
 chromadb>=0.5      # 벡터DB (사업 아이디어 -> 업종코드 검색)
 
 # 로컬 임베딩(bge-m3) 사용 시에만 필요. OpenAI 임베딩만 쓰면 생략 가능. GPU 권장(CPU도 동작):
 #   pip install torch --index-url https://download.pytorch.org/whl/cu124   (GPU)
 #   pip install sentence-transformers>=3.0
+
+# --- 업종코드 자동분류 ksic_core (backend/ml/classifier, 2026-09-13 도입 — 신규 파이프라인) ---
+# 규칙+LLM+ML게이트 하이브리드. 위 구버전(chromadb 기반)과는 별개 파이프라인.
+pdfplumber==0.11.10       # 텍스트 기반 PDF 추출
+pillow==12.3.0            # 이미지 처리(OCR 입력)
+numpy==2.3.5              # 이미지 배열 처리 / ML Gate 특징 벡터
+olefile==0.47             # HWP(OLE) 파일 저수준 파싱
+pyhwp==0.1b15             # HWP 본문 텍스트 추출
+paddleocr==3.1.1          # 스캔본/이미지 첨부파일 OCR (3.2.0+는 modelscope/torch 끌고와서 고정)
+paddlex==3.1.1            # paddleocr 3.1.1과 짝 (버전 안 맞으면 최신 paddlex가 modelscope 재유입시킴)
+kiwipiepy==0.23.2         # 한국어 형태소분석(명사 추출)
+scipy==1.16.3             # ML Gate embed_rule 특징(OneHotEncoder 결과 sparse 결합)
+sentence-transformers==6.0.1  # ML Gate Champion(embed_rule) SBERT 임베딩 — models/ml_gate_v2_champion.joblib 로드 시 필수
+torch==2.6.0              # sentence-transformers 런타임 백엔드 (GPU 환경이면 CUDA 빌드로 자동 대체됨)
+joblib==1.5.2             # ML Gate 아티팩트(.joblib) 로드
+
+# paddleocr는 paddlepaddle(또는 paddlepaddle-gpu)이 별도로 필요합니다 (위 두 항목처럼 requirements.txt로 안 잡힘):
+#   CPU만 쓸 경우: pip install paddlepaddle
+#   GPU(CUDA) 환경: pip install paddlepaddle-gpu

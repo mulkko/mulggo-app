@@ -47,8 +47,6 @@ function DiagnosisIndustryResult() {
   const [ready, setReady] = useState(false);
   const [ksicCodes, setKsicCodes] = useState<string[]>([]);
   const [industryName, setIndustryName] = useState("");
-  const [industryState, setIndustryState] = useState("");
-  const [industryConfidence, setIndustryConfidence] = useState("");
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [track, setTrack] = useState<"cafe" | "tech" | undefined>(undefined);
   const [checking, setChecking] = useState(false);
@@ -75,8 +73,6 @@ function DiagnosisIndustryResult() {
     const codes = answers.resolvedKsicCodes ?? [];
     setKsicCodes(codes);
     setIndustryName(answers.industryMatchName ?? "");
-    setIndustryState(answers.industryMatchState ?? "");
-    setIndustryConfidence(answers.industryMatchConfidence ?? "");
     setReady(true);
   }, [navigate]);
 
@@ -173,15 +169,12 @@ function DiagnosisIndustryResult() {
 
         {ksicCodes.length > 0 ? (
           <div className={styles.cardList}>
-            {ksicCodes.map((code, i) => (
+            {ksicCodes.map((code) => (
               <div key={code} className={industryStyles.matchCard}>
                 <span className={industryStyles.matchCardHead}>
                   <span className={industryStyles.matchCardTitle}>{industryName || "업종 미확인"}</span>
                 </span>
-                <span className={industryStyles.matchCodeText}>
-                  업종코드 {code}
-                  {i === 0 && industryConfidence ? ` · 신뢰도 ${industryConfidence}` : ""}
-                </span>
+                <span className={industryStyles.matchCodeText}>업종코드 {code}</span>
               </div>
             ))}
           </div>
@@ -191,8 +184,22 @@ function DiagnosisIndustryResult() {
           </div>
         )}
 
-        {industryState && industryState !== "추천" && (
-          <div className={industryStyles.stateBanner}>업종 판정 상태: {industryState}</div>
+        {/* [2026-09-14, 사용자 확인] 프로토타입("12 업종코드 매칭" 화면) 원본 대조 -
+            이 배너는 원래 백엔드 매칭 상태(industryState) 문구가 아니라, 어느
+            트랙(카페형/기술창업형)으로 분류됐는지 안내하는 용도였다. 색은 프로토타입
+            원본(#DFF3EF/#0F6E62) 그대로가 아니라 스타일가이드 토큰(--color-teal-mist/
+            --color-teal-green, 값 완전히 동일)으로 매핑했다. */}
+        {track && (
+          <div className={industryStyles.stateBanner}>
+            <span className={industryStyles.stateBannerTitle}>
+              {track === "cafe" ? "상권분석형으로 분류됐어요" : "기술창업형으로 분류됐어요"}
+            </span>
+            <span className={industryStyles.stateBannerDesc}>
+              {track === "cafe"
+                ? "오프라인 매장 기반 사업이라 상권 데이터 분석으로 이동합니다"
+                : "온라인·기술 기반 사업이라 특허·투자 동향 분석으로 이동합니다"}
+            </span>
+          </div>
         )}
         {checkError && <p className={styles.errorText}>{checkError}</p>}
       </div>
@@ -201,7 +208,25 @@ function DiagnosisIndustryResult() {
           이전
         </button>
         <button type="button" className={styles.nextButton} disabled={checking} onClick={handleNext}>
-          {checking ? "분석 확인 중..." : "분석 리포트 보러가기 →"}
+          {checking ? (
+            "분석 확인 중..."
+          ) : (
+            <>
+              분석 리포트 보러가기
+              <svg
+                className={styles.nextButtonIcon}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M8 5l8 7-8 7" />
+              </svg>
+            </>
+          )}
         </button>
       </div>
       {checking && (

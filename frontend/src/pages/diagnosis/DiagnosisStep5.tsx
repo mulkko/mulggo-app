@@ -34,6 +34,12 @@ function DiagnosisStep5() {
   const [sido, setSido] = useState("");
   const [sigungu, setSigungu] = useState("");
   const [dong, setDong] = useState("");
+  // [2026-09-14, 사용자 확인] 기술창업형(오프라인 매장이 아닌 경우)은 상권분석과
+  // 달리 행정동 단위 데이터를 안 쓴다(backend/api/diagnosis.py의 _resolve_tech_report는
+  // ksic_codes만 받고 지역 자체를 안 받음) - 그래서 이 경로에서는 시/도·시/군/구까지만
+  // 받고 행정동 선택은 일단 주석처리한다(사용자 확인, "일단 주석처리해줘" - 나중에
+  // 필요해지면 되살릴 수 있게 완전히 지우지 않음).
+  const [hasStore, setHasStore] = useState(true);
 
   // [2026-09-10] 지역 3단을 자유입력 대신 administrative_dong 기반 캐스케이딩
   // 셀렉트박스로 바꿈 - GET /analysis/regions(3,924행, 작아서 한 번에 다 받음)를
@@ -47,6 +53,7 @@ function DiagnosisStep5() {
       navigate("/diagnosis/5", { replace: true });
       return;
     }
+    setHasStore(answers.storeType === "offline" || answers.storeType === "booking");
     setSido(answers.sido ?? "");
     setSigungu(answers.sigungu ?? "");
     setDong(answers.dong ?? "");
@@ -88,11 +95,13 @@ function DiagnosisStep5() {
 
   const handleBack = () => navigate("/diagnosis/5");
 
-  const canSubmit = sido.trim() !== "" && sigungu.trim() !== "" && dong.trim() !== "";
+  const canSubmit = hasStore
+    ? sido.trim() !== "" && sigungu.trim() !== "" && dong.trim() !== ""
+    : sido.trim() !== "" && sigungu.trim() !== "";
 
   const handleNext = () => {
     if (!canSubmit) return;
-    saveDiagnosisAnswers({ sido, sigungu, dong });
+    saveDiagnosisAnswers({ sido, sigungu, dong: hasStore ? dong : "" });
     navigate("/diagnosis/summary");
   };
 
@@ -104,7 +113,9 @@ function DiagnosisStep5() {
       <div className={styles.scrollArea}>
         <span className={styles.topicBadge}>Q6 · 지역·규모</span>
         <h1 className={styles.questionTitle}>어디서, 어느 정도 규모로 시작하실 계획인가요?</h1>
-        <p className={styles.questionSub}>시/도 → 시/군/구 → 행정동 순서로 선택해주세요.</p>
+        <p className={styles.questionSub}>
+          {hasStore ? "시/도 → 시/군/구 → 행정동 순서로 선택해주세요." : "시/도 → 시/군/구 순서로 선택해주세요."}
+        </p>
         <div className={styles.regionGroup}>
           <SelectSheet
             label="시/도"
@@ -124,15 +135,20 @@ function DiagnosisStep5() {
             placeholder="시/군/구 선택"
             disabled={!sido}
           />
-          <SelectSheet
-            label="행정동"
-            name="dong"
-            value={dong}
-            options={dongOptions}
-            onChange={setDong}
-            placeholder="행정동 선택"
-            disabled={!sigungu}
-          />
+          {/* [2026-09-14, 사용자 확인] 기술창업형(오프라인 매장 아님)은 행정동 단위
+              데이터를 안 써서 일단 주석처리 - hasStore(오프라인 매장)일 때만
+              보여준다. 나중에 기술창업형도 행정동이 필요해지면 이 조건만 지우면 됨. */}
+          {hasStore && (
+            <SelectSheet
+              label="행정동"
+              name="dong"
+              value={dong}
+              options={dongOptions}
+              onChange={setDong}
+              placeholder="행정동 선택"
+              disabled={!sigungu}
+            />
+          )}
         </div>
         {regionsError && (
           <p className={styles.errorText}>지역 목록을 불러오지 못했어요. 새로고침해주세요.</p>
@@ -143,7 +159,19 @@ function DiagnosisStep5() {
           이전
         </button>
         <button type="button" className={styles.nextButton} disabled={!canSubmit} onClick={handleNext}>
-          다음 →
+          다음
+          <svg
+            className={styles.nextButtonIcon}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M8 5l8 7-8 7" />
+          </svg>
         </button>
       </div>
 

@@ -89,7 +89,7 @@ function DiagnosisChoice() {
       </main>
 
       <BottomNav active="idea" />
-      <ChatFab variant="default" />
+      <ChatFab variant="withBottomNav" />
     </div>
   );
 }

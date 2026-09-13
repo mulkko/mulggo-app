@@ -1157,7 +1157,19 @@ function DiagnosisReport() {
           이전
         </button>
         <button type="button" className={styles.nextButton} disabled={!reportReady} onClick={handleNext}>
-          {viewSessionId || mode === "fast" ? "지원사업 보러가기 →" : "다음 →"}
+          {viewSessionId || mode === "fast" ? "지원사업 보러가기" : "다음"}
+          <svg
+            className={styles.nextButtonIcon}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M8 5l8 7-8 7" />
+          </svg>
         </button>
       </div>
       {!reportReady && !reportError && (

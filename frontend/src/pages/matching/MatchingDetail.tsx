@@ -331,7 +331,7 @@ function MatchingDetail() {
       )}
 
       <BottomNav active="matching" />
-      <ChatFab variant="default" />
+      <ChatFab variant="withBottomNav" />
     </div>
   );
 }

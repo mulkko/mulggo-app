@@ -4,12 +4,12 @@
   --color-navy-sphere-hover: #0b3868; /* 홈 "회원가입하기" CTA hover 배경 (--color-navy-sphere의 hover 상태) */
   --color-teal-green: #0f6e62; /* 안내 링크 텍스트, 보조 상호작용 요소 */
   --color-light-teal: #3fb6a8; /* 컬러 팔레트 등록값 — 인풋 스펙 등에서는 미사용, 용도 팀 확인 필요 */
-  --color-teal-mist: #dff3ef; /* 컬러 팔레트 등록값 — 인풋 스펙 등에서는 미사용, 용도 팀 확인 필요 */
+  --color-teal-mist: #dff3ef; /* 컬러 팔레트 등록값 — 인풋 스펙 등에서는 미사용, 용도 팀 확인 필요. Report BG/Teal Mist Hover/Card Target BG의 대표색 (2026-09-14 색상 통합 확정) */
 
   /* ===== 색상 — Neutral & Form ===== */
   --color-ink-charcoal: #2e312e; /* 주요 텍스트, 입력란 타이틀 라벨 */
   --color-stone-gray: #8b8d93; /* 서브텍스트, 일반 버튼 테두리, 비활성 라벨, 공통 인풋 필드 테두리 */
-  --color-text-placeholder: #757575; /* 입력란 placeholder 텍스트 */
+  --color-text-placeholder: #8b8d93; /* Stone Gray(--color-stone-gray)와 동일 값으로 통합 (2026-09-14 확정, 원래 #757575) */
   --color-stone-mist: #efeff1; /* 공통 인풋 필드 배경 (로그인/회원가입 통합) */
   --color-border-web: #dcd8cc; /* 구분선, 파일 업로드 점선 테두리 (adminTokens.css의 --color-border와 이름 충돌 방지) */
   --color-white: #ffffff; /* 앱 기본 배경, 카드 배경, 활성 버튼 텍스트 */
@@ -84,7 +84,7 @@
   --color-border-nav: #ededf0; /* 하단 네비게이션 상단 구분선 */
   --color-tab-active-icon: #e8a93c; /* 하단 네비게이션 활성 탭 아이콘 stroke */
   --color-tab-active-label: #b5761a; /* 하단 네비게이션 활성 탭 라벨 텍스트 */
-  --color-section-subtitle: #b5b6bb; /* [매칭 리스트 draft] "업종맞춤 공고"/"업종 무관 공고" 그룹 제목 아래 안내문구 텍스트 (--color-stone-gray보다 밝은 톤) */
+  --color-section-subtitle: #b5b6bb; /* "업종맞춤 공고"/"업종 무관 공고" 그룹 제목 아래 안내문구 텍스트 (--color-stone-gray보다 밝은 톤). Caption Faint의 대표색 (2026-09-14 색상 통합 확정) */
   /* 해시태그 칩은 --color-teal-mist(배경) + --color-teal-green(텍스트) 재사용 */
   /* 지역 필터 칩은 --color-light-teal(배경) + --color-white(텍스트) 재사용 */
 
@@ -100,12 +100,12 @@
 
   /* ===== 공고 상세(지원사업 상세) 화면 전용 ===== */
   /* 색상 */
-  --color-ai-comment-bg: #eef1fa; /* AI 코멘트 박스 배경 */
-  --color-ai-comment-text: #2e3a6b; /* AI 코멘트 박스 라벨/본문 텍스트 */
+  --color-ai-comment-bg: #e7ecf8; /* AI 코멘트 박스 배경. Navy Mist(--color-navy-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 #eef1fa) */
+  --color-ai-comment-text: #2e3a6b; /* AI 코멘트 박스 라벨/본문 텍스트. Badge Revenue Text의 대표색 (2026-09-14 색상 통합 확정) */
   --color-overview-icon: #c4841e; /* 사업개요 카드 항목 아이콘 stroke */
-  --color-autofill-banner-bg: #fafaf9; /* 서류 자동채움 안내 배너 배경 */
-  --color-teal-mist-hover: #cdede6; /* "채우기" 필 버튼 hover 배경 (--color-teal-mist의 hover 상태) */
-  --color-light-teal-hover: #2e9c8f; /* "원 공고 홈페이지로 이동" 버튼 hover 배경 (--color-light-teal의 hover 상태) */
+  --color-autofill-banner-bg: #efeff1; /* 자동입력 배너 배경. Stone Mist(--color-stone-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 #fafaf9) */
+  --color-teal-mist-hover: #dff3ef; /* Teal Mist(--color-teal-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 #cdede6) */
+  --color-light-teal-hover: #3fb6a8; /* Light Teal(--color-light-teal)과 동일 값으로 통합 (2026-09-14 확정, 원래 #2e9c8f) */
   /* 북마크(저장) 아이콘 채움색은 --color-tab-active-icon(#e8a93c) 재사용 */
   /* AI 코멘트 제목 색은 --color-deep-navy(#15328c) 재사용 */
   /* 사업개요 카드 항목 구분선은 --color-border-nav(#ededf0) 재사용 */
@@ -122,11 +122,11 @@
 
   /* ===== 마이페이지 화면 전용 ===== */
   /* 색상 */
-  --color-report-bg: #eaf7f4; /* "나의 분석 리포트" 카드 배경 */
-  --color-fill-history-bg: #fdf6e7; /* "채우기 이용내역" 카드 배경 */
+  --color-report-bg: #dff3ef; /* "나의 분석 리포트" 카드 배경. Teal Mist(--color-teal-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 #eaf7f4) */
+  --color-fill-history-bg: #fff3d6; /* Badge Download BG(--color-badge-download-bg)와 동일 값으로 통합 (2026-09-14 확정, 원래 #fdf6e7) */
   --color-badge-download-bg: #fff3d6; /* "다운로드 가능" 뱃지 배경 (뱃지 텍스트는 --color-tab-active-icon 재사용) */
   --color-border-dashed: rgba(139, 141, 147, 0.3); /* "+ 새 분석 시작하기" 점선 버튼 테두리 (hover 시 --color-light-teal) */
-  --color-delete-hover: rgba(139, 141, 147, 0.15); /* 카드 우측 상단 삭제(X) 버튼 hover 배경 (아이콘 stroke는 --color-stone-gray 재사용) */
+  --color-delete-hover: #efeff1; /* Stone Mist(--color-stone-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 rgba(139,141,147,.15)) — 아이콘 stroke는 --color-stone-gray 재사용 */
   /* 프로필 요약 카드 배경/화살표는 --color-white / --color-stone-gray 재사용 */
   /* 분석 리포트 제목은 --color-teal-green, "채우기" 설명 텍스트는 --color-dday-text 재사용 */
   /* "지원함" 상태 뱃지는 --color-teal-green(텍스트) + --color-teal-mist(배경) 재사용 */
@@ -140,7 +140,7 @@
 
   /* ===== 프로필 수정 화면 전용 ===== */
   /* 색상 */
-  --color-light-teal-hover-strong: #34a296; /* "저장하기" 버튼 hover 배경 (--color-light-teal의 hover 상태 — 공고 상세 CTA의 --color-light-teal-hover(#2e9c8f)와는 다른 값) */
+  --color-light-teal-hover-strong: #3fb6a8; /* Light Teal(--color-light-teal)과 동일 값으로 통합 (2026-09-14 확정, 원래 #34a296) */
   /* 인풋 배경은 --color-stone-mist, 아바타 배경은 --color-teal-mist, "사진 변경" 텍스트는 --color-teal-green,
      구분선은 --color-border-nav, select 화살표/서브텍스트는 --color-stone-gray, Inter(숫자·이메일) 폰트는 --font-family-logo 재사용 */
 
@@ -162,8 +162,8 @@
 
   /* ===== 서류 미리보기 화면 전용 ===== */
   /* 색상 */
-  --color-bg-doc-preview: #f7f7f8; /* 서류 미리보기 본문·헤더 배경 */
-  --color-scrim-download: rgba(23, 26, 25, 0.45); /* 다운로드 모달 오버레이 딤 (--color-scrim(0,0,0,.3)보다 진하고 그린블랙 톤 — 다른 값) */
+  --color-bg-doc-preview: #efeff1; /* Stone Mist(--color-stone-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 #f7f7f8) */
+  --color-scrim-download: rgba(0, 0, 0, 0.3); /* Scrim(--color-scrim)과 동일 값으로 통합 (2026-09-14 확정, 원래 rgba(23,26,25,.45)) */
   /* "나의 정보로 채우기" CTA·모달 "로컬 저장소에 저장하기" 버튼 배경은 --color-light-teal + hover --color-light-teal-hover-strong 재사용,
      아이콘 원 배경은 --color-white + --shadow-inset-card, 문서 아이콘 stroke·설명 텍스트는 --color-stone-gray, 제목은 --color-ink-charcoal 재사용,
      카카오 버튼은 --brand-kakao-yellow / --brand-kakao-label 사용 */
@@ -225,16 +225,16 @@
      카드 radius --radius-card(14px), 버튼 radius --radius-cta(13px), 뱃지 radius --radius-pill 재사용 */
   --color-purple-accent: #7c5cbf; /* 4축요약카드 "차별점" 아이콘 배경 */
   --color-cta-hover-navy: #0b2170; /* "지원사업 매칭 보기 →" CTA 버튼 hover 배경 (--color-light-teal의 hover 상태) */
-  --color-caption-faint: #a9abb2; /* "AI가 답변을 바탕으로 만든 참고 아이디어예요" 캡션 텍스트 */
-  --color-card-target-bg: rgba(63, 182, 168, 0.06); /* "타깃 관점" 아이디어 카드 배경 */
+  --color-caption-faint: #b5b6bb; /* Section Subtitle(--color-section-subtitle)과 동일 값으로 통합 (2026-09-14 확정, 원래 #a9abb2) */
+  --color-card-target-bg: #dff3ef; /* Teal Mist(--color-teal-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 rgba(63,182,168,.06) — 반투명→불투명이라 카드가 조금 더 진해 보일 수 있음) */
   --color-card-revenue-bg: rgba(21, 50, 140, 0.05); /* "수익모델 관점" 아이디어 카드 배경 */
   --color-card-skill-bg: rgba(232, 169, 60, 0.08); /* "보유역량 활용" 아이디어 카드 배경 */
   --color-badge-target-bg: #bfeae1; /* "타깃 관점" 뱃지 배경 */
-  --color-badge-target-text: #0b5a50; /* "타깃 관점" 뱃지 텍스트 */
-  --color-badge-revenue-bg: #c9d6f6; /* "수익모델 관점" 뱃지 배경 */
-  --color-badge-revenue-text: #102569; /* "수익모델 관점" 뱃지 텍스트 */
-  --color-badge-skill-bg: #f3da9b; /* "보유역량 활용" 뱃지 배경 */
-  --color-badge-skill-text: #714800; /* "보유역량 활용" 뱃지 텍스트 */
+  --color-badge-target-text: #0f6e62; /* Teal Green(--color-teal-green)과 동일 값으로 통합 (2026-09-14 확정, 원래 #0b5a50) */
+  --color-badge-revenue-bg: #e7ecf8; /* Navy Mist(--color-navy-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 #c9d6f6) */
+  --color-badge-revenue-text: #2e3a6b; /* AI Comment Text(--color-ai-comment-text)와 동일 값으로 통합 (2026-09-14 확정, 원래 #102569) */
+  --color-badge-skill-bg: #f6dfaf; /* D-day BG(--color-dday-bg)와 동일 값으로 통합 (2026-09-14 확정, 원래 #f3da9b) */
+  --color-badge-skill-text: #8a6212; /* D-day Text(--color-dday-text)와 동일 값으로 통합 (2026-09-14 확정, 원래 #714800) */
   /* [2026-09-13] 프로토타입(E:\3차프로젝트\260911_Mulkko Prototype) 원본 대조로 확인 -
      "반경 500m 동일업종 밀집도" 히트맵은 상권분석(카페형)은 이 러스트 계열, 기술창업형은
      --color-deep-navy(#15328c) 계열로 서로 다르게 디자인돼 있었다. 코드에서는 그동안
@@ -248,6 +248,6 @@
      기존 그림자 토큰 중 --shadow-idea-card-navy가 수치는 가장 가까웠지만 항상 얇은
      네이비 테두리 링이 같이 붙어있어(디자인 "정밀 구체화" 카드 전용) 이 화면(테두리
      없이 은은한 그림자만)엔 안 맞아 새로 등록. */
-  --color-industry-anchor-bg: #f3f8ff; /* "업종코드를 찾았어요" 안내박스 배경(프로토타입 원본값) */
+  --color-industry-anchor-bg: #e7ecf8; /* Navy Mist(--color-navy-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 #f3f8ff — 프로토타입 원본값) */
   --shadow-industry-card: 0 10px 26px -20px rgba(21, 50, 140, 0.6); /* 업종코드 카드 그림자(프로토타입 원본값, 테두리 링 없음) */
 }
