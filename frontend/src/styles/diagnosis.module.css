@@ -352,6 +352,26 @@
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease;
+  /* [2026-09-14, 사용자 확인] 텍스트만 있던 버튼에 아이콘(.nextButtonIcon)이 들어갈
+     수 있어서 flex로 정렬 - 아이콘 없이 텍스트만 있는 다른 화면 버튼도 그대로 동작.
+     line-height:1은 텍스트 줄상자 여백 때문에 아이콘과 글자가 미묘하게 안 맞아
+     보이는 것 방지(사용자 확인 - "아이콘과 text 상하 정렬"). */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+/* 뒤로가기(.backButton) 화살표를 좌우 반전한 모양 - "업종코드 확인하기" 버튼처럼
+   텍스트 옆에 ">" 대신 실제 아이콘을 붙일 때 재사용. */
+.nextButtonIcon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  position: relative;
+  top: 1px; /* flex align-items:center만으로는 1px 위로 떠 보임(사용자 확인) - 수동 보정 */
+  display: block;
 }
 
 .nextButton:hover {
@@ -369,13 +389,12 @@
   color: var(--color-error-text);
 }
 
-/* ===== PSST 확정(11) 요약 카드 (Q1~Q6 리캡, 누르면 해당 Q 화면으로 이동) ===== */
+/* ===== PSST 확정(11) 요약 카드 (Q1~Q6 리캡, 헤드를 누르면 카드 안에서 바로 수정) ===== */
 .confirmCard {
   width: 100%;
   box-sizing: border-box;
   border: none;
   text-align: left;
-  cursor: pointer;
   background: var(--color-white);
   border-radius: var(--radius-card);
   padding: 16px;
@@ -389,6 +408,25 @@
   box-shadow: var(--shadow-inset-teal-strong);
 }
 
+/* [2026-09-14, 사용자 확인] 프로토타입("11 PSST 확정") 원본 대조 - 카드 상단에
+   라벨 + 수정하기(연필) 아이콘이 좌우로 나뉘어 있다. 이 헤드를 누르면 카드가 그
+   자리에서 펼쳐져 값을 바로 고칠 수 있다(DiagnosisAnswerSummary.tsx 참고) - 아이콘
+   눌러서 따로 화면 이동하는 방식은 "영역이 너무 좁다"는 피드백으로 폐기. */
+.confirmCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.confirmCardEditIcon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--color-stone-gray);
+}
+
 .confirmCardLabel {
   font-size: 11px;
   font-weight: 700;
@@ -399,6 +437,67 @@
   font-size: 13px;
   color: var(--color-ink-charcoal);
   line-height: 1.5;
+}
+
+/* [2026-09-14, 사용자 확인] 카드를 누르면 그 자리에서 값을 고칠 수 있게 펼쳐지는
+   영역 - "아이콘 눌러서 수정하면 영역이 너무 좁다"는 피드백으로, 별도 화면 대신
+   카드 안에서 바로 입력받는 방식으로 변경. Q1·Q3·Q4(자유서술)는 .textarea 재사용,
+   Q2·Q5·Q6(디자인은 셀렉트지만 실제로는 라디오 단일선택)은 SelectSheet 재사용
+   (DiagnosisStep5.tsx의 지역 3단 선택과 동일 컴포넌트). */
+.confirmCardEditArea {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* [2026-09-14, 사용자 확인] Q1·Q3·Q4 인라인 수정 - 처음엔 .textarea(최소 높이 120px)를
+   재사용했는데 "칸이 너무 크다, 한 줄로만 보이게"라는 피드백으로 한 줄짜리 인풋으로
+   교체. 넘치는 글자는 줄바꿈 없이 가로 스크롤(네이티브 input 기본 동작). */
+.confirmCardEditInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  padding: 10px 12px;
+  font-family: var(--font-family-base);
+  font-size: 14px;
+  color: var(--color-ink-charcoal);
+  outline: none;
+}
+
+.confirmCardEditActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.confirmCardSaveButton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.confirmCardSaveButton {
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius-cta);
+  background: var(--color-light-teal);
+  color: var(--color-white);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirmCardCancelButton {
+  height: 34px;
+  padding: 0 12px;
+  border: none;
+  background: none;
+  color: var(--color-stone-gray);
+  font-size: 13px;
+  cursor: pointer;
 }
 
 /* [2026-09-12] "리포트 분석 중" 로딩 오버레이 - DiagnosisReport.tsx가 참조하는데

@@ -17,7 +17,8 @@ function DiagnosisStep8() {
 
   useEffect(() => {
     const answers = getDiagnosisAnswers();
-    if (!answers.sido || !answers.sigungu || !answers.dong) {
+    // dong은 기술창업형(오프라인 매장 아님)이면 비어있는 게 정상(DiagnosisStep5.tsx 참고).
+    if (!answers.sido || !answers.sigungu) {
       navigate("/diagnosis/6", { replace: true });
       return;
     }
