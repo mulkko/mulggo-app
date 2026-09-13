@@ -2,7 +2,9 @@
    값(색상/radius/크기)은 webTokens.css 토큰만 사용한다. 스펙 출처: 프로토타입 "프로필 수정"(is.profile).
    레이아웃: 모바일 우선 + 데스크톱은 common.css .pageContainer(최대 640px 가운데 정렬).
    폭은 전부 %/flex/max-width 기반 — 고정 px 폭을 쓰지 않아 뷰포트를 좁혀도 자연스럽게 줄어든다.
-   하단 네비게이션(BottomNav) 없음 — 공고 상세와 동일하게 뒤로가기 헤더만 있는 구조. */
+   [2026-09-13, 사용자 확인] 하단 네비게이션(BottomNav)을 모든 페이지에 넣는 것으로
+   방침 변경 - "MULKKO PAGE" 브랜드 행 추가함(이전엔 공고 상세와 동일하게 뒤로가기
+   헤더만 있는 구조였음). */
 
 .page {
   display: flex;
@@ -11,6 +13,39 @@
   background: var(--color-white);
   font-family: var(--font-family-base);
   color: var(--color-ink-charcoal);
+}
+
+/* [2026-09-13, 사용자 확인] "MULKKO PAGE" 브랜드 행 - MyPage.tsx가 이미 쓰는
+   .logo/.logoText/.logoMark와 동일 스펙 재사용. 마이페이지/정보수정 둘 다 같은
+   그룹("MULKKO PAGE")이라 정보수정 화면 상단에도 추가 - 아래 기존 .header(뒤로가기+
+   "프로필 수정")는 그대로 두고 그 위에 얹는다. */
+.brandRow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px 0;
+  box-sizing: border-box;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.logoText {
+  font-family: var(--font-family-logo);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  color: var(--color-deep-navy);
+}
+
+/* [2026-09-13, 사용자 확인] 인라인 SVG 리프 아이콘 대신 이미지 로고(logo.svg)로 통일 */
+.logoMark {
+  width: 28px;
+  flex-shrink: 0;
+  display: block;
 }
 
 /* ===== 헤더 (높이 50px) — 공고 상세(MatchingDetail) 헤더 패턴과 동일 ===== */

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.svg";
 import styles from "../../styles/diagnosisChoice.module.css";
 import { saveDiagnosisAnswers } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
 
 /**
@@ -87,6 +88,7 @@ function DiagnosisChoice() {
         </button>
       </main>
 
+      <BottomNav active="idea" />
       <ChatFab variant="default" />
     </div>
   );

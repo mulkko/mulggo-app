@@ -4,6 +4,7 @@ import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import DiagnosisTextQuestion from "./DiagnosisTextQuestion";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 /**
  * 선택 질문 1/4 (Q7 · 타깃). 슬롯: target.
@@ -54,6 +55,8 @@ function DiagnosisStep6() {
         onSubmit={handleSubmit}
         onBack={handleBack}
       />
+
+      <BottomNav active="idea" />
     </div>
   );
 }

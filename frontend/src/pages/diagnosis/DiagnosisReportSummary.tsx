@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.svg";
 import styles from "../../styles/diagnosisReportSummary.module.css";
+import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
 
 export interface IdeaCard {
@@ -144,6 +145,8 @@ function DiagnosisReportSummary({
           지원사업 매칭 보기 →
         </button>
       </div>
+
+      <BottomNav active="idea" />
     </div>
   );
 }

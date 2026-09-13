@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import { consumeDiagnosisReturnTo, getDiagnosisAnswers, saveDiagnosisAnswers, type StoreType } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 /**
  * 사업구체화 진단 - 필수 질문 5/6 (Q5 · 매장 운영 형태). 슬롯: storeType.
@@ -41,7 +42,7 @@ function DiagnosisStep4() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      <DiagnosisHeader onBack={handleBack} pct="83%" stepLabel="AI 제안 · 5/6" />
+      <DiagnosisHeader onBack={handleBack} pct="83%" stepLabel="5/6" />
       <div className={styles.scrollArea}>
         <span className={styles.topicBadge}>Q5 · 매장 운영 형태</span>
         <h1 className={styles.questionTitle}>사업을 어떤 형태로 하시나요?</h1>
@@ -84,6 +85,8 @@ function DiagnosisStep4() {
           다음 →
         </button>
       </div>
+
+      <BottomNav active="idea" />
     </div>
   );
 }

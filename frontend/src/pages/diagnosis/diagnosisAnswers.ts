@@ -50,6 +50,12 @@ export interface DiagnosisAnswers {
   marketAnalysis?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   techAnalysis?: any;
+  // [2026-09-13] 업종코드 후보(최대 3개) 전부를 각자 분석한 결과 - 코드 -> {marketAnalysis,
+  // techAnalysis} 맵. 분석 리포트 화면(DiagnosisReport) 상단 셀렉박스가 이걸로 후보를
+  // 전환해가며 보여준다. marketAnalysis/techAnalysis(위 두 필드)는 그중 1순위(후보
+  // 배열의 첫 코드) 결과와 항상 같다(하위호환 - Q7·Q8 앵커는 계속 1순위 기준).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  analysisByCode?: Record<string, { marketAnalysis?: any; techAnalysis?: any; failed?: boolean }>;
   sido?: string;
   sigungu?: string;
   dong?: string;

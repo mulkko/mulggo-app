@@ -4,6 +4,7 @@ import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import DiagnosisTextQuestion from "./DiagnosisTextQuestion";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 /**
  * 선택 질문 2/4 (Q8 · 차별점). 슬롯: differentiator. DiagnosisStep6와 동일 패턴
@@ -52,6 +53,8 @@ function DiagnosisStep7() {
         onSubmit={handleSubmit}
         onBack={handleBack}
       />
+
+      <BottomNav active="idea" />
     </div>
   );
 }

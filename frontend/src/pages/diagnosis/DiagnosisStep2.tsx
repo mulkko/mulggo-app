@@ -10,6 +10,7 @@ import {
   saveDiagnosisAnswers,
   type Origin,
 } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 /**
  * 사업구체화 진단 3/5 — "구체화 진단2" = Q3 (dev_links.html 목업 이름).
@@ -45,7 +46,7 @@ function DiagnosisStep2() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      <DiagnosisHeader onBack={handleBack} pct="60%" stepLabel="AI 제안 · 3/6" />
+      <DiagnosisHeader onBack={handleBack} pct="60%" stepLabel="3/6" />
       <DiagnosisTextQuestion
         topicBadge="Q3 · 문제 정의"
         title={DIAGNOSIS_QUESTIONS[origin].problemToSolve}
@@ -53,6 +54,8 @@ function DiagnosisStep2() {
         onSubmit={handleSubmit}
         onBack={handleBack}
       />
+
+      <BottomNav active="idea" />
     </div>
   );
 }
