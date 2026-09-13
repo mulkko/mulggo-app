@@ -29,8 +29,10 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const LOG_SOURCE_LABELS: Record<string, string> = {
-  bizinfo: "기업마당 수집",
-  kstartup: "K-스타트업 수집",
+  bizinfo: "기업마당 수집(스케줄러)",
+  kstartup: "K-스타트업 수집(스케줄러)",
+  "bizinfo-manual": "기업마당 수집(수동호출)",
+  "kstartup-manual": "K-스타트업 수집(수동호출)",
   "bizinfo-sync": "기업마당 통합 반영",
   "kstartup-sync": "K-스타트업 통합 반영",
 };
