@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/customerSupport.module.css";
-import { BotAvatarIcon } from "./CustomerSupportChat";
+import fabIcon from "../../assets/8_white.png";
+import chatCardAvatarIcon from "../../assets/9_mint.svg";
 
 /**
  * 1:1 문의 화면 (19번, /support). 하위 화면: 19-1번 고객센터 챗봇(/support/chat, CustomerSupportChat.tsx).
@@ -104,7 +105,7 @@ function CustomerSupport() {
 
         <button type="button" className={styles.chatCard} onClick={handleChatCardClick}>
           <span className={styles.chatCardAvatar}>
-            <BotAvatarIcon />
+            <img className={styles.chatCardAvatarImg} src={chatCardAvatarIcon} alt="" />
           </span>
           <span className={styles.chatCardText}>
             <span className={styles.chatCardTitle}>챗봇에게 먼저 물어보기</span>
@@ -175,6 +176,10 @@ function CustomerSupport() {
           <p className={styles.emptyText}>아직 접수한 문의가 없어요</p>
         </section>
       </main>
+
+      <button type="button" className={styles.fab} onClick={handleChatCardClick} aria-label="챗봇 상담 시작하기">
+        <img className={styles.fabImg} src={fabIcon} alt="" />
+      </button>
     </div>
   );
 }

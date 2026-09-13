@@ -61,6 +61,12 @@ const PROFILE_COLORS = [
   },
 ];
 
+// 프로필 수정 화면 V2(/edit-v2)에서 추가된 색상 토큰
+const PROFILE_V2_COLORS = [
+  { name: "Mist Alt", hex: "#F5F5F7", usage: "인풋 배경 (기존 Stone Mist #EFEFF1과 다른 값)", varName: "--color-mist-alt" },
+  { name: "BG Hover Mist", hex: "#F8F8FA", usage: "사업자등록증 업로드 박스 hover 배경", varName: "--color-bg-hover-mist" },
+];
+
 // 서류 미리보기 화면에서 추가된 색상 토큰
 const DOCPREVIEW_COLORS = [
   { name: "BG Doc Preview", hex: "#F7F7F8", usage: "서류 미리보기 본문·헤더 배경", varName: "--color-bg-doc-preview" },
@@ -506,6 +512,37 @@ function WebStyleGuide() {
           <div className={styles.specRow}><span>--radius-thumb</span><span>9px (사업자등록증 업로드 행 썸네일)</span></div>
           <div className={styles.specRow}><span>--radius-input</span><span>12px (인풋·select) — 재사용</span></div>
           <div className={styles.specRow}><span>--radius-cta</span><span>13px ("저장하기" 버튼) — 재사용</span></div>
+        </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>09-1. 프로필 수정 V2 (/edit-v2)</h2>
+        </div>
+
+        <p className={styles.subheading}>
+          기존 프로필 수정(/mypage/edit)과 별도 화면 — 항목 구성만 다르고 레이아웃 스펙은
+          동일 계열. 인풋 배경/테두리만 근소하게 다른 값이라 아래 토큰으로 분리했다.
+        </p>
+        <div className={styles.colorGrid}>
+          {PROFILE_V2_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <p className={styles.subheading}>
+          select 화살표는 --color-teal-green, 업로드 박스 테두리는 --color-border-dashed,
+          hover 테두리는 --color-light-teal, 구분선은 --color-border-nav, "저장하기" 버튼은
+          --color-light-teal + hover --color-light-teal-hover-strong 재사용.
+        </p>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--shadow-inset-gray-soft</span><span>inset 0 0 0 1.5px rgba(139,141,147,.22) (인풋 테두리)</span></div>
         </div>
       </section>
 
