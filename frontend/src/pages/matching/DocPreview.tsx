@@ -3,6 +3,66 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "../../styles/docPreview.module.css";
 import type { RequiredDoc } from "./matchingDetailData";
 import { fetchFilledDocument, saveFilledBlob } from "../../utils/downloadFilledDoc";
+import { authHeaders } from "../../auth/session";
+
+// ============================================================
+// [실험용, 2026-09-11] "채워질 정보 미리보기" 카드 - 사용자 확인 중인 실험 기능.
+// 별로면 이 블록(타입 + BizCertPreview 컴포넌트) 통째로 지우고, 아래 DocPreview
+// 본문에서 <BizCertPreview /> 쓰는 줄만 빼면 깔끔하게 원상복구됨.
+// 값 출처: GET /api/matching/biz-cert-preview (backend/api/matching.py, 같은 표시로 실험용 표시).
+// 재OCR 없음 - 이미 저장된 사업자등록증 값을 그대로 조회만 함.
+// ============================================================
+interface BizCertPreviewData {
+  name: string;
+  ceoName: string;
+  bizNo: string;
+  address: string;
+  entityType: string;
+}
+
+function BizCertPreview() {
+  const [data, setData] = useState<BizCertPreviewData | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/matching/biz-cert-preview`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((body: { success: boolean; data?: BizCertPreviewData }) => {
+        if (body.success && body.data) setData(body.data);
+      })
+      .catch(() => {
+        /* 등록된 사업자등록증 없거나 실패 - 카드 자체를 안 보여주고 조용히 넘어감(실험용) */
+      });
+  }, []);
+
+  if (!data) return null;
+
+  return (
+    <div className={styles.bizCertPreviewCard}>
+      <p className={styles.bizCertPreviewTitle}>이 정보로 채워져요</p>
+      <dl className={styles.bizCertPreviewList}>
+        <div>
+          <dt>상호명</dt>
+          <dd>{data.name || "-"}</dd>
+        </div>
+        <div>
+          <dt>대표자명</dt>
+          <dd>{data.ceoName || "-"}</dd>
+        </div>
+        <div>
+          <dt>사업자등록번호</dt>
+          <dd>{data.bizNo || "-"}</dd>
+        </div>
+        <div>
+          <dt>사업장 주소</dt>
+          <dd>{data.address || "-"}</dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+// ============================================================
+// [실험용 끝]
+// ============================================================
 
 /**
  * 서류 미리보기 화면 (16-1).
@@ -147,6 +207,9 @@ function DocPreview() {
           아직 만들지 않았어요. 회원님의 사업자 프로필에서
           상호명·대표자명·사업자등록번호·사업장 주소·연락처 등으로 채워 문서를 만들어드려요.
         </p>
+        {/* [실험용, 2026-09-11] 위 docDesc가 "이런 필드로 채워요"만 말하고 실제 값은
+            안 보여줘서 추가한 카드 - 지우려면 이 줄만 빼면 됨. */}
+        <BizCertPreview />
       </main>
 
       <div className={styles.ctaBar}>

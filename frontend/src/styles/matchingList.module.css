@@ -54,9 +54,12 @@
 .filterBar {
   flex-shrink: 0;
   display: flex;
-  flex-wrap: wrap;
+  /* [2026-09-12] 360px 폭에서도 지역/업종/정렬 칩 + 필터 버튼이 한 줄에 다 들어가야
+     한다(사용자 확인) - flex-wrap을 없애고, 칩 3개가 남는 공간을 똑같이 나눠 갖다가
+     라벨이 길면 말줄임(.chipLabel)되게 한다. */
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 0 20px 14px;
   box-sizing: border-box;
 }
@@ -68,7 +71,7 @@
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--color-white);
   background: var(--color-light-teal);
@@ -90,13 +93,18 @@
   cursor: pointer;
   white-space: nowrap;
   font-family: var(--font-family-base);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--color-ink-charcoal);
   background: var(--color-white);
   box-shadow: var(--shadow-inset-gray);
   border: none;
-  padding: 7px 11px;
+  padding: 7px 8px;
   border-radius: var(--radius-pill);
+  /* [2026-09-12] 지역/업종/정렬 칩 3개가 남는 폭을 똑같이 나눠 갖고, 라벨이 길면
+     안의 .chipLabel에서 말줄임되게 한다(360px 대응, 사용자 확인) - flex-basis 0으로
+     내용 길이와 무관하게 균등 분배. */
+  flex: 1 1 0%;
+  min-width: 0;
 }
 
 .chevron {
@@ -110,14 +118,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
-}
-
-/* [임시] 450px 미만 좁은 화면에서 업종 칩("소프트웨어 개발·공급업" 등 긴 라벨)만
-   말줄임 처리 - 지역/정렬은 기본 라벨이 짧아서 해당 없음. */
-@media (max-width: 449px) {
-  .ksicChip {
-    max-width: 90px;
-  }
 }
 
 .filterButton {
@@ -156,7 +156,7 @@
 
 .guide {
   margin: 0;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--color-stone-gray);
   line-height: 1.6;
 }
@@ -165,7 +165,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--color-teal-green);
   text-decoration: underline;
@@ -195,7 +195,7 @@
   color: var(--color-deep-navy);
 }
 
-/* ===== 공고 카드 리스트 ===== */
+/* ===== 공고 카드 리스트 (업종맞춤/업종무관 2그룹) ===== */
 /* 카드 자체는 공통 컴포넌트 components/AnnouncementCard 로 분리됨 (스타일: announcementCard.module.css) */
 .cardList {
   list-style: none;
@@ -204,6 +204,31 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* [2026-09-12] 그룹 사이 간격은 별도 구분선 없이 .scrollArea의 기본 gap(12px)을 그대로
+   씀(프로토타입과 동일) - MatchingListDraft.tsx 디자인 반영. */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sectionTitle {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--color-ink-charcoal);
+}
+
+.sectionHint {
+  font-size: 11px;
+  color: var(--color-section-subtitle);
 }
 
 .loadMoreButton {

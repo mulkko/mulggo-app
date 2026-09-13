@@ -117,7 +117,9 @@ def get_market_report(sido: str, sigungu: str, dong: str, ksic_code: str | None 
         return _error(400, str(e), "REGION_NOT_FOUND")
 
     total_nearby_count = len(nearby)
-    industry_dist = industry_mix.get_industry_distribution(nearby, level="상권업종소분류명", top_n=4)
+    # [2026-09-12] 4 -> 10 (사용자 확인) - DiagnosisReport.tsx의 도넛 차트가 상위 4개는
+    # 색+분리(exploded)로, 5~10위는 회색 그러데이션으로 같이 보여준다.
+    industry_dist = industry_mix.get_industry_distribution(nearby, level="상권업종소분류명", top_n=10)
 
     density_grid = None
     if ksic_code:

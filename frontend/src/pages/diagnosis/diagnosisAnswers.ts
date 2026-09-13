@@ -17,13 +17,39 @@ export type Origin = "problem" | "opportunity";
 // ④온라인 판매·중개 플랫폼 / ⑤앱·소프트웨어·디지털 서비스
 export type StoreType = "offline" | "booking" | "delivery" | "online" | "digital";
 
+export type DiagnosisMode = "fast" | "precise";
+
 export interface DiagnosisAnswers {
+  // [2026-09-11] DiagnosisChoice(/diagnosis/choice)에서 고른 트랙 - "빠른 진단"은
+  // 필수 6문항+정리+리포트 후 바로 공고매칭리스트로, "정밀 진단"은 거기서 선택
+  // 4문항(Q7~Q10)까지 이어서 진행한다(사용자 확인).
+  mode?: DiagnosisMode;
   origin?: Origin;
   seedInterest?: string;
   problemToSolve?: string;
   solutionApproach?: string;
   hasStore?: boolean;
   storeType?: StoreType;
+  // [2026-09-11] 6번(지역) 제출 시 POST /api/diagnosis/start로 세션이 만들어지면서
+  // 받는 id. 10번(마지막) 제출이 이 id로 같은 세션에 이어붙인다(backend/api/diagnosis.py
+  // 상단 주석 참고).
+  sessionId?: number;
+  resolvedKsicCodes?: string[];
+  // /start 응답의 업종코드 판정 요약 - 분석 리포트 화면(DiagnosisReport) 상단에 보여준다.
+  industryMatchName?: string;
+  industryMatchState?: string;
+  industryMatchConfidence?: string;
+  // /start 응답으로 같이 받는 앵커 문구(있으면 7·8번 화면 하드코딩 문구 대신 사용) -
+  // 매장형태로 카페형/기술창업형이 갈려 내용 출처가 다르지만 프론트는 그냥 문자열로 받아 쓴다.
+  targetAnchor?: string;
+  differentiatorAnchor?: string;
+  // /start 응답의 원본 리포트 - 지역 제출 직후 "분석 리포트" 화면(DiagnosisReport)이
+  // track에 따라 marketAnalysis 또는 techAnalysis 하나만 그려서 보여준다.
+  track?: "cafe" | "tech";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  marketAnalysis?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  techAnalysis?: any;
   sido?: string;
   sigungu?: string;
   dong?: string;

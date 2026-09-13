@@ -14,14 +14,20 @@
   color: var(--color-ink-charcoal);
 }
 
-/* ===== 헤더 (진행바 + 단계뱃지) — ideaQuestions.module.css .header 그대로 포팅 ===== */
+/* ===== 헤더 (진행바 + 단계뱃지) =====
+   [2026-09-13, 사용자 확인] 프로토타입(260911_Mulkko Prototype) "PSST 확정" 화면의
+   실제 헤더 마크업과 대조해서 3곳 수정: 여백 24px→22px, 뒤로가기 버튼 24px→20px,
+   단계 라벨을 알약(pill) 뱃지에서 배경 없는 순수 텍스트로. 처음 만들 때 이 프로토타입
+   대신 다른 화면(matchingDetail.module.css) 헤더 스펙을 재사용해서 생긴 차이 - 로직은
+   그대로, DiagnosisHeader.tsx는 onBack/pct/stepLabel만 받는 순수 표시 컴포넌트라
+   이 파일 하나만 고치면 이 컴포넌트를 쓰는 모든 화면에 안전하게 반영됨. */
 .header {
   flex-shrink: 0;
   height: 52px;
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 0 24px;
+  padding: 0 22px;
   box-sizing: border-box;
 }
 
@@ -30,8 +36,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
   background: none;
@@ -62,9 +68,6 @@
 .stepBadge {
   flex-shrink: 0;
   white-space: nowrap;
-  padding: 5px 10px;
-  border-radius: var(--radius-pill);
-  background: var(--color-stone-mist);
   color: var(--color-stone-gray);
   font-size: 11px;
 }
@@ -76,7 +79,7 @@
   border-radius: var(--radius-pill);
   background: var(--color-teal-mist);
   color: var(--color-teal-green);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -98,8 +101,8 @@
 }
 
 .qAnchorText {
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 400;
   line-height: 1.55;
   color: var(--color-deep-navy);
 }
@@ -125,7 +128,7 @@
 
 .questionSub {
   margin: -8px 0 0;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--color-stone-gray);
 }
 
@@ -187,7 +190,7 @@
 }
 
 .radioCardTitle {
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--color-ink-charcoal);
 }
@@ -257,7 +260,7 @@
   background: var(--color-white);
   box-shadow: var(--shadow-inset-gray-strong);
   color: var(--color-ink-charcoal);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: box-shadow 0.15s ease;
@@ -275,7 +278,7 @@
   background: var(--color-light-teal);
   color: var(--color-white);
   font-family: var(--font-family-base);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease;
@@ -292,7 +295,7 @@
 
 .errorText {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--color-error-text);
 }
 
@@ -326,5 +329,162 @@
   font-size: 13px;
   color: var(--color-ink-charcoal);
   line-height: 1.5;
+}
+
+/* [2026-09-12] "리포트 분석 중" 로딩 오버레이 - DiagnosisReport.tsx가 참조하는데
+   정의가 빠져있던 클래스들. BizCertUpload/DocPreview의 로딩 팝업과 같은 톤
+   (화면 전체 딤 + 가운데 흰 박스 + 도는 스피너)으로 맞춤. */
+.loadingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-outer);
+  box-sizing: border-box;
+  background: var(--color-scrim);
+}
+
+.loadingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 32px 24px;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
+  text-align: center;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border-web);
+  border-top-color: var(--color-navy-sphere);
+  border-radius: 50%;
+  animation: diagnosisReportSpin 0.8s linear infinite;
+}
+
+@keyframes diagnosisReportSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
+.loadingHint {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  color: var(--color-stone-gray);
+}
+
+/* [2026-09-12] "업종코드 매칭 결과" 카드 - .confirmCard와 같은 카드 톤 재사용,
+   라벨/제목/설명 3단 구성만 다름(DiagnosisReport.tsx가 참조하는데 정의가 빠져있었음). */
+.resultCard {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-inset-card);
+}
+
+.resultAxis {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+}
+
+.resultTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.resultDesc {
+  font-size: 13px;
+  color: var(--color-stone-gray);
+  line-height: 1.5;
+}
+
+/* [2026-09-12] 도넛 차트 카드 - 유사 벤처기업/인증유형 분포 등에 재사용되는
+   차트+범례 레이아웃(DiagnosisReport.tsx). 조각 색은 인라인 fill로 이미 지정되므로
+   여기서는 카드/레이아웃/범례 텍스트만 담당. */
+.chartCard {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-inset-card);
+}
+
+.chartTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.donutRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.donutSvg {
+  flex-shrink: 0;
+  width: 108px;
+  height: 108px;
+}
+
+.donutLegend {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.donutLegendRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.donutLegendDot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.donutLegendLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--color-ink-charcoal);
+}
+
+.donutLegendValue {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--color-stone-gray);
 }
 

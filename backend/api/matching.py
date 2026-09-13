@@ -7,7 +7,7 @@ from datetime import date
 
 import requests
 from fastapi import APIRouter, BackgroundTasks, Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from backend.assistant.hwpx_fill import fill_hwpx_all
 from backend.assistant.pipeline import _load_mapping
@@ -15,6 +15,23 @@ from backend.auth.session import get_current_user_id, get_optional_user_id
 from backend.db.connection import get_connection
 
 router = APIRouter(prefix="/api/matching", tags=["matching"])
+
+
+def _lookup_profile_ksic_code(conn, user_id: int) -> str | None:
+    """로그인한 user_id 본인이 사업자등록증에서 확정한 KSIC 코드. 없으면(프로필/등록증
+    미등록, 업종 미확정) None - 호출부는 이 경우 ksic 필터 없이(전체 공고) 보여준다."""
+    cur = conn.cursor()
+    cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    if row is None:
+        return None
+    cur.execute(
+        "SELECT ksic_code FROM profile_business_types "
+        "WHERE profile_id = %s AND ksic_code IS NOT NULL ORDER BY is_primary DESC LIMIT 1",
+        (row[0],),
+    )
+    row = cur.fetchone()
+    return row[0] if row else None
 
 DEFAULT_LIMIT = 20
 MAPPING_XLSX = os.path.join("data", "field_mapping.xlsx")
@@ -48,10 +65,54 @@ SORT_OPTIONS = {
 }
 
 
+def _fetch_announcement_page(conn, where_sql: str, params: list, order_sql: str, limit: int, offset: int) -> tuple[list, bool, int]:
+    """공통 조회 로직 - COUNT + "더보기"용 limit+1건 조회. list_announcements()가 매칭
+    섹션/업종무관 섹션 양쪽에 그대로 재사용한다(2026-09-12, 두 섹션 분리 - 사용자 확인)."""
+    cur = conn.cursor()
+    cur.execute(f"SELECT COUNT(*) FROM announcements {where_sql}", params)
+    total = cur.fetchone()[0]
+    cur.execute(
+        f"""
+        SELECT a.announcement_id, a.host_org_name, a.title, a.apply_end_date,
+               a.ksic_codes_matched,
+               EXISTS (
+                   SELECT 1 FROM announcement_attachments att
+                   WHERE att.announcement_id = a.announcement_id
+                     AND att.fillable_field_count > 0
+               ) AS fillable
+        FROM announcements a
+        {where_sql}
+        ORDER BY {order_sql}
+        LIMIT %s OFFSET %s
+        """,
+        [*params, limit + 1, offset],
+    )
+    rows = cur.fetchall()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+    data = [
+        {
+            "id": str(announcement_id),
+            "agency": host_org_name or "기관명 미기재",
+            "dday": _format_dday(apply_end_date),
+            "title": title,
+            # [2026-09-09] 해시태그 로직은 사용자가 직접 확인 중 - 우선 빈 배열로 둔다.
+            "tags": [],
+            "fillable": bool(fillable),
+            # [임시, 2026-09-11] 매칭된 업종코드 확인용 - 화면에 agency 옆 노출.
+            "ksicCodesMatched": ksic_codes_matched or [],
+        }
+        for announcement_id, host_org_name, title, apply_end_date, ksic_codes_matched, fillable in rows
+    ]
+    return data, has_more, total
+
+
 @router.get("")
 def list_announcements(
     offset: int = 0,
     limit: int = DEFAULT_LIMIT,
+    unclassified_offset: int = 0,
+    unclassified_limit: int = DEFAULT_LIMIT,
     ksic: str = "",
     region: str = "",
     company: str = "",
@@ -59,6 +120,7 @@ def list_announcements(
     field: str = "",
     age: str = "",
     sort: str = "recent",
+    user_id: int | None = Depends(get_optional_user_id),
 ) -> dict:
     """"더보기" 버튼 방식 페이지네이션. limit+1건을 조회해서, limit보다 많이
     돌아오면 다음 페이지가 더 있다는 뜻이므로 has_more=True로 알려준다.
@@ -67,6 +129,24 @@ def list_announcements(
     ksic_codes_matched 배열과 하나라도 겹치는 것만 필터. [2026-09-09, 테스트용]
     지금은 업종 드롭다운에 전체 KSIC(1,200여개)가 아니라 실제로 매칭된 것 중
     자주 나오는 몇 개만 넣어서 필터링 자체가 되는지 확인하는 용도.
+    [2026-09-11] 비워서 호출하고 로그인 상태면, 사용자가 사업자등록증에서 확정한
+    ksic_code(profile_business_types)로 대신 채운다 - 프론트가 매번 안 넘겨도
+    "내 업종 기준" 매칭이 되게. 그마저 없으면(미등록/미확정) 그냥 전체 공고.
+
+    [2026-09-12, 사용자 확인] ksic_status가 "업종무관(기본값)"/"특정불가"인 공고는
+    ksic_codes_matched가 항상 빈 배열이라(schema.sql 참고 - decide_industry()가 특정
+    업종을 못 정했을 때의 값) 배열 겹침 조건(&&)에 절대 안 걸린다 - 특정 업종으로
+    필터링할 때마다 이 두 상태(합쳐서 전체 공고의 절반 가까이, 실측 1,348건)가 통째로
+    빠지고 있었음. "업종무관"은 어떤 업종에도 해당된다는 뜻이라 당연히 포함해야 하고,
+    "특정불가"도 사용자 확인 후 같이 포함하기로 함(분류만 실패했을 뿐 실제 제한이
+    없을 가능성이 높다고 판단).
+    다만 "같은 목록에 섞어서" 보여주면 진짜 매칭된 공고가 묻혀 보이니(사용자 확인),
+    ksic 필터가 있을 때는 응답을 두 섹션으로 분리한다 - data/has_more/total은 진짜
+    매칭(ksic_codes_matched 겹침)만, unclassified/unclassified_has_more/
+    unclassified_total은 업종무관·특정불가만. 각자 자기 offset/limit
+    (unclassified_offset/unclassified_limit)으로 독립적으로 "더보기" 페이지네이션한다.
+    ksic 필터가 없으면(전체 공고 보기) 나눌 기준 자체가 없으니 예전처럼 data 하나에
+    전부 담고 unclassified는 내려주지 않는다.
 
     region: 콤마로 구분된 시/도 목록 (예: "서울특별시,경기도"). 공고의 regions
     배열과 하나라도 겹치는 것만 필터. regions는 시/군 단위까지만 있고 구 단위는
@@ -102,74 +182,71 @@ def list_announcements(
     age = age.strip()
     order_sql = SORT_OPTIONS.get(sort, SORT_OPTIONS["recent"])
 
-    # [2026-09-09] 이미 마감 지난 공고는 리스트에서 아예 뺀다. announcements 원본
-    # 데이터는 안 지운다(raw/가공 원칙) - 여기 조회 조건에서만 제외. 마감일이
-    # 없는(NULL, 상시모집 등) 공고는 계속 보여줌.
-    conditions = ["(apply_end_date IS NULL OR apply_end_date >= CURRENT_DATE)"]
-    params: list = []
-    if ksic_codes:
-        conditions.append("ksic_codes_matched && %s")
-        params.append(ksic_codes)
-    if regions:
-        conditions.append("regions && %s")
-        params.append(regions)
-    if companies:
-        conditions.append("target_summary = ANY(%s)")
-        params.append(companies)
-    if biz_age:
-        conditions.append("business_age_condition LIKE %s")
-        params.append(f"%{biz_age}%")
-    if fields:
-        conditions.append("category ILIKE ANY(%s)")
-        params.append([f"%{f}%" for f in fields])
-    if age:
-        conditions.append("target_age_groups && %s")
-        params.append([age])
-    where_sql = "WHERE " + " AND ".join(conditions) if conditions else ""
-
     conn = get_connection()
     try:
-        cur = conn.cursor()
-        cur.execute(f"SELECT COUNT(*) FROM announcements {where_sql}", params)
-        total = cur.fetchone()[0]
-        cur.execute(
-            f"""
-            SELECT a.announcement_id, a.host_org_name, a.title, a.apply_end_date,
-                   a.ksic_codes_matched,
-                   EXISTS (
-                       SELECT 1 FROM announcement_attachments att
-                       WHERE att.announcement_id = a.announcement_id
-                         AND att.fillable_field_count > 0
-                   ) AS fillable
-            FROM announcements a
-            {where_sql}
-            ORDER BY {order_sql}
-            LIMIT %s OFFSET %s
-            """,
-            [*params, limit + 1, offset],
-        )
-        rows = cur.fetchall()
+        if not ksic_codes and user_id is not None:
+            profile_ksic = _lookup_profile_ksic_code(conn, user_id)
+            if profile_ksic:
+                ksic_codes = [profile_ksic]
+
+        # [2026-09-09] 이미 마감 지난 공고는 리스트에서 아예 뺀다. announcements 원본
+        # 데이터는 안 지운다(raw/가공 원칙) - 여기 조회 조건에서만 제외. 마감일이
+        # 없는(NULL, 상시모집 등) 공고는 계속 보여줌.
+        # region/company/biz_age/field/age 조건은 매칭 섹션·업종무관 섹션 둘 다에
+        # 똑같이 적용되므로 base_conditions로 공유한다.
+        base_conditions = ["(apply_end_date IS NULL OR apply_end_date >= CURRENT_DATE)"]
+        base_params: list = []
+        if regions:
+            base_conditions.append("regions && %s")
+            base_params.append(regions)
+        if companies:
+            base_conditions.append("target_summary = ANY(%s)")
+            base_params.append(companies)
+        if biz_age:
+            base_conditions.append("business_age_condition LIKE %s")
+            base_params.append(f"%{biz_age}%")
+        if fields:
+            base_conditions.append("category ILIKE ANY(%s)")
+            base_params.append([f"%{f}%" for f in fields])
+        if age:
+            base_conditions.append("target_age_groups && %s")
+            base_params.append([age])
+
+        if ksic_codes:
+            matched_conditions = [*base_conditions, "ksic_codes_matched && %s"]
+            matched_params = [*base_params, ksic_codes]
+        else:
+            matched_conditions = base_conditions
+            matched_params = base_params
+        matched_where_sql = "WHERE " + " AND ".join(matched_conditions)
+        data, has_more, total = _fetch_announcement_page(conn, matched_where_sql, matched_params, order_sql, limit, offset)
+
+        unclassified_data: list = []
+        unclassified_has_more = False
+        unclassified_total = 0
+        if ksic_codes:
+            # NOT (ksic_codes_matched && %s)는 안전장치 - 실제로는 업종무관/특정불가가
+            # ksic_codes_matched를 항상 빈 배열로 두므로(위 독스트링 참고) 겹칠 일이
+            # 없지만, 나중에 데이터가 달라져도 매칭 섹션과 절대 겹치지 않게 명시적으로 뺀다.
+            unclassified_conditions = [
+                *base_conditions,
+                "ksic_status IN ('업종무관(기본값)', '특정불가')",
+                "NOT (ksic_codes_matched && %s)",
+            ]
+            unclassified_params = [*base_params, ksic_codes]
+            unclassified_where_sql = "WHERE " + " AND ".join(unclassified_conditions)
+            unclassified_data, unclassified_has_more, unclassified_total = _fetch_announcement_page(
+                conn, unclassified_where_sql, unclassified_params, order_sql, unclassified_limit, unclassified_offset,
+            )
     finally:
         conn.close()
 
-    has_more = len(rows) > limit
-    rows = rows[:limit]
-
-    data = [
-        {
-            "id": str(announcement_id),
-            "agency": host_org_name or "기관명 미기재",
-            "dday": _format_dday(apply_end_date),
-            "title": title,
-            # [2026-09-09] 해시태그 로직은 사용자가 직접 확인 중 - 우선 빈 배열로 둔다.
-            "tags": [],
-            "fillable": bool(fillable),
-            # [임시, 2026-09-11] 매칭된 업종코드 확인용 - 화면에 agency 옆 노출.
-            "ksicCodesMatched": ksic_codes_matched or [],
-        }
-        for announcement_id, host_org_name, title, apply_end_date, ksic_codes_matched, fillable in rows
-    ]
-    return {"success": True, "data": data, "has_more": has_more, "total": total}
+    response = {"success": True, "data": data, "has_more": has_more, "total": total}
+    if ksic_codes:
+        response["unclassified"] = unclassified_data
+        response["unclassified_has_more"] = unclassified_has_more
+        response["unclassified_total"] = unclassified_total
+    return response
 
 
 def _format_period(apply_start_date: date | None, apply_end_date: date | None) -> str:
@@ -263,6 +340,42 @@ def _build_biz_cert_for_user(conn, user_id: int):
         "biz_item": biz_item or "",
     }
     return biz_cert, entity_type, profile_id
+
+
+# ============================================================
+# [실험용, 2026-09-11] DocPreview.tsx "채워질 정보 미리보기" 카드용 - 사용자 확인 중,
+# 반응 별로면 이 엔드포인트 통째로 지우고 프론트 카드도 같이 걷어내면 됨.
+# _build_biz_cert_for_user()는 이미 fill_attachment()가 쓰던 것 그대로 재사용(재OCR 없음,
+# DB에 저장된 값 SELECT만) - 실제 hwpx 채우기 전에 "이 정보로 채워집니다"만 보여주는 용도.
+# ============================================================
+@router.get("/biz-cert-preview")
+def get_biz_cert_preview(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
+    conn = get_connection()
+    try:
+        result = _build_biz_cert_for_user(conn, user_id)
+    finally:
+        conn.close()
+
+    if result is None:
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "error": {"message": "등록된 사업자등록증이 없습니다.", "code": "BIZ_CERT_NOT_FOUND"}},
+        )
+
+    biz_cert, entity_type, _ = result
+    return JSONResponse(content={
+        "success": True,
+        "data": {
+            "name": biz_cert["corp_name"] or biz_cert["trade_name"],
+            "ceoName": biz_cert["ceo_name"],
+            "bizNo": biz_cert["biz_no"],
+            "address": biz_cert["address_basic"],
+            "entityType": entity_type,
+        },
+    })
+# ============================================================
+# [실험용 끝]
+# ============================================================
 
 
 @router.get("/attachments/{attachment_id}/fill")

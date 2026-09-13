@@ -37,7 +37,7 @@
 }
 
 .brandTagline {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--color-stone-gray); /* #8b8d93 */
 }
 
@@ -145,7 +145,7 @@
   background: var(--color-navy-sphere); /* #104a8f */
   color: var(--color-white);
   font-family: var(--font-family-base);
-  font-size: 16.5px;
+  font-size: 17px;
   font-weight: 900;
   cursor: pointer;
 }
@@ -247,7 +247,7 @@
 
 .howCardTitle {
   margin: 0;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--color-ink-charcoal);
 }

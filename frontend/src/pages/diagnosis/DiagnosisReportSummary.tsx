@@ -15,6 +15,12 @@ interface DiagnosisReportSummaryProps {
   revenueModel: string;
   coreSkill: string;
   cards: IdeaCard[];
+  /** [2026-09-12] 라이브 흐름(DiagnosisStep9)은 emkim99님의 별도 market/tech-report
+   * 화면 대신 제 통합 분석리포트(/diagnosis/report)로 되돌아가야 해서, variant 기반
+   * 기본 경로를 덮어쓸 수 있게 옵션으로 뺐다. 안 넘기면(프리뷰 등) 기존 기본값 그대로. */
+  backPath?: string;
+  /** 실제 매칭된 업종코드/지역으로 필터된 매칭 리스트로 보내기 위한 경로 override. */
+  matchPath?: string;
 }
 
 const AXIS_TONE: Record<string, "target" | "revenue" | "skill"> = {
@@ -52,12 +58,14 @@ function DiagnosisReportSummary({
   revenueModel,
   coreSkill,
   cards,
+  backPath,
+  matchPath,
 }: DiagnosisReportSummaryProps) {
   const navigate = useNavigate();
-  const reportPath = variant === "market" ? "/diagnosis/market-report" : "/diagnosis/tech-report";
+  const reportPath = backPath ?? (variant === "market" ? "/diagnosis/market-report" : "/diagnosis/tech-report");
 
   const handleBack = () => navigate(reportPath);
-  const handleMatch = () => navigate("/matching");
+  const handleMatch = () => navigate(matchPath ?? "/matching");
 
   return (
     <div className={`pageContainer ${styles.page}`}>
@@ -71,7 +79,7 @@ function DiagnosisReportSummary({
         <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
       </header>
 
-      <div className={styles.subHeader}>사업구체화 리포트</div>
+      <div className={styles.subHeader}>이렇게 정리했어요</div>
 
       <div className={styles.scrollArea}>
         <div className={styles.summaryCard}>
