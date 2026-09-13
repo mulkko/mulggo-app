@@ -38,6 +38,23 @@ export function authHeaders(): Record<string, string> {
 }
 
 /**
+ * [2026-09-12] 로그아웃 - clearSession()은 브라우저 저장소만 지우고 서버 auth_sessions의
+ * 토큰은 그대로 살려뒀었다(사용자 확인 후 보완) - 로그아웃 버튼은 이제 이 함수를 써서
+ * 서버에도 같이 무효화 요청을 보낸다. 토큰을 지우기 전에 먼저 헤더를 만들어야 하므로
+ * clearSession()보다 항상 나중에 지운다. API 호출이 실패해도(네트워크 문제 등) 클라이언트
+ * 쪽은 무조건 로그아웃 처리한다 - 사용자 입장에서 로그아웃 버튼이 안 먹으면 안 됨.
+ */
+export async function logout(): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST", headers: authHeaders() });
+  } catch {
+    // 서버에 못 알렸어도 클라이언트 쪽 로그아웃은 아래에서 그대로 진행
+  } finally {
+    clearSession();
+  }
+}
+
+/**
  * 앱 시작 시 한 번 호출. 이미 로그인돼있으면(토큰 있음) 아무 것도 안 함.
  * 토큰이 없으면 개발용 자동로그인(POST /api/auth/dev-auto-login)을 시도한다 -
  * 서버 .env에 DEV_AUTO_LOGIN_EMAIL/PASSWORD가 없으면(팀원 기본 환경, 배포 환경)

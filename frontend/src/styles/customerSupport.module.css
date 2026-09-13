@@ -74,7 +74,7 @@
 
 .introSub {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--color-stone-gray);
 }
@@ -163,7 +163,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   color: var(--color-ink-charcoal);
@@ -295,7 +295,7 @@
 
 .emptyText {
   padding: 20px 0;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--color-stone-gray);
   text-align: center;
 }

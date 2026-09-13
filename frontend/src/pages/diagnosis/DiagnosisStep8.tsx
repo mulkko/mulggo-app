@@ -43,7 +43,6 @@ function DiagnosisStep8() {
         sub="주요 매출원과 보조 매출원을 구분해 작성해주시면 좋습니다"
         placeholder="예: 음료 판매, 공간 대여(모임룸)"
         initialValue={initialValue}
-        required={false}
         onSubmit={handleSubmit}
         onBack={handleBack}
       />

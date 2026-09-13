@@ -21,8 +21,11 @@ industry_matcher.match_business_code() 를 감싸서:
 """
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # 패키지로 임포트돼도 bare import 되게 (industry_matcher.py와 동일 패턴)
 from industry_matcher import match_business_code, warm_up
 
 # result_state 내부값 -> 프론트 표시용
@@ -38,11 +41,39 @@ def warm() -> None:
     warm_up()
 
 
-def _slim(b: dict[str, Any]) -> dict[str, str]:
+_KSIC_MAP: dict[str, list[str]] | None = None  # 국세청업종코드 -> KSIC코드 목록 (지연 로딩, 프로세스당 1회)
+
+
+def _load_ksic_map() -> dict[str, list[str]]:
+    """nts_ksic_mapping 테이블(DA2, backend/db/load_nts_ksic_mapping.py 적재) 원본 그대로 사용.
+    이 모듈 자체 참조 CSV에도 linked_ksic_codes가 있지만 중복 관리 피하려고 DB만 본다."""
+    from backend.db.connection import get_connection
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT nts_code, ksic_code FROM nts_ksic_mapping")
+        out: dict[str, list[str]] = {}
+        for nts_code, ksic_code in cur.fetchall():
+            out.setdefault(nts_code, []).append(ksic_code)
+        return out
+    finally:
+        conn.close()
+
+
+def _ksic_codes(business_code: str) -> list[str]:
+    global _KSIC_MAP
+    if _KSIC_MAP is None:
+        _KSIC_MAP = _load_ksic_map()
+    return _KSIC_MAP.get(business_code, [])  # 매핑 누락 코드(DA2 확인 필요분, load_nts_ksic_mapping.py 참고)는 빈 배열
+
+
+def _slim(b: dict[str, Any]) -> dict[str, Any]:
     return {
         "code": b["business_code"],
         "name": b["business_name"],
         "confidence": b.get("confidence", ""),
+        "ksicCodes": _ksic_codes(b["business_code"]),
     }
 
 
@@ -63,9 +94,9 @@ def predict(
         "data": {
           "state": "추천" | "확인필요" | "정보부족",   # 화면 분기 키
           "question": "...",                          # state != "추천" 일 때 표시
-          "primary":     {"code","name","confidence"},
+          "primary":     {"code","name","confidence","ksicCodes"},   # ksicCodes: nts_ksic_mapping DB 조회 (0개 이상)
           "alternatives":[{"code","name"}...],         # 최대 3, "이 업종 아니면?"
-          "additional":  [{"code","name","confidence"}...],  # 부가 업종 0~2
+          "additional":  [{"code","name","confidence","ksicCodes"}...],  # 부가 업종 0~2
           "raw": {...}                                 # 전체 응답 (로깅/디버깅)
         }
       }

@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, Header, Response, UploadFile
 from pydantic import BaseModel
 
 from backend.assistant.biz_cert_ocr import (
@@ -15,7 +15,7 @@ from backend.assistant.biz_cert_ocr import (
     get_cached_vision_model,
 )
 from backend.auth.login import login
-from backend.auth.session import create_session
+from backend.auth.session import create_session, delete_session
 from backend.auth.signup import process_biz_cert_ocr, save_biz_cert_data, signup
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -164,6 +164,7 @@ _ERROR_STATUS = {
     "VALIDATION_ERROR": 400,
     "UNAUTHORIZED": 401,
     "DUPLICATE_EMAIL": 409,
+    "ACCOUNT_LOCKED": 401,
 }
 
 
@@ -186,6 +187,17 @@ def login_endpoint(payload: LoginRequest, response: Response) -> AuthResponse:
         success=True,
         data=AuthUserData(user_id=user["user_id"], email=user["email"], name=user["name"], token=token),
     )
+
+
+@router.post("/logout", response_model=AuthResponse)
+def logout_endpoint(authorization: str | None = Header(default=None)) -> AuthResponse:
+    """[2026-09-12] 로그아웃 - 서버측 auth_sessions에서도 토큰을 지워서 즉시 무효화한다
+    (사용자 확인). 토큰 없거나 이미 지워졌어도 에러 안 내고 그냥 성공 처리(로그아웃은
+    몇 번을 눌러도 "로그아웃된 상태"로 끝나면 되는 멱등 동작)."""
+    token = authorization.removeprefix("Bearer ").strip() if authorization and authorization.startswith("Bearer ") else None
+    if token:
+        delete_session(token)
+    return AuthResponse(success=True, data=None)
 
 
 def _dev_auto_login(response: Response, email_env: str, password_env: str, require_admin: bool = False) -> AuthResponse:
