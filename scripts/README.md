@@ -50,7 +50,8 @@ Unregister-ScheduledTask -TaskName "mulkko-crawl-bizinfo" -Confirm:$false
 ```
 
 - 실행 로그: `logs\crawl_bizinfo.log` (저장소 루트, git 추적 안 함)
-- DB 실행 이력: `crawl_batch_logs` 테이블의 `source = 'bizinfo'` 행
+- DB 실행 이력: `crawl_batch_logs` 테이블의 `source = 'bizinfo-local'` 행
+  (`.bat`이 `CRAWL_SOURCE_SUFFIX=-local`을 심어서 돈다. 접미사 없는 `'bizinfo'`는 GitHub Actions/수동 커맨드 실행, `'bizinfo-manual'`은 관리자 대시보드 실행)
 - 수집 코드(`backend/crawler/bizinfo_api.py`)가 바뀌면 그 PC에서 `git pull` 해줘야 최신으로 돈다.
 
 ## crawl_kstartup.bat — 창업진흥원(K-Startup) 원본 공고 매일 수집
@@ -109,5 +110,6 @@ Unregister-ScheduledTask -TaskName "mulkko-crawl-kstartup" -Confirm:$false
 ```
 
 - 실행 로그: `logs\crawl_kstartup.log` (저장소 루트, git 추적 안 함)
-- DB 실행 이력: `crawl_batch_logs` 테이블의 `source = 'kstartup'` 행
+- DB 실행 이력: `crawl_batch_logs` 테이블의 `source = 'kstartup-local'` 행
+  (`.bat`이 `CRAWL_SOURCE_SUFFIX=-local`을 심어서 돈다. 접미사 없는 `'kstartup'`은 GitHub Actions/수동 커맨드 실행, `'kstartup-manual'`은 관리자 대시보드 실행)
 - 수집 코드(`backend/crawler/kst_api.py`)가 바뀌면 그 PC에서 `git pull` 해줘야 최신으로 돈다.

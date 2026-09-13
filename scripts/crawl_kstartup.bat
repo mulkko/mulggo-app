@@ -17,6 +17,9 @@ REM  make Python write UTF-8 to the redirected log (avoids mojibake)
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 
+REM  crawl_batch_logs.source 에 "-local" 접미사를 남겨서 GitHub Actions(수동 dispatch 포함)와 구분한다
+set "CRAWL_SOURCE_SUFFIX=-local"
+
 set "PY=.venv\Scripts\python.exe"
 if not exist "%PY%" set "PY=python"
 

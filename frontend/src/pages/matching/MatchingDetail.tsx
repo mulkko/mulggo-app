@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "../../styles/matchingDetail.module.css";
 import type { AnnouncementDetail } from "./matchingDetailData";
 import { authHeaders } from "../../auth/session";
+import ChatFab from "../../components/ChatFab/ChatFab";
 
 /**
  * 공고 상세(지원사업 상세) 화면.
@@ -326,6 +327,8 @@ function MatchingDetail() {
           {toastMessage}
         </div>
       )}
+
+      <ChatFab variant="default" />
     </div>
   );
 }

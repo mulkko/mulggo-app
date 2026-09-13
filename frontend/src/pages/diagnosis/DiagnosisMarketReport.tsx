@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosisMarketReport.module.css";
 import diagnosisStyles from "../../styles/diagnosis.module.css";
 import { getDiagnosisAnswers } from "./diagnosisAnswers";
+import ChatFab from "../../components/ChatFab/ChatFab";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -90,6 +91,8 @@ function DiagnosisMarketReport() {
           <span className={styles.headerTitle}>상권분석 리포트</span>
         </div>
       </header>
+
+      <ChatFab variant="default" />
 
       {loading && (
         <div className={styles.stateArea}>

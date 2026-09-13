@@ -38,6 +38,11 @@ REQUEST_TIMEOUT = 30          # 초. 성공 시 3초 내외지만 서버가 느�
 SLEEP_BETWEEN_PAGES = 0.5     # 초. 연속 호출 시 게이트웨이 부하 완화
 MAX_RETRIES = 6              # 페이지당 상위 재시도 횟수(가시적 로그)
 
+# 로컬 작업 스케줄러(crawl_kstartup.bat)는 CRAWL_SOURCE_SUFFIX=-local 을 심어서 돈다.
+# crawl_batch_logs.source 만 보고 로컬 스케줄러 실행인지 구분하기 위함
+# (관리자 대시보드 수동 실행은 "kstartup-manual"로 이미 별도 표시됨).
+SOURCE_NAME = "kstartup" + os.getenv("CRAWL_SOURCE_SUFFIX", "")
+
 # API 응답 키 -> DB 컬럼명. 이름이 다른 것만 매핑에 신경 쓰면 되고,
 # 나머지는 API 키와 DB 컬럼명이 동일하다.
 #   - API "id"는 다운로드 순번(1,2,3...)이라 저장하지 않는다. pbanc_sn이 실제 공고번호.
@@ -292,10 +297,10 @@ def main():
 
         summary = save_to_db(items)
     except Exception as e:
-        log_crawl_batch("kstartup", 0, 0, "error")
+        log_crawl_batch(SOURCE_NAME, 0, 0, "error")
         print(f"[crawl] kstartup 실패: {e}")
         sys.exit(1)
-    log_crawl_batch("kstartup", len(items), summary["inserted"], "success")
+    log_crawl_batch(SOURCE_NAME, len(items), summary["inserted"], "success")
     print(
         "\n=== DB 저장 결과 (announcements_raw_kstartup) ===\n"
         f"  신규 저장: {summary['inserted']}건\n"

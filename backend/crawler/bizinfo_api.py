@@ -20,6 +20,11 @@ PAGE_UNIT = 100
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 OUTPUT_PATH = os.path.join(DATA_DIR, "bizinfo.csv")
 
+# 로컬 작업 스케줄러(crawl_bizinfo.bat)는 CRAWL_SOURCE_SUFFIX=-local 을 심어서 돈다.
+# crawl_batch_logs.source 만 보고 로컬 스케줄러 실행인지 구분하기 위함
+# (관리자 대시보드 수동 실행은 "bizinfo-manual"로 이미 별도 표시됨).
+SOURCE_NAME = "bizinfo" + os.getenv("CRAWL_SOURCE_SUFFIX", "")
+
 
 def fetch_page(page_index: int, page_unit: int) -> dict:
     if not API_KEY:
@@ -142,8 +147,8 @@ if __name__ == "__main__":
         save_to_csv(items, OUTPUT_PATH)
         inserted = save_to_db(items)
     except Exception as e:
-        log_crawl_batch("bizinfo", 0, 0, "error")
+        log_crawl_batch(SOURCE_NAME, 0, 0, "error")
         print(f"[crawl] bizinfo 실패: {e}")
         sys.exit(1)
-    log_crawl_batch("bizinfo", len(items), inserted, "success")
+    log_crawl_batch(SOURCE_NAME, len(items), inserted, "success")
     print(f"{len(items)}건 수집 완료 -> {OUTPUT_PATH} / DB 신규 저장 {inserted}건")
