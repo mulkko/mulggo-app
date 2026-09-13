@@ -3,6 +3,7 @@ import logo from "../../assets/logo.svg";
 import styles from "../../styles/diagnosisChoice.module.css";
 import { saveDiagnosisAnswers } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import ChatFab from "../../components/ChatFab/ChatFab";
 
 /**
  * 진단 방식 선택 화면 (`/diagnosis/choice`).
@@ -88,6 +89,7 @@ function DiagnosisChoice() {
       </main>
 
       <BottomNav active="idea" />
+      <ChatFab variant="default" />
     </div>
   );
 }

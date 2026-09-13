@@ -3,6 +3,7 @@
    레이아웃: 모바일 우선 + 데스크톱은 common.css .pageContainer(최대 640px 가운데 정렬). */
 
 .page {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100vh;

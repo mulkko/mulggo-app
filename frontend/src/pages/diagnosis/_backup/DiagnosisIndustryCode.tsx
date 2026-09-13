@@ -4,6 +4,7 @@ import styles from "../../../styles/diagnosisIndustryCode.module.css";
 import diagnosisStyles from "../../../styles/diagnosis.module.css";
 import marketReportStyles from "../../../styles/diagnosisMarketReport.module.css";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "../diagnosisAnswers";
+import ChatFab from "../../../components/ChatFab/ChatFab";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -115,6 +116,8 @@ function DiagnosisIndustryCode() {
         </button>
         <span className={styles.resultLabel}>매칭 결과</span>
       </header>
+
+      <ChatFab variant="top" />
 
       {loading && (
         <div className={marketReportStyles.stateArea}>

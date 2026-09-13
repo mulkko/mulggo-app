@@ -6,6 +6,7 @@ import styles from "../../styles/home.module.css";
 // import { clearSession } from "../../auth/session"; // [보류] 햄버거 메뉴 드로어용 - 위 블록과 세트
 import { getAuthToken } from "../../auth/session";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import ChatFab from "../../components/ChatFab/ChatFab";
 
 /**
  * 홈 화면(/home).
@@ -191,6 +192,8 @@ function Home() {
           </ol>
         </section>
       </div>
+
+      <ChatFab variant="withBottomNav" />
 
       {/* 로그인 상태에서만 하단 네비게이션 표시 ("홈" 탭 활성) */}
       {isLoggedIn && <BottomNav active="home" />}

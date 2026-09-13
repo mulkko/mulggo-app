@@ -4,6 +4,7 @@
    폭은 고정 px 없이 %/flex/max-width 기반 — 뷰포트를 좁혀도 자연스럽게 줄어든다. */
 
 .page {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100vh;

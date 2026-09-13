@@ -22,6 +22,7 @@ import DocPreview from "./pages/matching/DocPreview";
 import FilterPage from "./pages/matching/FilterPage";
 import MyPage from "./pages/mypage/MyPage";
 import ProfileEdit from "./pages/mypage/ProfileEdit";
+import ProfileEditV2 from "./pages/mypage/ProfileEditV2";
 import CustomerSupport from "./pages/support/CustomerSupport";
 import CustomerSupportChat from "./pages/support/CustomerSupportChat";
 import DiagnosisSelect from "./pages/diagnosis/DiagnosisSelect";
@@ -203,6 +204,7 @@ function App() {
         <Route path="/matching/:id/doc-preview" element={<DocPreview />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/mypage/edit" element={<ProfileEdit />} />
+        <Route path="/edit-v2" element={<ProfileEditV2 />} />
         <Route path="/support" element={<CustomerSupport />} />
         <Route path="/support/chat" element={<CustomerSupportChat />} />
         <Route path="/diagnosis/select" element={<DiagnosisSelect />} />

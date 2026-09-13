@@ -152,6 +152,14 @@
   --radius-thumb: 9px; /* 사업자등록증 업로드 행 썸네일 (인풋 12px보다 살짝 작음) */
   /* 인풋·select radius 12px는 --radius-input, "저장하기" 버튼 radius 13px는 --radius-cta 재사용 */
 
+  /* ===== 프로필 수정 화면 V2 전용 (/edit-v2, ProfileEditV2.tsx) ===== */
+  /* 항목 구성만 다른 별도 화면 — 인풋 배경/테두리 스펙이 기존 프로필 수정과 근소하게 달라 새 토큰으로 분리 */
+  --color-mist-alt: #f5f5f7; /* 인풋 배경 (기존 --color-stone-mist #efeff1과 다른 값) */
+  --color-bg-hover-mist: #f8f8fa; /* 사업자등록증 업로드 박스 hover 배경 */
+  --shadow-inset-gray-soft: inset 0 0 0 1.5px rgba(139, 141, 147, 0.22); /* 인풋 테두리 (--shadow-inset-gray보다 옅음) */
+  /* select 화살표는 --color-teal-green, 업로드 박스 테두리는 --color-border-dashed,
+     hover 테두리는 --color-light-teal, 구분선은 --color-border-nav 재사용 */
+
   /* ===== 서류 미리보기 화면 전용 ===== */
   /* 색상 */
   --color-bg-doc-preview: #f7f7f8; /* 서류 미리보기 본문·헤더 배경 */

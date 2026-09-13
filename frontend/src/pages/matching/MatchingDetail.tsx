@@ -4,6 +4,7 @@ import styles from "../../styles/matchingDetail.module.css";
 import type { AnnouncementDetail } from "./matchingDetailData";
 import { authHeaders } from "../../auth/session";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import ChatFab from "../../components/ChatFab/ChatFab";
 
 /**
  * 공고 상세(지원사업 상세) 화면.
@@ -330,6 +331,7 @@ function MatchingDetail() {
       )}
 
       <BottomNav active="matching" />
+      <ChatFab variant="default" />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/myPage.module.css";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import logo from "../../assets/logo.svg";
+import ChatFab from "../../components/ChatFab/ChatFab";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
@@ -368,6 +369,8 @@ function MyPage() {
           </button>
         </div>
       </div>
+
+      <ChatFab variant="withBottomNav" />
 
       {/* 8. 하단 네비게이션 ("마이페이지" 탭 활성) */}
       <BottomNav active="my" />
