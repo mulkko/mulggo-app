@@ -220,8 +220,9 @@ _running_lock = threading.Lock()
 
 
 def _crawl_bizinfo() -> None:
-    # source를 "bizinfo-manual"로 남긴다: 스케줄러(로컬 작업 스케줄러)가 남기는
-    # "bizinfo"와 구분해야 crawl_batch_logs만 보고 어느 쪽이 돈 건지 알 수 있다.
+    # source를 "bizinfo-manual"로 남긴다: 로컬 작업 스케줄러가 남기는 "bizinfo-local",
+    # GitHub Actions/수동 커맨드가 남기는 "bizinfo"와 구분해야 crawl_batch_logs만 보고
+    # 어느 쪽이 돈 건지 알 수 있다.
     try:
         items = bizinfo_api.fetch_all()
         inserted = bizinfo_api.save_to_db(items)
@@ -236,8 +237,9 @@ def _crawl_bizinfo() -> None:
 
 
 def _crawl_kstartup() -> None:
-    # source를 "kstartup-manual"로 남긴다: GitHub Actions 스케줄이 남기는
-    # "kstartup"과 구분해야 crawl_batch_logs만 보고 어느 쪽이 돈 건지 알 수 있다.
+    # source를 "kstartup-manual"로 남긴다: 로컬 작업 스케줄러가 남기는 "kstartup-local",
+    # GitHub Actions/수동 커맨드가 남기는 "kstartup"과 구분해야 crawl_batch_logs만 보고
+    # 어느 쪽이 돈 건지 알 수 있다.
     try:
         items = kst_api.fetch_announcements_all()
         summary = kst_api.save_to_db(items)
