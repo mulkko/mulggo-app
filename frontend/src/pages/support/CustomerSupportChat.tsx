@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/customerSupportChat.module.css";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 /**
  * 고객센터 챗봇 화면 (19-1번, /support/chat). 19번 "1:1 문의"(CustomerSupport.tsx)의 하위 화면.
@@ -220,6 +221,8 @@ function CustomerSupportChat() {
           <SendIcon />
         </button>
       </div>
+
+      <BottomNav active="my" />
     </div>
   );
 }

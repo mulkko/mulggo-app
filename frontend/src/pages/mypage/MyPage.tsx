@@ -186,8 +186,8 @@ function MyPage() {
     // TODO: 새 분석(사업 구체화 챗봇) 시작 화면으로 이동
   };
 
-  const handleReportClick = (_id: string) => {
-    // TODO: 해당 분석 리포트 상세 화면으로 이동
+  const handleReportClick = (id: string) => {
+    navigate(`/diagnosis/report/${id}`);
   };
 
   const handleViewAllInterests = () => {

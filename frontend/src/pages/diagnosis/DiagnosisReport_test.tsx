@@ -21,27 +21,48 @@ interface BarItem {
   suffix?: string;
 }
 
+// [2026-09-13] 도넛차트와 상위 4개 색상 통일(DiagnosisReport.tsx와 동일 이유 - 골드
+// (--color-tab-active-icon)는 흰 글씨 명암비 미달이라 --color-purple-accent로 교체).
+const TOP4_COLORS = [
+  "var(--color-teal-green)",
+  "var(--color-light-teal)",
+  "var(--color-deep-navy)",
+  "var(--color-purple-accent)",
+];
+
+function getTop4Color(index: number): string | undefined {
+  return TOP4_COLORS[index];
+}
+
 function MarketBarChart({ title, items }: { title: string; items: BarItem[] }) {
   if (items.length === 0) return null;
   const max = Math.max(...items.map((i) => i.value), 1);
   return (
     <section className={marketStyles.sectionCard}>
       <h2 className={marketStyles.sectionTitle}>{title}</h2>
-      {items.map((item) => (
-        <div key={item.label} className={marketStyles.barRow}>
-          <span className={marketStyles.barLabel}>{item.label}</span>
-          <span className={marketStyles.barTrack}>
-            <span
-              className={`${marketStyles.barFill} ${item.value === max ? marketStyles.barFillMax : ""}`}
-              style={{ width: `${(item.value / max) * 100}%` }}
-            />
-          </span>
-          <span className={marketStyles.barCount}>
-            {item.value}
-            {item.suffix ?? ""}
-          </span>
-        </div>
-      ))}
+      {items.map((item, index) => {
+        const top4Color = getTop4Color(index);
+        return (
+          <div key={item.label} className={marketStyles.barRow}>
+            <span className={`${marketStyles.barLabel} ${top4Color ? marketStyles.barLabelOnFill : ""}`}>
+              {item.label}
+            </span>
+            <span className={marketStyles.barTrack}>
+              <span
+                className={marketStyles.barFill}
+                style={{
+                  width: `${(item.value / max) * 100}%`,
+                  ...(top4Color ? { background: top4Color } : {}),
+                }}
+              />
+            </span>
+            <span className={marketStyles.barCount}>
+              {item.value}
+              {item.suffix ?? ""}
+            </span>
+          </div>
+        );
+      })}
     </section>
   );
 }
@@ -85,12 +106,6 @@ interface DonutSlice {
   exploded: boolean;
 }
 
-const DONUT_TOP4_COLORS = [
-  "var(--color-teal-green)",
-  "var(--color-light-teal)",
-  "var(--color-deep-navy)",
-  "var(--color-tab-active-icon)",
-];
 const DONUT_OTHER_COLOR = "rgba(139, 141, 147, 0.35)";
 const DONUT_OUTER_R = 42;
 const DONUT_INNER_R = 24;
@@ -123,7 +138,7 @@ function DonutChart({ title, items, totalCount }: { title: string; items: BarIte
   const otherValue = Math.max(totalCount - top4Sum, 0);
 
   const slices: DonutSlice[] = [
-    ...top4.map((item, i) => ({ label: item.label, value: item.value, color: DONUT_TOP4_COLORS[i], exploded: true })),
+    ...top4.map((item, i) => ({ label: item.label, value: item.value, color: TOP4_COLORS[i], exploded: true })),
     ...(otherValue > 0 ? [{ label: "기타", value: otherValue, color: DONUT_OTHER_COLOR, exploded: false }] : []),
   ];
 
@@ -173,12 +188,25 @@ interface DensityCell {
   count: number;
 }
 
-function getDensityColor(count: number, maxCount: number): string {
+// [2026-09-13] 프로토타입 원본 대조 확인 - 상권분석은 러스트(#7A2A0A =
+// --color-market-density), 기술창업형은 네이비(#15328C) 계열로 서로 다름(사용자 확인).
+function getDensityColor(count: number, maxCount: number, track: "cafe" | "tech"): string {
   const ratio = maxCount > 0 ? count / maxCount : 0;
-  return `rgba(21, 50, 140, ${(0.1 + ratio * 0.7).toFixed(2)})`;
+  const rgb = track === "cafe" ? "122, 42, 10" : "21, 50, 140";
+  return `rgba(${rgb}, ${(0.1 + ratio * 0.7).toFixed(2)})`;
 }
 
-function DensityGrid({ title, gridSize, cells }: { title: string; gridSize: number; cells: DensityCell[] }) {
+function DensityGrid({
+  title,
+  gridSize,
+  cells,
+  track,
+}: {
+  title: string;
+  gridSize: number;
+  cells: DensityCell[];
+  track: "cafe" | "tech";
+}) {
   if (cells.length === 0) return null;
   const max = Math.max(...cells.map((c) => c.count), 1);
   const byPos = new Map(cells.map((c) => [`${c.x},${c.y}`, c.count]));
@@ -199,7 +227,7 @@ function DensityGrid({ title, gridSize, cells }: { title: string; gridSize: numb
             <div
               key={i}
               className={techStyles.densityCell}
-              style={{ background: getDensityColor(count, max), color: count / max > 0.5 ? "var(--color-white)" : "var(--color-ink-charcoal)" }}
+              style={{ background: getDensityColor(count, max, track), color: count / max > 0.5 ? "var(--color-white)" : "var(--color-ink-charcoal)" }}
             >
               {count > 0 && <span className={techStyles.densityCount}>{count}</span>}
             </div>
@@ -473,6 +501,7 @@ function DiagnosisReport_test() {
               title="반경 500m 동일업종 밀집도"
               gridSize={MOCK_MARKET.density.grid.grid_size}
               cells={MOCK_MARKET.density.grid.cells}
+              track="cafe"
             />
           </>
         )}

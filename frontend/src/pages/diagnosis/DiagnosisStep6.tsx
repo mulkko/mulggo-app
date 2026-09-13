@@ -7,9 +7,9 @@ import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 
 /**
  * 선택 질문 1/4 (Q7 · 타깃). 슬롯: target.
- * 선택 질문끼리는 서로 비어있을 수 있어 가드 조건으로 못 쓰므로, 필수 질문 구간이
- * 끝났는지(지역·규모까지 채워졌는지)만 확인한다. 값이 비어도 진행 허용
- * (idea_card_generator가 부실 슬롯은 알아서 스킵).
+ * [2026-09-13, 사용자 확인] 정밀진단은 Q1~Q10 전부 필수 - "선택 질문"이라는 화면
+ * 이름과 달리 실제로는 비워두고 못 넘어가게 한다(DiagnosisTextQuestion 기본값
+ * required=true 그대로 사용, 이전엔 required={false}로 열어뒀던 걸 되돌림).
  *
  * [2026-09-11] anchor 문구를 6번(지역) 제출 시 받은 실측 데이터(targetAnchor - 매장형태에
  * 따라 상권분석 또는 벤처통계 기반)로 교체 - 데이터가 없으면(매칭 실패 등) 기존
@@ -51,7 +51,6 @@ function DiagnosisStep6() {
         sub="타깃을 구체적으로 정의할수록 이후 분석·매칭의 정확도가 높아집니다"
         placeholder="예: 동네 직장인, 재택근무자"
         initialValue={initialValue}
-        required={false}
         onSubmit={handleSubmit}
         onBack={handleBack}
       />

@@ -137,7 +137,6 @@ function DiagnosisStep9() {
         sub="자격증, 경력, 네트워크 등 구체적으로 작성해주세요"
         placeholder="예: 바리스타 자격증, 요식업 경력"
         initialValue={initialValue}
-        required={false}
         buttonLabel={submitting ? "제출 중..." : "제출하기"}
         onSubmit={handleSubmit}
         onBack={handleBack}

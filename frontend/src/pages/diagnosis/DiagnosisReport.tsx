@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import marketStyles from "../../styles/diagnosisMarketReport.module.css";
 import techStyles from "../../styles/diagnosisTechReport.module.css";
@@ -9,6 +9,7 @@ import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const POLL_INTERVAL_MS = 2000;
+const MAX_NETWORK_RETRIES = 10;
 
 interface BarItem {
   label: string;
@@ -16,29 +17,56 @@ interface BarItem {
   suffix?: string;
 }
 
+// [2026-09-13, 사용자 확인] 도넛차트·막대그래프가 같은 데이터(반경 500m 업종 구성)의
+// 같은 순위를 표시하니 상위 4개 색상도 하나로 통일 - 원래 4번째 색이 --color-tab-active-icon
+// (골드, #e8a93c)이었는데 흰 글씨와 명암비가 2.15:1로 기준(4.5:1) 미달이라 --color-purple-accent
+// (#7c5cbf, 명암비 약 5.07:1)로 교체(스타일가이드 확인 - "재사용 금지" 표시 없는 일반
+// UI 팔레트 색상, 새 색상 추가 아님).
+const TOP4_COLORS = [
+  "var(--color-teal-green)",
+  "var(--color-light-teal)",
+  "var(--color-deep-navy)",
+  "var(--color-purple-accent)",
+];
+
+function getTop4Color(index: number): string | undefined {
+  return TOP4_COLORS[index];
+}
+
 /** 카페형 "반경 500m 업종 구성" 막대그래프 - emkim99님 DiagnosisMarketReport.tsx의
- * .sectionCard/.barRow 스타일 그대로 재사용(사용자 확인, 로직은 그대로 디자인만 이관). */
+ * .sectionCard/.barRow 스타일 그대로 재사용(사용자 확인, 로직은 그대로 디자인만 이관).
+ * [2026-09-13] 상위 4개(도넛차트와 동일한 TOP4_COLORS)만 색을 넣고 5~10위는 기존
+ * 회색 유지(사용자 확인) - 라벨 위치·색은 diagnosisMarketReport.module.css의 640px
+ * 미디어쿼리가 처리(640px 미만: 막대 위에 겹쳐 표시, 상위 4개는 흰 글씨). */
 function MarketBarChart({ title, items }: { title: string; items: BarItem[] }) {
   if (items.length === 0) return null;
   const max = Math.max(...items.map((i) => i.value), 1);
   return (
     <section className={marketStyles.sectionCard}>
       <h2 className={marketStyles.sectionTitle}>{title}</h2>
-      {items.map((item) => (
-        <div key={item.label} className={marketStyles.barRow}>
-          <span className={marketStyles.barLabel}>{item.label}</span>
-          <span className={marketStyles.barTrack}>
-            <span
-              className={`${marketStyles.barFill} ${item.value === max ? marketStyles.barFillMax : ""}`}
-              style={{ width: `${(item.value / max) * 100}%` }}
-            />
-          </span>
-          <span className={marketStyles.barCount}>
-            {item.value}
-            {item.suffix ?? ""}
-          </span>
-        </div>
-      ))}
+      {items.map((item, index) => {
+        const top4Color = getTop4Color(index);
+        return (
+          <div key={item.label} className={marketStyles.barRow}>
+            <span className={`${marketStyles.barLabel} ${top4Color ? marketStyles.barLabelOnFill : ""}`}>
+              {item.label}
+            </span>
+            <span className={marketStyles.barTrack}>
+              <span
+                className={marketStyles.barFill}
+                style={{
+                  width: `${(item.value / max) * 100}%`,
+                  ...(top4Color ? { background: top4Color } : {}),
+                }}
+              />
+            </span>
+            <span className={marketStyles.barCount}>
+              {item.value}
+              {item.suffix ?? ""}
+            </span>
+          </div>
+        );
+      })}
     </section>
   );
 }
@@ -88,12 +116,6 @@ interface DonutSlice {
   exploded: boolean;
 }
 
-const DONUT_TOP4_COLORS = [
-  "var(--color-teal-green)",
-  "var(--color-light-teal)",
-  "var(--color-deep-navy)",
-  "var(--color-tab-active-icon)",
-];
 const DONUT_OTHER_COLOR = "rgba(139, 141, 147, 0.35)";
 
 const DONUT_OUTER_R = 42;
@@ -127,7 +149,7 @@ function DonutChart({ title, items, totalCount }: { title: string; items: BarIte
   const otherValue = Math.max(totalCount - top4Sum, 0);
 
   const slices: DonutSlice[] = [
-    ...top4.map((item, i) => ({ label: item.label, value: item.value, color: DONUT_TOP4_COLORS[i], exploded: true })),
+    ...top4.map((item, i) => ({ label: item.label, value: item.value, color: TOP4_COLORS[i], exploded: true })),
     ...(otherValue > 0 ? [{ label: "기타", value: otherValue, color: DONUT_OTHER_COLOR, exploded: false }] : []),
   ];
 
@@ -177,15 +199,29 @@ interface DensityCell {
   count: number;
 }
 
-/** 반경 500m 동일업종 밀집도 격자 - emkim99님 DiagnosisTechReport.tsx의 getDensityColor
- * 색상 공식 + .densityGrid/.densityCell 스타일 그대로 재사용(카페형 전용 - 기술창업형은
- * 아직 밀집도 데이터를 안 만들어서 그대로 미노출). */
-function getDensityColor(count: number, maxCount: number): string {
+/** 반경 500m 동일업종 밀집도 격자 색상 - [2026-09-13] 프로토타입(260911_Mulkko
+ * Prototype) 원본 대조로 확인한 결과, 상권분석(카페형)은 러스트 계열(--color-market-density,
+ * #7A2A0A), 기술창업형은 네이비 계열(#15328C = --color-deep-navy)로 서로 다르게
+ * 디자인돼 있었다. 그동안 이 함수가 두 트랙 구분 없이 네이비 하나만 써서 상권분석
+ * 쪽이 잘못 표시되고 있었음(사용자 확인, 프로토타입 대조로 확정) - 트랙별로 분리.
+ * 값(카운트) 계산은 그대로, 색상 매핑만 바뀐다. */
+function getDensityColor(count: number, maxCount: number, track: "cafe" | "tech"): string {
   const ratio = maxCount > 0 ? count / maxCount : 0;
-  return `rgba(21, 50, 140, ${(0.1 + ratio * 0.7).toFixed(2)})`;
+  const rgb = track === "cafe" ? "122, 42, 10" : "21, 50, 140";
+  return `rgba(${rgb}, ${(0.1 + ratio * 0.7).toFixed(2)})`;
 }
 
-function DensityGrid({ title, gridSize, cells }: { title: string; gridSize: number; cells: DensityCell[] }) {
+function DensityGrid({
+  title,
+  gridSize,
+  cells,
+  track,
+}: {
+  title: string;
+  gridSize: number;
+  cells: DensityCell[];
+  track: "cafe" | "tech";
+}) {
   if (cells.length === 0) return null;
   const max = Math.max(...cells.map((c) => c.count), 1);
   const byPos = new Map(cells.map((c) => [`${c.x},${c.y}`, c.count]));
@@ -206,7 +242,7 @@ function DensityGrid({ title, gridSize, cells }: { title: string; gridSize: numb
             <div
               key={i}
               className={techStyles.densityCell}
-              style={{ background: getDensityColor(count, max), color: count / max > 0.5 ? "var(--color-white)" : "var(--color-ink-charcoal)" }}
+              style={{ background: getDensityColor(count, max, track), color: count / max > 0.5 ? "var(--color-white)" : "var(--color-ink-charcoal)" }}
             >
               {count > 0 && <span className={techStyles.densityCount}>{count}</span>}
             </div>
@@ -214,6 +250,67 @@ function DensityGrid({ title, gridSize, cells }: { title: string; gridSize: numb
         </div>
       </div>
     </section>
+  );
+}
+
+// [2026-09-13] 기술창업형 "동종산업 밀집도" - DiagnosisTechReport.tsx(emkim99님 디자인
+// 참고 화면)의 DensityGridView를 그대로 포팅. 카페형(위 DensityGrid)과 데이터 모양이
+// 달라서(카페형: 정사각 gridSize 하나 + x/y/count, 기술창업형: grid_cols×grid_rows
+// 직사각형 + 시군구별 count/지역명) 별도 컴포넌트로 분리 - 억지로 하나로 합치면
+// 카페형 정사각형 가정이 깨지거나 지역명 표시가 빠진다. 색상은 기존 getDensityColor
+// (track="tech")를 그대로 재사용 - 이미 네이비 계열로 트랙 분기돼 있음.
+interface TechDensityCell {
+  x: number;
+  y: number;
+  count: number;
+  sigungu: string;
+}
+
+interface TechDensityGridData {
+  grid_cols: number;
+  grid_rows: number;
+  cells: TechDensityCell[];
+  total_sigungu_count: number;
+  shown_sigungu_count: number;
+}
+
+function TechDensityGrid({ grid }: { grid: TechDensityGridData }) {
+  const cellMap = new Map<string, TechDensityCell>();
+  grid.cells.forEach((cell) => cellMap.set(`${cell.x},${cell.y}`, cell));
+  const maxCount = Math.max(0, ...grid.cells.map((c) => c.count));
+
+  const items: Array<TechDensityCell | null> = [];
+  for (let y = 0; y < grid.grid_rows; y += 1) {
+    for (let x = 0; x < grid.grid_cols; x += 1) {
+      items.push(cellMap.get(`${x},${y}`) ?? null);
+    }
+  }
+
+  return (
+    <div className={techStyles.densityWrap}>
+      <div
+        className={techStyles.densityGrid}
+        style={{ gridTemplateColumns: `repeat(${grid.grid_cols}, 1fr)`, gridTemplateRows: `repeat(${grid.grid_rows}, 1fr)` }}
+      >
+        {items.map((cell, index) => {
+          const color = getDensityColor(cell?.count ?? 0, maxCount, "tech");
+          const ratio = cell && maxCount > 0 ? cell.count / maxCount : 0;
+          return (
+            <div key={index} className={techStyles.densityCell} style={{ background: color, color: ratio > 0.5 ? "var(--color-white)" : "var(--color-ink-charcoal)" }}>
+              {cell && (
+                <>
+                  <span className={techStyles.densityCount}>{cell.count}</span>
+                  <span className={techStyles.densitySigungu}>{cell.sigungu}</span>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className={techStyles.emptyText}>
+        * 진한 색일수록 동종업종 벤처기업 밀집 · 상위 {grid.shown_sigungu_count}개 지역 기준 (전체 {grid.total_sigungu_count}개 중)
+      </p>
+    </div>
   );
 }
 
@@ -372,6 +469,15 @@ interface DiagnosisReportResponse {
     techAnalysis?: any;
     targetAnchor?: string | null;
     differentiatorAnchor?: string | null;
+    // [2026-09-13] 마이페이지에서 지난 세션을 URL로 바로 열 때(sessionStorage 없음)
+    // 이 응답만으로 화면을 채우기 위한 필드 - ready:true일 때만 내려온다.
+    track?: "cafe" | "tech";
+    resolvedKsicCodes?: string[];
+    mode?: "fast" | "precise";
+    sido?: string;
+    industryMatchName?: string | null;
+    industryMatchState?: string | null;
+    industryMatchConfidence?: string | null;
   };
   error?: { message: string };
 }
@@ -388,13 +494,15 @@ interface DiagnosisReportResponse {
  * "프론트 완성 후 추가"로 보류된 실험적 요소라 막대그래프 아래에 [임시] 타이틀로 남겨둠.
  *
  * [2026-09-12] 6번(지역) 제출 이후(POST /start는 요약 화면 버튼으로 트리거) 업종코드
- * 매칭만 끝내고 바로 업종코드 결과 화면으로 넘어가고, 상권/기술창업 분석은 백그라운드
- * 에서 계속 돈다. 이 화면 자체도 GET /api/diagnosis/{sessionId}/report를 2초 간격으로
- * 폴링하지만(안 끝났으면 "분석 중이에요" 스피너), [2026-09-12, 사용자 확인] 실제로
- * 기다리는 화면은 한 단계 앞(DiagnosisIndustryResult)으로 옮겨져서 - 여기 도착할
- * 때는 이미 완료돼있는 게 정상 경로다. 이 폴링은 직접 URL 접근 등 예외 상황을 위한
- * 안전망으로 그대로 남겨둠. 완료되면 받은 데이터를 sessionStorage에도 저장해
- * Q7·Q8 화면의 앵커 문구로 이어 쓴다.
+ * 매칭만 끝내고 바로 업종코드 결과 화면으로 넘어간다. 상권/기술창업 분석은 거기서
+ * 사용자가 업종을 확정해야(POST /{id}/select-industry, 후보 2개 이상이면 선택
+ * 필수) 비로소 백그라운드로 시작된다(backend/api/diagnosis.py 상단 주석 참고).
+ * 이 화면 자체도 GET /api/diagnosis/{sessionId}/report를 2초 간격으로 폴링하지만
+ * (안 끝났으면 "분석 중이에요" 스피너), [2026-09-12, 사용자 확인] 실제로 기다리는
+ * 화면은 한 단계 앞(DiagnosisIndustryResult)으로 옮겨져서 - 여기 도착할 때는 이미
+ * 완료돼있는 게 정상 경로다. 이 폴링은 직접 URL 접근 등 예외 상황을 위한 안전망으로
+ * 그대로 남겨둠. 완료되면 받은 데이터를 sessionStorage에도 저장해 Q7·Q8 화면의
+ * 앵커 문구로 이어 쓴다.
  *
  * "다음"은 진단방식선택(DiagnosisChoice)에서 고른 mode로 갈린다:
  *   - fast(빠른 진단): 선택 질문(Q7~Q10) 없이 바로 공고매칭리스트(/matching)로.
@@ -402,6 +510,10 @@ interface DiagnosisReportResponse {
  */
 function DiagnosisReport() {
   const navigate = useNavigate();
+  // [2026-09-13] 마이페이지 "분석 리포트" 카드에서 옴 - /diagnosis/report/:sessionId로
+  // 들어오면 sessionStorage(실시간 흐름 전용) 대신 이 세션ID로 API에서 바로 불러온다.
+  const { sessionId: sessionIdParam } = useParams<{ sessionId?: string }>();
+  const viewSessionId = sessionIdParam ? Number(sessionIdParam) : undefined;
   const [ready, setReady] = useState(false);
   const [reportReady, setReportReady] = useState(false);
   const [reportError, setReportError] = useState("");
@@ -428,6 +540,7 @@ function DiagnosisReport() {
   const [recentInvestmentCount, setRecentInvestmentCount] = useState<number | null>(null);
   const [typeDistItems, setTypeDistItems] = useState<BarItem[]>([]);
   const [patentTrend, setPatentTrend] = useState<PatentTrendData | null>(null);
+  const [techDensityGrid, setTechDensityGrid] = useState<TechDensityGridData | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyAnalysis = (forTrack: "cafe" | "tech" | undefined, marketAnalysis: any, techAnalysis: any) => {
@@ -462,33 +575,53 @@ function DiagnosisReport() {
           keyword: patent.keyword ?? "",
         });
       }
+      if (t.density_grid) {
+        setTechDensityGrid(t.density_grid);
+      }
     }
   };
 
   useEffect(() => {
     const answers = getDiagnosisAnswers();
-    if (!answers.sessionId) {
+    const sessionId = viewSessionId ?? answers.sessionId;
+    if (!sessionId) {
       navigate("/diagnosis/6", { replace: true });
       return;
     }
-    setTrack(answers.track);
-    setMode(answers.mode ?? "precise");
-    setKsicQuery((answers.resolvedKsicCodes ?? []).join(","));
-    setSido(answers.sido ?? "");
-    setIndustryName(answers.industryMatchName ?? "");
-    setIndustryState(answers.industryMatchState ?? "");
-    setIndustryConfidence(answers.industryMatchConfidence ?? "");
+
+    // 실시간 흐름(sessionStorage 있음)은 기존처럼 즉시 채워서 분석 끝나기 전에도
+    // 업종매칭 요약 카드가 바로 보이게 한다. 지난 세션을 URL로 바로 연 경우
+    // (viewSessionId)는 sessionStorage가 없으니 poll() 첫 응답에서 채운다.
+    if (!viewSessionId) {
+      setTrack(answers.track);
+      setMode(answers.mode ?? "precise");
+      setKsicQuery((answers.resolvedKsicCodes ?? []).join(","));
+      setSido(answers.sido ?? "");
+      setIndustryName(answers.industryMatchName ?? "");
+      setIndustryState(answers.industryMatchState ?? "");
+      setIndustryConfidence(answers.industryMatchConfidence ?? "");
+    }
     setReady(true);
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
+    // [2026-09-12] 네트워크 오류가 계속되면(백엔드에 아예 안 닿는 경우 등) 예전엔 에러
+    // 표시 없이 계속 조용히 재시도해서 "무한 로딩"처럼 보이는 문제가 있었다(사용자
+    // 확인) - 10번(20초) 넘게 연속 실패하면 재시도를 멈추고 에러를 보여준다.
+    let networkRetries = 0;
+    // [2026-09-13] "ready: false"만 계속 오는 경우엔 이 한도가 없었다(위와 별개) -
+    // DiagnosisIndustryResult.tsx와 동일한 이유로 상한을 둔다.
+    let notReadyRetries = 0;
+    const MAX_NOT_READY_RETRIES = 60;
 
     const poll = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/diagnosis/${answers.sessionId}/report`, {
+        const res = await fetch(`${API_BASE_URL}/api/diagnosis/${sessionId}/report`, {
           headers: authHeaders(),
+          cache: "no-store", // [2026-09-13] 폴링 GET이 캐시된 옛 응답을 계속 재사용하는 걸 방지
         });
         if (cancelled) return;
+        networkRetries = 0;
         if (res.status === 401) {
           setReportError("로그인이 필요해요. 로그인 후 다시 시도해주세요.");
           return;
@@ -499,19 +632,44 @@ function DiagnosisReport() {
           return;
         }
         if (!body.data.ready) {
+          notReadyRetries += 1;
+          if (notReadyRetries >= MAX_NOT_READY_RETRIES) {
+            setReportError("분석이 예상보다 오래 걸리고 있어요. 잠시 후 다시 시도해주세요.");
+            return;
+          }
           timer = setTimeout(poll, POLL_INTERVAL_MS);
           return;
         }
-        applyAnalysis(answers.track, body.data.marketAnalysis, body.data.techAnalysis);
-        saveDiagnosisAnswers({
-          marketAnalysis: body.data.marketAnalysis,
-          techAnalysis: body.data.techAnalysis,
-          targetAnchor: body.data.targetAnchor ?? undefined,
-          differentiatorAnchor: body.data.differentiatorAnchor ?? undefined,
-        });
+        const resolvedTrack = viewSessionId ? body.data.track : answers.track;
+        if (viewSessionId) {
+          setTrack(body.data.track);
+          setMode(body.data.mode ?? "precise");
+          setKsicQuery((body.data.resolvedKsicCodes ?? []).join(","));
+          setSido(body.data.sido ?? "");
+          setIndustryName(body.data.industryMatchName ?? "");
+          setIndustryState(body.data.industryMatchState ?? "");
+          setIndustryConfidence(body.data.industryMatchConfidence ?? "");
+        }
+        applyAnalysis(resolvedTrack, body.data.marketAnalysis, body.data.techAnalysis);
+        if (!viewSessionId) {
+          // sessionStorage 갱신은 지금 진행 중인 흐름(Q7·Q8 앵커로 이어씀)에만 의미 있다 -
+          // 지난 세션 조회는 현재 진행 중인 답변을 덮어쓰면 안 되므로 건드리지 않는다.
+          saveDiagnosisAnswers({
+            marketAnalysis: body.data.marketAnalysis,
+            techAnalysis: body.data.techAnalysis,
+            targetAnchor: body.data.targetAnchor ?? undefined,
+            differentiatorAnchor: body.data.differentiatorAnchor ?? undefined,
+          });
+        }
         setReportReady(true);
       } catch {
-        if (!cancelled) timer = setTimeout(poll, POLL_INTERVAL_MS); // 네트워크 일시 오류 - 계속 재시도
+        if (cancelled) return;
+        networkRetries += 1;
+        if (networkRetries >= MAX_NETWORK_RETRIES) {
+          setReportError("서버에 연결할 수 없어요. 네트워크 상태를 확인하고 다시 시도해주세요.");
+          return;
+        }
+        timer = setTimeout(poll, POLL_INTERVAL_MS); // 네트워크 일시 오류 - 한도 내에서 계속 재시도
       }
     };
     poll();
@@ -521,11 +679,13 @@ function DiagnosisReport() {
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate]);
+  }, [navigate, viewSessionId]);
 
-  const handleBack = () => navigate("/diagnosis/industry-result");
+  // 지난 세션을 보는 중이면 "이어서 진단하기" 개념 자체가 없다 - 뒤로가기는 마이페이지로,
+  // "다음"은 항상 매칭 화면으로 보낸다(fast 모드와 동일 취급).
+  const handleBack = () => (viewSessionId ? navigate("/mypage") : navigate("/diagnosis/industry-result"));
   const handleNext = () => {
-    if (mode === "fast") {
+    if (viewSessionId || mode === "fast") {
       navigate(`/matching?ksic=${encodeURIComponent(ksicQuery)}&region=${encodeURIComponent(sido)}`);
     } else {
       navigate("/diagnosis/7");
@@ -615,7 +775,7 @@ function DiagnosisReport() {
               totalCount={totalNearbyCount}
             />
             {densityGrid && (
-              <DensityGrid title="반경 500m 동일업종 밀집도" gridSize={densityGrid.gridSize} cells={densityGrid.cells} />
+              <DensityGrid title="반경 500m 동일업종 밀집도" gridSize={densityGrid.gridSize} cells={densityGrid.cells} track="cafe" />
             )}
           </>
         )}
@@ -638,7 +798,24 @@ function DiagnosisReport() {
             </div>
 
             <TechBarChart title="유사 기업 인증유형 구성" items={typeDistItems} />
-            {patentTrend && <PatentChart title="관련분야 특허출원 추이 (KIPRIS)" data={patentTrend} />}
+            {patentTrend ? (
+              <PatentChart title="관련분야 특허출원 추이 (KIPRIS)" data={patentTrend} />
+            ) : (
+              // [2026-09-13] 특허 예측은 외부 API(KIPRIS/OpenAI) 호출이라 실패해도 진단
+              // 자체는 막지 않게 설계돼 있는데(diagnosis.py 주석 참고), 그래서 실패하면
+              // 이 섹션이 원래 없었던 것처럼 조용히 사라져 "왜 안 나오지" 원인 파악이
+              // 어려웠다(사용자 확인, 실측) - 실패도 눈에 보이게 안내 문구로 표시.
+              <section className={techStyles.sectionCard}>
+                <h2 className={techStyles.sectionTitle}>관련분야 특허출원 추이 (KIPRIS)</h2>
+                <p className={techStyles.emptyText}>특허 데이터를 불러오지 못했어요. 잠시 후 다시 진단해보시면 나올 수 있어요.</p>
+              </section>
+            )}
+            {techDensityGrid && (
+              <section className={techStyles.sectionCard}>
+                <h2 className={techStyles.sectionTitle}>동종산업 밀집도</h2>
+                <TechDensityGrid grid={techDensityGrid} />
+              </section>
+            )}
             <p className={techStyles.sourceText}>출처: 중기부 벤처기업명단·특허청 KIPRIS 기준 · 개별 성공 확률 아님</p>
           </>
         )}
@@ -650,7 +827,7 @@ function DiagnosisReport() {
           이전
         </button>
         <button type="button" className={styles.nextButton} disabled={!reportReady} onClick={handleNext}>
-          {mode === "fast" ? "지원사업 보러가기 →" : "다음 →"}
+          {viewSessionId || mode === "fast" ? "지원사업 보러가기 →" : "다음 →"}
         </button>
       </div>
       {!reportReady && !reportError && (

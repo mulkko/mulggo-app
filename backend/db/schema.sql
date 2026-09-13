@@ -450,5 +450,14 @@ CREATE TABLE IF NOT EXISTS idea_refinement_sessions (
     save_consented           BOOLEAN NOT NULL,
     created_at               TIMESTAMPTZ NOT NULL,
     is_extended_diagnosis    BOOLEAN NOT NULL DEFAULT false,
-    business_operation_type  VARCHAR(30)                    -- 설계문서의 has_offline_store(BOOLEAN)와 이름/타입 다름
+    business_operation_type  VARCHAR(30),                   -- 설계문서의 has_offline_store(BOOLEAN)와 이름/타입 다름
+    -- [2026-09-13] 마이페이지 "분석 리포트"를 나중에 다시 열어볼 수 있게(사용자 확인) -
+    -- 이 둘은 원래 DB에 안 남고 그 순간 프론트 응답/sessionStorage에만 있다가 사라지던
+    -- 값이라, 지금부터 저장해야 나중에 다시 불러올 수 있다. diagnosis_mode: 프론트
+    -- DiagnosisChoice에서 고른 "빠른진단"/"정밀진단" 여부(mode) - 원래 백엔드로 전송조차
+    -- 안 됐음. industry_match_summary: backend/api/diagnosis.py::_resolve_industry_codes()가
+    -- 만드는 업종명/확정상태/신뢰도 요약(state/name/confidence/question) - 지금까지는
+    -- resolved_ksic_codes(코드 숫자)만 남고 이 사람이 읽는 텍스트는 응답 한 번으로 소실됨.
+    diagnosis_mode           VARCHAR(10),
+    industry_match_summary   JSONB
 );

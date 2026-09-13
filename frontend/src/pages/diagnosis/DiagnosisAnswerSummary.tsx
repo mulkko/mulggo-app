@@ -44,12 +44,14 @@ interface DiagnosisStartResponse {
  * 분석 리포트(DiagnosisReport) 순으로 이어진다.
  *
  * [2026-09-12] 업종코드 매칭(POST /api/diagnosis/start) 트리거를 Q6(DiagnosisStep5)
- * 에서 여기로 옮김(사용자 확인) - Q1~Q6 답변을 먼저 요약으로 보여준 다음 "분석
- * 시작" 버튼을 눌러야 세션 생성 + 업종코드 매칭이 시작된다. 매칭(11~13초)이 끝나면
- * 바로 업종코드 결과 화면으로 넘어가고, 상권/기술창업 분석(추가 7~9초)은 그 뒤로도
- * 백그라운드에서 계속 돈다 - "분석 리포트" 화면(DiagnosisReport)이 완료 여부를
- * 폴링해서 마저 보여준다(backend/api/diagnosis.py 상단 주석 참고, 이 뒷부분은
- * 그대로 유지).
+ * 에서 여기로 옮김(사용자 확인) - Q1~Q6 답변을 먼저 요약으로 보여준 다음 "업종코드
+ * 확인하기" 버튼을 눌러야 세션 생성 + 업종코드 매칭이 시작된다(11~13초).
+ *
+ * [2026-09-12] 상권/기술창업 분석은 여기서 시작하지 않는다 - 매칭 후보가 여러 개면
+ * "업종코드 보여주기" 화면(DiagnosisIndustryResult)에서 사용자가 하나를 확정해야
+ * (POST /{id}/select-industry) 그때 비로소 분석이 시작된다(backend/api/diagnosis.py
+ * 상단 주석 참고). 그래서 이 화면의 로딩 오버레이는 "업종코드를 분석하고 있어요"
+ * (매칭까지)만 의미하고, 상권/기술창업 분석 대기는 다음 화면 몫이다.
  *
  * [2026-09-12] 카드 디자인은 emkim99님이 만든 DiagnosisPsstConfirm.tsx(같은 목적의
  * 별도 화면, 디자인 참고용으로만 남김)의 .cardList/.confirmCard를 그대로 가져다 씀
@@ -101,6 +103,7 @@ function DiagnosisAnswerSummary() {
           sido: answers.sido,
           sigungu: answers.sigungu,
           dong: answers.dong,
+          mode: answers.mode || "precise",
         }),
       });
       if (res.status === 401) {
@@ -172,7 +175,7 @@ function DiagnosisAnswerSummary() {
           <div className={styles.loadingBox} role="status" aria-live="polite">
             <div className={styles.spinner} />
             <p className={styles.loadingText}>업종코드를 분석하고 있어요... ({elapsedSeconds}초 경과)</p>
-            <p className={styles.loadingHint}>상권·기술창업 분석은 다음 화면에서 마저 준비할게요</p>
+            <p className={styles.loadingHint}>업종을 확인하고 나면 상권·기술창업 분석을 이어서 준비할게요</p>
           </div>
         </div>
       )}

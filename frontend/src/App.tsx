@@ -14,6 +14,7 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminRoute from "./pages/admin/AdminRoute";
 import AdminStyleGuide from "./components/AdminStyleGuide/AdminStyleGuide";
 import WebStyleGuide from "./components/WebStyleGuide/WebStyleGuide";
+import WebStyleGuideByFeature from "./components/WebStyleGuideByFeature/WebStyleGuideByFeature";
 import MatchingList from "./pages/matching/MatchingList";
 import MatchingListDraft from "./pages/matching/MatchingListDraft";
 import MatchingDetail from "./pages/matching/MatchingDetail";
@@ -66,6 +67,24 @@ import DiagnosisStep7 from "./pages/diagnosis/DiagnosisStep7";
 import DiagnosisStep8 from "./pages/diagnosis/DiagnosisStep8";
 import DiagnosisStep9 from "./pages/diagnosis/DiagnosisStep9";
 import DiagnosisReportSummaryPreview from "./pages/diagnosis/DiagnosisReportSummaryPreview";
+// [2026-09-13, 개인 디자인 확인용] 진단 흐름 화면들이 전부 이전 단계 가드가 있어서
+// 직접 URL로 들어가면 앞 단계로 튕겨버려 디자인만 따로 확인하기 어렵다는 요청으로
+// 만든 격리 사본들 - 세션/백엔드 의존 전혀 없음. 확인 끝나면 이 블록 + 아래 라우트들
+// + _test.tsx 파일들 지울 것. (DiagnosisStep4는 같은 이름의 무관한 기존 스크래치
+// 파일이 이미 있어서 이번 배치에서 제외 - App.tsx 하단 라우트 주석 참고)
+import DiagnosisSelectTest from "./pages/diagnosis/DiagnosisSelect_test";
+import DiagnosisStep2Test from "./pages/diagnosis/DiagnosisStep2_test";
+import DiagnosisStep3Test from "./pages/diagnosis/DiagnosisStep3_test";
+import DiagnosisStep5Test from "./pages/diagnosis/DiagnosisStep5_test";
+import DiagnosisStep6Test from "./pages/diagnosis/DiagnosisStep6_test";
+import DiagnosisStep7Test from "./pages/diagnosis/DiagnosisStep7_test";
+import DiagnosisStep8Test from "./pages/diagnosis/DiagnosisStep8_test";
+import DiagnosisStep9Test from "./pages/diagnosis/DiagnosisStep9_test";
+import DiagnosisIndustryResultTest from "./pages/diagnosis/DiagnosisIndustryResult_test";
+// [2026-09-13, 디자인 검토용, 라이브 미적용] "업종코드를 찾았어요" 화면을 프로토타입
+// 실측값대로 다시 만든 미리보기 - 검토 후 괜찮으면 DiagnosisIndustryResult.tsx에
+// 반영하고 이 줄+아래 라우트+파일 정리할 것. 상세 이유는 파일 자체 주석 참고.
+import DiagnosisIndustryResultPreview from "./pages/diagnosis/DiagnosisIndustryResultPreview";
 
 /**
  * [임시/디버그] 지금 로그인된 사람이 누구인지 확인용 - 확인 끝나면 지울 것.
@@ -193,6 +212,9 @@ function App() {
         <Route path="/diagnosis/summary" element={<DiagnosisAnswerSummary />} />
         <Route path="/diagnosis/industry-result" element={<DiagnosisIndustryResult />} />
         <Route path="/diagnosis/report" element={<DiagnosisReport />} />
+        {/* [2026-09-13] 마이페이지 "분석 리포트"에서 지난 세션을 다시 열어볼 때 - 같은
+            컴포넌트가 URL의 sessionId 유무로 "진행 중" vs "완료된 리포트 보기"를 가른다. */}
+        <Route path="/diagnosis/report/:sessionId" element={<DiagnosisReport />} />
         {/* [2026-09-12, 개인 테스트용] 확인 끝나면 이 2줄도 위 import 2줄과 같이 지울 것 */}
         <Route path="/diagnosis/summary-test" element={<DiagnosisAnswerSummaryTest />} />
         <Route path="/diagnosis/report-test" element={<DiagnosisReportTest />} />
@@ -213,8 +235,23 @@ function App() {
         <Route path="/diagnosis/8" element={<DiagnosisStep7 />} />
         <Route path="/diagnosis/9" element={<DiagnosisStep8 />} />
         <Route path="/diagnosis/10" element={<DiagnosisStep9 />} />
+        {/* [2026-09-13, 개인 디자인 확인용] 확인 끝나면 이 라우트들도 위 import 블록과
+            같이 지울 것. DiagnosisStep4는 같은 이름의 무관한 기존 스크래치 파일이 있어
+            이번 배치에서 제외했음(App.tsx 위쪽 import 주석 참고) - Q5(매장 운영 형태)
+            디자인 확인이 필요하면 별도 파일명으로 요청할 것. */}
+        <Route path="/diagnosis/select-test" element={<DiagnosisSelectTest />} />
+        <Route path="/diagnosis/3-test" element={<DiagnosisStep2Test />} />
+        <Route path="/diagnosis/4-test" element={<DiagnosisStep3Test />} />
+        <Route path="/diagnosis/6-test" element={<DiagnosisStep5Test />} />
+        <Route path="/diagnosis/7-test" element={<DiagnosisStep6Test />} />
+        <Route path="/diagnosis/8-test" element={<DiagnosisStep7Test />} />
+        <Route path="/diagnosis/9-test" element={<DiagnosisStep8Test />} />
+        <Route path="/diagnosis/10-test" element={<DiagnosisStep9Test />} />
+        <Route path="/diagnosis/industry-result-test" element={<DiagnosisIndustryResultTest />} />
+        <Route path="/diagnosis/industry-result-preview" element={<DiagnosisIndustryResultPreview />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
+        <Route path="/dev/web-style-guide-by-feature" element={<WebStyleGuideByFeature />} />
         <Route path="/dev/report-summary-preview" element={<DiagnosisReportSummaryPreview />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />
         <Route

@@ -88,7 +88,7 @@
 
 .docTitle {
   margin: 0;
-  font-size: 15.5px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-ink-charcoal);
   line-height: 1.4;
@@ -97,7 +97,7 @@
 .docDesc {
   margin: 0;
   max-width: 260px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--color-stone-gray);
   line-height: 1.65;
 }
@@ -132,7 +132,7 @@
 .bizCertPreviewList > div {
   display: flex;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .bizCertPreviewList dt {

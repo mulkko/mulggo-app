@@ -98,7 +98,7 @@
 }
 
 .statLabel {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--color-stone-gray);
   line-height: 1.4;
 }
@@ -117,7 +117,7 @@
 .statValueEmpty {
   font-family: var(--font-family-base);
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--color-stone-gray);
   line-height: 1.4;
 }
@@ -174,27 +174,40 @@
   color: var(--color-ink-charcoal);
 }
 
-/* ===== 업종분포 막대그래프 ===== */
+/* ===== 업종분포 막대그래프 =====
+   [2026-09-13, 사용자 확인] 640px(common.css .pageContainer 최대폭과 동일 기준 재사용 -
+   그 이상은 태블릿 세로/데스크톱이라 어차피 640px로 캡되는 화면이라 더 쪼갤 필요 없음)
+   기준으로 라벨 배치 방식이 갈린다:
+   - 640px 이상(기본값, 아래 .barLabel): 막대 왼쪽 전용 칸에 라벨 표시, 폭을 넉넉히
+     주고 2줄까지 허용해서 긴 업종명도 안 잘리게 한다.
+   - 640px 미만(맨 아래 미디어쿼리): 전용 칸 대신 라벨을 막대(트랙) 위에 겹쳐서 그린다
+     (좁은 화면에서 52px 고정폭에 업종명이 잘리는 문제 해결, 사용자 확인). */
 .barRow {
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative; /* 640px 미만에서 라벨을 이 기준으로 막대 위에 겹쳐 배치 */
 }
 
 .barLabel {
-  width: 52px;
+  width: 100px;
   flex-shrink: 0;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 400;
+  line-height: 1.3;
   color: var(--color-ink-charcoal);
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: keep-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .barTrack {
   flex: 1;
-  height: 9px;
+  height: 12px;
   border-radius: var(--radius-pill);
   background: var(--color-stone-mist);
   overflow: hidden;
@@ -208,18 +221,51 @@
   background: var(--color-stone-gray);
 }
 
+/* [2026-09-13] DiagnosisReport.tsx(라이브)의 MarketBarChart는 이제 상위 4개를 인라인
+   style(top4Color)로 칠해서 이 클래스를 안 쓰지만, 같은 CSS 모듈을 공유하는 emkim99님
+   원본 DiagnosisMarketReport.tsx/_test.tsx(디자인 참고용, 라이브 흐름 아님)가 여전히
+   최댓값 강조에 이 클래스를 쓰고 있어 남겨둔다 - 지우면 그 페이지들이 깨짐. */
 .barFillMax {
   background: var(--color-tab-active-icon);
 }
 
 .barCount {
-  width: 26px;
+  width: 42px;
   flex-shrink: 0;
   text-align: right;
   font-family: var(--font-family-logo), var(--font-family-base);
   font-size: 12px;
   font-weight: 700;
   color: var(--color-ink-charcoal);
+}
+
+/* [2026-09-13] 상위 4개 막대 위에 얹히는 라벨 전용 색 - 640px 이상에서는 라벨이
+   막대 위가 아니라 왼쪽 칸(흰 배경)에 있어서 무의미(아래 미디어쿼리가 다시 덮어씀). */
+.barLabelOnFill {
+  color: var(--color-ink-charcoal);
+}
+
+@media (max-width: 639px) {
+  .barLabel {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: auto;
+    max-width: calc(100% - 66px);
+    white-space: nowrap;
+    -webkit-line-clamp: 1;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* ponytail: 상위 4개는 색이 채워진 막대라 흰 글씨로 - 다만 그 막대 자체가 아주
+     짧아서 라벨이 빈 트랙(회색 배경)까지 삐져나오면 흰 글씨가 안 보일 수 있다.
+     지금 데이터(업종별 건수)에서는 상위 4개가 항상 가장 긴 막대라 실제로 거의
+     안 생기는 케이스라 픽셀 단위 겹침 계산은 생략함 - 문제 생기면 그때 보강. */
+  .barLabelOnFill {
+    color: var(--color-white);
+  }
 }
 
 .emptyText {
@@ -271,7 +317,7 @@
   background: var(--color-white);
   box-shadow: var(--shadow-inset-gray-strong);
   color: var(--color-ink-charcoal);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
 }

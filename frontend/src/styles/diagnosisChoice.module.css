@@ -67,16 +67,20 @@
   gap: 4px;
 }
 
+/* [2026-09-13, 사용자 확인] 모바일에서 다른 서비스(토스·당근마켓 등) 대비 폰트가
+   작다는 지적으로 이 페이지만 키움 - 되돌릴 땐 아래 원래 값 참고(이 파일은 git
+   커밋된 상태라 git으로도 되돌릴 수 있음): title 19px, subtitle/cardDesc 12.5px,
+   cardTitle 15.5px. */
 .title {
   margin: 0;
   font-weight: 900;
-  font-size: 19px;
+  font-size: 20px;
   color: var(--color-ink-charcoal);
 }
 
 .subtitle {
-  margin: 0;
-  font-size: 12.5px;
+  margin: 5px 0 0;
+  font-size: 14px;
   color: var(--color-stone-gray);
 }
 
@@ -116,13 +120,13 @@
 
 .cardTitle {
   font-weight: 800;
-  font-size: 15.5px;
+  font-size: 17px;
   color: var(--color-ink-charcoal);
 }
 
 .inlineBadge {
   font-weight: 700;
-  font-size: 10.5px;
+  font-size: 11px; /* [2026-09-13] 원래 10.5px(프로토타입 실측값) - 아래 .pill과 맞춰 정수로 정리 */
 }
 
 .inlineBadgeTeal {
@@ -134,7 +138,7 @@
 }
 
 .cardDesc {
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--color-stone-gray);
 }

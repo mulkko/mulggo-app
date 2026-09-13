@@ -75,7 +75,7 @@ const KAKAO_COLORS = [
 
 // 온보딩 화면에서 추가된 색상 토큰
 const ONBOARDING_COLORS = [
-  { name: "Dot Inactive", hex: "rgba(139,141,147,0.3)", usage: "페이지 인디케이터 비활성 점 배경", varName: "--color-dot-inactive" },
+  { name: "Dot Inactive", hex: "rgba(139,141,147,0.3)", usage: "페이지 인디케이터 비활성 점 배경 (--color-border-dashed와 값이 같아 그걸 참조하는 별칭, 2026-09-13 통합)", varName: "--color-dot-inactive" },
 ];
 
 // 진단 방식 선택 화면(05-1)에서 추가된 색상 토큰
@@ -97,6 +97,8 @@ const REPORTSUMMARY_COLORS = [
   { name: "Badge Revenue Text", hex: "#102569", usage: '"수익모델 관점" 뱃지 텍스트', varName: "--color-badge-revenue-text" },
   { name: "Badge Skill BG", hex: "#F3DA9B", usage: '"보유역량 활용" 뱃지 배경', varName: "--color-badge-skill-bg" },
   { name: "Badge Skill Text", hex: "#714800", usage: '"보유역량 활용" 뱃지 텍스트', varName: "--color-badge-skill-text" },
+  { name: "Market Density", hex: "#7A2A0A", usage: '상권분석 "동일업종 밀집도" 히트맵 그라데이션 진한 끝(프로토타입 원본값)', varName: "--color-market-density" },
+  { name: "Industry Anchor BG", hex: "#F3F8FF", usage: '"업종코드를 찾았어요" 화면 안내박스 배경(프로토타입 원본값)', varName: "--color-industry-anchor-bg" },
 ];
 
 function WebStyleGuide() {
@@ -181,7 +183,7 @@ function WebStyleGuide() {
             <p className={styles.typoPreviewBody}>다람쥐 헌 쳇바퀴에 타고파</p>
             <div className={styles.typoSpec}>
               <p className={styles.typoSpecDesc}>본문/값</p>
-              <p className={styles.typoSpecValue}>13.5px / 400</p>
+              <p className={styles.typoSpecValue}>14px / 400</p>
             </div>
           </div>
           <div className={styles.typoRow}>
@@ -396,6 +398,7 @@ function WebStyleGuide() {
           <div className={styles.specRow}><span>--shadow-inset-card</span><span>inset 0 0 0 1.2px rgba(139,141,147,.25)</span></div>
           <div className={styles.specRow}><span>--shadow-inset-teal</span><span>inset 0 0 0 1px #3FB6A8 (신청서류 카드)</span></div>
           <div className={styles.specRow}><span>--shadow-inset-gray-strong</span><span>inset 0 0 0 1.5px rgba(139,141,147,.3) ("지원 시 체크")</span></div>
+          <div className={styles.specRow}><span>--shadow-industry-card</span><span>0 10px 26px -20px rgba(21,50,140,.6) ("업종코드를 찾았어요" 카드, 프로토타입 원본값)</span></div>
         </div>
 
         <p className={styles.subheading}>AI 코멘트 박스 · 카드 · CTA</p>

@@ -57,14 +57,14 @@
 }
 
 .agency {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--color-deep-navy);
 }
 
 .dday {
   white-space: nowrap;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--color-dday-text);
   background: var(--color-dday-bg);

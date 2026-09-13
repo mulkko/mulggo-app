@@ -67,7 +67,7 @@ function DiagnosisStep4() {
             >
               <span className={styles.radioCardHead} style={{ gap: 4 }}>
                 <span className={styles.radioCardTitle} style={{ fontSize: 14 }}>{opt.title}</span>
-                <span className={styles.radioCardDesc} style={{ fontSize: 11.5 }}>{opt.desc}</span>
+                <span className={styles.radioCardDesc} style={{ fontSize: 12 }}>{opt.desc}</span>
               </span>
               <span className={styles.radioDot}>
                 {storeType === opt.value && <span className={styles.radioDotOn} />}
