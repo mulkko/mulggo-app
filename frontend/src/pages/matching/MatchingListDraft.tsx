@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "../../styles/matchingListDraft.module.css";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import logo from "../../assets/logo.svg";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
@@ -250,9 +251,9 @@ function MatchingListDraft() {
     }).finally(() => setLoadingMore(false));
   };
 
-  const handleAnalysisClick = () => {
-    // TODO: "물꼬 분석"(분석 리포트) 화면으로 이동
-  };
+  // [2026-09-13, 사용자 확인] 다른 MULKKO 화면들(레이아웃 공용 헤더)처럼 "<" 뒤로가기
+  // 버튼 추가 - 이 화면은 탭 루트라 뒤로갈 이전 화면 개념이 없어서 홈으로 보낸다.
+  const handleBack = () => navigate("/home");
 
   const handleFilterClick = () => {
     // 지금 적용 중인 필터(company/field/biz_age/age)를 그대로 들고 들어가서,
@@ -279,26 +280,19 @@ function MatchingListDraft() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      {/* 헤더: 로고 + "물꼬 분석" 링크 */}
+      {/* [2026-09-13, 사용자 확인] "<" 뒤로가기 버튼 추가 + "물꼬 분석" 링크 삭제 */}
       <header className={styles.header}>
-        <span className={styles.logo}>
-          <span className={styles.logoText}>MULKKO MATCHING</span>
-          <svg
-            className={styles.logoMark}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--color-light-teal)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 3c3 3.6 6 6.9 6 10.5A6 6 0 0 1 6 13.5C6 9.9 9 6.6 12 3Z" />
-          </svg>
+        <span className={styles.headerLeft}>
+          <button type="button" className={styles.backButton} onClick={handleBack} aria-label="뒤로가기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M16 5l-8 7 8 7" />
+            </svg>
+          </button>
+          <span className={styles.logo}>
+            <span className={styles.logoText}>MULKKO MATCHING</span>
+            <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
+          </span>
         </span>
-        <button type="button" className={styles.analysisLink} onClick={handleAnalysisClick}>
-          물꼬 분석
-        </button>
       </header>
 
       {/* 필터바: 지역/업종/정렬 칩(누르면 시트 팝업) + 상세 필터 버튼, 전부 실동작 */}

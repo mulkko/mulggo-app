@@ -35,8 +35,8 @@ import DiagnosisIndustryResult from "./pages/diagnosis/DiagnosisIndustryResult";
 import DiagnosisReport from "./pages/diagnosis/DiagnosisReport";
 // [2026-09-12, 개인 테스트용] 정식 흐름(sessionStorage 의존)과 완전히 분리된 목업
 // 사본 - 확인 끝나면 이 2줄 + 아래 라우트 2개 + _test.tsx 파일 2개 지울 것.
-import DiagnosisAnswerSummaryTest from "./pages/diagnosis/DiagnosisAnswerSummary_test";
-import DiagnosisReportTest from "./pages/diagnosis/DiagnosisReport_test";
+import DiagnosisAnswerSummaryTest from "./pages/diagnosis/_backup/DiagnosisAnswerSummary_test";
+import DiagnosisReportTest from "./pages/diagnosis/_backup/DiagnosisReport_test";
 // [2026-09-12] 팀원(emkim99-coder) 버전(PSST 확정→업종코드 매칭→상권/기술창업 리포트,
 // 별도 화면 3~4개)과 제 버전(세션저장+백그라운드분석+폴링, DiagnosisAnswerSummary/
 // DiagnosisReport 2개)이 git stash pop 충돌로 부딪혔었음 - 로직(세션·백그라운드분석·
@@ -48,43 +48,47 @@ import DiagnosisReportTest from "./pages/diagnosis/DiagnosisReport_test";
 // [2026-09-12] DiagnosisIndustryResult는 emkim99님 DiagnosisIndustryCode.tsx(라디오
 // 선택형)와 달리, 이미 확정된 매칭 결과(sessionStorage)를 그대로 보여주기만 하는
 // 순수 표시 화면 - 상세 이유는 DiagnosisIndustryResult.tsx 자체 주석 참고.
-import DiagnosisPsstConfirm from "./pages/diagnosis/DiagnosisPsstConfirm";
+import DiagnosisPsstConfirm from "./pages/diagnosis/_backup/DiagnosisPsstConfirm";
 // [2026-09-12, 개인 테스트용] 위 두 test 파일과 동일한 이유/패턴 - 확인 끝나면
 // 이 줄 + 아래 라우트 1개 + _test.tsx 파일 1개 지울 것.
-import DiagnosisPsstConfirmTest from "./pages/diagnosis/DiagnosisPsstConfirm_test";
-import DiagnosisIndustryCode from "./pages/diagnosis/DiagnosisIndustryCode";
+import DiagnosisPsstConfirmTest from "./pages/diagnosis/_backup/DiagnosisPsstConfirm_test";
+import DiagnosisIndustryCode from "./pages/diagnosis/_backup/DiagnosisIndustryCode";
 // [2026-09-12, 개인 테스트용] 위 psst-confirm-test와 동일한 이유/패턴 - 확인 끝나면
 // 이 줄 + 아래 라우트 1개 + _test.tsx 파일 1개 지울 것.
-import DiagnosisIndustryCodeTest from "./pages/diagnosis/DiagnosisIndustryCode_test";
+import DiagnosisIndustryCodeTest from "./pages/diagnosis/_backup/DiagnosisIndustryCode_test";
 import DiagnosisStep6 from "./pages/diagnosis/DiagnosisStep6";
-import DiagnosisMarketReport from "./pages/diagnosis/DiagnosisMarketReport";
-import DiagnosisTechReport from "./pages/diagnosis/DiagnosisTechReport";
+import DiagnosisMarketReport from "./pages/diagnosis/_backup/DiagnosisMarketReport";
+import DiagnosisTechReport from "./pages/diagnosis/_backup/DiagnosisTechReport";
 // [2026-09-12, 개인 테스트용] 위 psst-confirm-test와 동일한 이유/패턴 - 확인 끝나면
 // 이 2줄 + 아래 라우트 2개 + _test.tsx 파일 2개 지울 것.
-import DiagnosisMarketReportTest from "./pages/diagnosis/DiagnosisMarketReport_test";
-import DiagnosisTechReportTest from "./pages/diagnosis/DiagnosisTechReport_test";
+import DiagnosisMarketReportTest from "./pages/diagnosis/_backup/DiagnosisMarketReport_test";
+import DiagnosisTechReportTest from "./pages/diagnosis/_backup/DiagnosisTechReport_test";
 import DiagnosisStep7 from "./pages/diagnosis/DiagnosisStep7";
 import DiagnosisStep8 from "./pages/diagnosis/DiagnosisStep8";
 import DiagnosisStep9 from "./pages/diagnosis/DiagnosisStep9";
-import DiagnosisReportSummaryPreview from "./pages/diagnosis/DiagnosisReportSummaryPreview";
+import DiagnosisReportSummaryPreview from "./pages/diagnosis/_backup/DiagnosisReportSummaryPreview";
+// [2026-09-13, 개인 확인용] report-summary-preview의 헤더/서브헤더/하단버튼 구조는
+// 그대로 두고, 스크롤 콘텐츠 영역 안쪽 내용만 비웠다 + 하단에 실제 BottomNav 추가.
+// 확인 끝나면 이 줄 + 아래 라우트 + 파일 지울 것.
+import DiagnosisReportSummaryFixedLayoutTest from "./pages/diagnosis/DiagnosisReportSummaryFixedLayout_test";
 // [2026-09-13, 개인 디자인 확인용] 진단 흐름 화면들이 전부 이전 단계 가드가 있어서
 // 직접 URL로 들어가면 앞 단계로 튕겨버려 디자인만 따로 확인하기 어렵다는 요청으로
 // 만든 격리 사본들 - 세션/백엔드 의존 전혀 없음. 확인 끝나면 이 블록 + 아래 라우트들
 // + _test.tsx 파일들 지울 것. (DiagnosisStep4는 같은 이름의 무관한 기존 스크래치
 // 파일이 이미 있어서 이번 배치에서 제외 - App.tsx 하단 라우트 주석 참고)
-import DiagnosisSelectTest from "./pages/diagnosis/DiagnosisSelect_test";
-import DiagnosisStep2Test from "./pages/diagnosis/DiagnosisStep2_test";
-import DiagnosisStep3Test from "./pages/diagnosis/DiagnosisStep3_test";
-import DiagnosisStep5Test from "./pages/diagnosis/DiagnosisStep5_test";
-import DiagnosisStep6Test from "./pages/diagnosis/DiagnosisStep6_test";
-import DiagnosisStep7Test from "./pages/diagnosis/DiagnosisStep7_test";
-import DiagnosisStep8Test from "./pages/diagnosis/DiagnosisStep8_test";
-import DiagnosisStep9Test from "./pages/diagnosis/DiagnosisStep9_test";
-import DiagnosisIndustryResultTest from "./pages/diagnosis/DiagnosisIndustryResult_test";
+import DiagnosisSelectTest from "./pages/diagnosis/_backup/DiagnosisSelect_test";
+import DiagnosisStep2Test from "./pages/diagnosis/_backup/DiagnosisStep2_test";
+import DiagnosisStep3Test from "./pages/diagnosis/_backup/DiagnosisStep3_test";
+import DiagnosisStep5Test from "./pages/diagnosis/_backup/DiagnosisStep5_test";
+import DiagnosisStep6Test from "./pages/diagnosis/_backup/DiagnosisStep6_test";
+import DiagnosisStep7Test from "./pages/diagnosis/_backup/DiagnosisStep7_test";
+import DiagnosisStep8Test from "./pages/diagnosis/_backup/DiagnosisStep8_test";
+import DiagnosisStep9Test from "./pages/diagnosis/_backup/DiagnosisStep9_test";
+import DiagnosisIndustryResultTest from "./pages/diagnosis/_backup/DiagnosisIndustryResult_test";
 // [2026-09-13, 디자인 검토용, 라이브 미적용] "업종코드를 찾았어요" 화면을 프로토타입
 // 실측값대로 다시 만든 미리보기 - 검토 후 괜찮으면 DiagnosisIndustryResult.tsx에
 // 반영하고 이 줄+아래 라우트+파일 정리할 것. 상세 이유는 파일 자체 주석 참고.
-import DiagnosisIndustryResultPreview from "./pages/diagnosis/DiagnosisIndustryResultPreview";
+import DiagnosisIndustryResultPreview from "./pages/diagnosis/_backup/DiagnosisIndustryResultPreview";
 
 /**
  * [임시/디버그] 지금 로그인된 사람이 누구인지 확인용 - 확인 끝나면 지울 것.
@@ -253,6 +257,7 @@ function App() {
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
         <Route path="/dev/web-style-guide-by-feature" element={<WebStyleGuideByFeature />} />
         <Route path="/dev/report-summary-preview" element={<DiagnosisReportSummaryPreview />} />
+        <Route path="/dev/report-summary-fixed-layout-test" element={<DiagnosisReportSummaryFixedLayoutTest />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />
         <Route
           path="/admin"

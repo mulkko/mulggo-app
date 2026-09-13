@@ -4,6 +4,7 @@ import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import DiagnosisTextQuestion from "./DiagnosisTextQuestion";
 import { consumeDiagnosisReturnTo, getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 /**
  * 사업구체화 진단 1/5 — "구체화 진단1" = Q1 (dev_links.html 목업 이름).
@@ -24,7 +25,7 @@ function DiagnosisStep1() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      <DiagnosisHeader onBack={handleBack} pct="25%" stepLabel="AI 제안 · 1/6" />
+      <DiagnosisHeader onBack={handleBack} pct="25%" stepLabel="1/6" />
       <DiagnosisTextQuestion
         topicBadge="Q1 · 사업 아이템 구상"
         title="구상 중인 사업 아이디어를 편하게 적어주세요."
@@ -33,6 +34,8 @@ function DiagnosisStep1() {
         onSubmit={handleSubmit}
         onBack={handleBack}
       />
+
+      <BottomNav active="idea" />
     </div>
   );
 }

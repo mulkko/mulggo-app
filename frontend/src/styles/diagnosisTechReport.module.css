@@ -77,10 +77,11 @@
   border-radius: var(--radius-pill);
 }
 
+/* [2026-09-13, 사용자 확인] 프로토타입(14번 기술창업분석 화면) 원본 대조 - 19px/900 */
 .regionTitle {
   margin: 0;
-  font-size: 17px;
-  font-weight: 800;
+  font-size: 19px;
+  font-weight: 900;
   color: var(--color-ink-charcoal);
 }
 
@@ -248,7 +249,10 @@
 }
 
 .patentSvg {
-  height: 120px;
+  /* [2026-09-13] 높이는 고정하지 않는다 - DiagnosisReport.tsx의 PatentChart가 인라인
+     style height를 viewBox와 항상 1:1로 맞춰서 넘긴다(예전엔 여기서 120px로 고정해
+     viewBox와 안 맞아 세로로 눌려찍히면서 회전된 연도 라벨이 잘려 보이는 문제가 있었음,
+     사용자 확인). */
   display: block;
   overflow: visible;
 }
@@ -275,6 +279,8 @@
 }
 
 .densityCell {
+  position: relative; /* [2026-09-13] 카페형 "내 위치" 점 마커(marketStyles.densityCellMarker)가
+    이 칸 위에 겹쳐 그려질 때 기준점이 필요 - 기술창업형은 마커를 안 쓰지만 공용 클래스라 그대로 둠. */
   border-radius: 3px;
   display: flex;
   flex-direction: column;
@@ -284,6 +290,49 @@
   overflow: hidden;
   padding: 2px;
   box-sizing: border-box;
+}
+
+/* [2026-09-13, 사용자 확인] 격자 옆 밀집도 범례(그라데이션+눈금) - 프로토타입(13번
+   상권분석 화면과 같은 구조의 기술창업형 화면) 원본 대조로 추가. 카페형(러스트)과
+   같은 모양이지만 네이비 계열 색만 다르다. */
+.densityRow {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.densityRow > *:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.densityLegend {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.densityLegendBar {
+  width: 12px;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, rgb(21, 50, 140), rgb(143, 168, 224) 55%, rgb(234, 240, 252));
+  flex-shrink: 0;
+}
+
+.densityLegendTicks {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 8px;
+  color: var(--color-stone-gray);
+}
+
+.densityLegendCaption {
+  writing-mode: vertical-rl;
+  font-size: 8px;
+  color: var(--color-stone-gray);
+  align-self: center;
 }
 
 .densityCount {

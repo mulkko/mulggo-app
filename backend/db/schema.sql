@@ -459,5 +459,16 @@ CREATE TABLE IF NOT EXISTS idea_refinement_sessions (
     -- 만드는 업종명/확정상태/신뢰도 요약(state/name/confidence/question) - 지금까지는
     -- resolved_ksic_codes(코드 숫자)만 남고 이 사람이 읽는 텍스트는 응답 한 번으로 소실됨.
     diagnosis_mode           VARCHAR(10),
-    industry_match_summary   JSONB
+    industry_match_summary   JSONB,
+    -- [2026-09-13] 업종코드 후보(최대 3개, resolved_ksic_codes) 강제로 하나만 고르게
+    -- 하던 걸 없애고, 후보 전부를 각자 분석해서 분석 리포트 상단 셀렉박스로 전환해가며
+    -- 보게 바꿈(사용자 확인) - {"56221": {"market_analysis":..., "tech_analysis":...}, ...}
+    -- 형태로 코드별 결과를 담는다. 새 테이블(코드당 1행)로 정규화하는 방식도 검토했으나
+    -- (이 프로젝트의 다른 1:N 관계는 대부분 별도 테이블 - biz_registration_docs 등과
+    -- 같은 패턴) 기간 부족으로 보류, JSON 컬럼으로 진행(사용자 확인,
+    -- [[industry-code-multi-select-deferred]] 메모리 참고 - row 방식은 나중 개선 후보).
+    -- market_analysis/tech_analysis(위 컬럼들)는 이 중 1순위(가장 신뢰도 높은) 후보의
+    -- 결과를 그대로 복사해서 계속 채운다 - 마이페이지 리포트 목록 등 기존 코드가
+    -- 이 두 컬럼만 보고 "분석 끝났나"를 판단하므로 하위호환 위해 유지.
+    analysis_by_code         JSONB
 );

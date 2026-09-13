@@ -1,0 +1,14 @@
+﻿method,tag,count_bucket,n,correct,accuracy,final_confidence
+KSIC 코드 직접 명시,strong_appendix,ANY,7,1,0.1429,LOW
+KSIC 코드 직접 명시,strong_direct_code,ANY,8,8,1.0,HIGH
+KSIC 코드 직접 명시,weak_generic_proximity,20+,5,5,1.0,HIGH
+KSIC 코드 직접 명시,weak_table_near_header,20+,5,4,0.8,MED
+KSIC 코드 직접 명시,weak_table_near_header,ANY,7,3,0.4286,LOW
+신청자격의 공장등록 필수요건 → 제조업(G3),unknown,ANY,3,2,0.6667,LOW
+지원대상 문맥의 KSIC 업종명 매칭,medium_영위선언,1,7,3,0.4286,LOW
+지원대상 문맥의 KSIC 업종명 매칭,medium_영위선언,ANY,4,2,0.5,LOW
+지원대상 문맥의 KSIC 업종명 매칭,strong_biz_expr,1,40,37,0.925,HIGH
+지원대상 문맥의 KSIC 업종명 매칭,strong_biz_expr,ANY,1,1,1.0,LOW
+지원대상 문맥의 KSIC 업종명 매칭,weak_generic_proximity,1,55,39,0.7091,MED
+지원대상 문맥의 KSIC 업종명 매칭,weak_generic_proximity,2-5,38,29,0.7632,MED
+지원대상 문맥의 KSIC 업종명 매칭,weak_generic_proximity,ANY,3,3,1.0,LOW

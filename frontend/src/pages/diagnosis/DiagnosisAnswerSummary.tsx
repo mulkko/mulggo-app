@@ -4,6 +4,7 @@ import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import { authHeaders } from "../../auth/session";
 import { getDiagnosisAnswers, saveDiagnosisAnswers, type Origin, type StoreType } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -148,7 +149,7 @@ function DiagnosisAnswerSummary() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      <DiagnosisHeader onBack={handleBack} pct="100%" stepLabel="AI 제안 · 답변 정리" />
+      <DiagnosisHeader onBack={handleBack} pct="100%" stepLabel="답변 정리" />
       <div className={styles.scrollArea}>
         <h1 className={styles.questionTitle}>지금까지 답변한 내용이에요</h1>
         <p className={styles.questionSub}>이 내용을 바탕으로 업종코드를 매칭하고 분석 리포트를 준비했어요.</p>
@@ -179,6 +180,8 @@ function DiagnosisAnswerSummary() {
           </div>
         </div>
       )}
+
+      <BottomNav active="idea" />
     </div>
   );
 }

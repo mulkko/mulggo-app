@@ -37,11 +37,11 @@
   color: var(--color-deep-navy);
 }
 
+/* [2026-09-13, 사용자 확인] 인라인 SVG 리프 아이콘 대신 이미지 로고(logo.svg)로 통일 */
 .logoMark {
-  width: 20px;
-  height: 20px;
-  display: block;
+  width: 28px;
   flex-shrink: 0;
+  display: block;
 }
 
 .contactBtn {

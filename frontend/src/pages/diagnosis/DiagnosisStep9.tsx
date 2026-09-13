@@ -6,6 +6,7 @@ import DiagnosisTextQuestion from "./DiagnosisTextQuestion";
 import DiagnosisReportSummary, { type IdeaCard } from "./DiagnosisReportSummary";
 import { authHeaders } from "../../auth/session";
 import { clearDiagnosisAnswers, getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -151,6 +152,8 @@ function DiagnosisStep9() {
           </div>
         </div>
       )}
+
+      <BottomNav active="idea" />
     </div>
   );
 }

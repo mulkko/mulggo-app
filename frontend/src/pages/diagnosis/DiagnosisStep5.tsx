@@ -4,6 +4,7 @@ import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -99,7 +100,7 @@ function DiagnosisStep5() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      <DiagnosisHeader onBack={handleBack} pct="92%" stepLabel="AI 제안 · 6/6" />
+      <DiagnosisHeader onBack={handleBack} pct="92%" stepLabel="6/6" />
       <div className={styles.scrollArea}>
         <span className={styles.topicBadge}>Q6 · 지역·규모</span>
         <h1 className={styles.questionTitle}>어디서, 어느 정도 규모로 시작하실 계획인가요?</h1>
@@ -145,6 +146,8 @@ function DiagnosisStep5() {
           다음 →
         </button>
       </div>
+
+      <BottomNav active="idea" />
     </div>
   );
 }

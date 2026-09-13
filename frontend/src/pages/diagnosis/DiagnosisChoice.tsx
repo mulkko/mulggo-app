@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.svg";
 import styles from "../../styles/diagnosisChoice.module.css";
 import { saveDiagnosisAnswers } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 /**
  * 진단 방식 선택 화면 (`/diagnosis/choice`).
@@ -85,6 +86,8 @@ function DiagnosisChoice() {
           </span>
         </button>
       </main>
+
+      <BottomNav active="idea" />
     </div>
   );
 }

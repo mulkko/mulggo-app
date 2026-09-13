@@ -105,6 +105,14 @@ async def biz_cert_ocr_endpoint(file: UploadFile = File(...)) -> dict:
         # 확신 있게 매칭됐는지"만 판단해서 결과에 같이 실어 보낸다. 실시간 응답 경로라
         # LLM 폴백(2단계, 느림·비용)은 빼고 결정적 매칭(1단계)만 시도 - 실패하면 그냥
         # 매칭 없음으로 두고 선택은 사용자 몫으로 넘긴다.
+        # [2026-09-13] ksic_core(공고 매칭용, backend/preprocessing/pipeline.py 등)로
+        # 통일해봤으나(사용자 확인 시도), 실측 결과 여기서는 안 맞음 - ksic_core 규칙엔진은
+        # "지원대상 문맥"이 있는 공고 원문 전제로 설계돼서, 업태/종목 같은 맥락 없는 짧은
+        # 구문은("소프트웨어 개발업 응용 소프트웨어 개발 및 공급업"처럼 명확한 경우도)
+        # 자동확정을 안 해준다(needs_review=True로 빠짐) - 구버전(decide_industry, 단순
+        # 문자열 대조라 짧은 구문에도 강함)은 같은 입력을 HIGH 확신으로 즉시 매칭했다.
+        # 자동매칭 성공률 저하(크래시는 아니고 수동 선택으로 자연스럽게 넘어감)를 감수할
+        # 가치가 없다고 판단해 이 화면만 구버전 유지로 되돌림(사용자 확인, 2026-09-13).
         ksic_code, ksic_name = "", ""
         combined = f"{business_category} {business_item}".strip()
         if combined:

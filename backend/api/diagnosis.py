@@ -52,24 +52,32 @@
 # 생성" 두 단계로 분리(사용자 확인 - 실측: 업종코드 매칭만 11~13초, 리포트 생성이
 # 추가로 7~9초 더 걸려 합치면 18~22초. 사용자가 중간에 이탈할 위험 때문에, 매칭이
 # 끝나는 대로 바로 다음 화면(질응답 정리)으로 보내고 리포트는 그 뒤에 별도로 돌린다):
-#   POST /start                 - 업종코드 매칭만 하고 즉시 응답(후보 최대 3개).
-#                                  이 시점엔 상권/기술창업 분석을 시작하지 않는다.
-#   POST /{id}/select-industry  - [2026-09-12] 후보가 2개 이상이면 사용자가 화면에서
-#                                  하나를 확정해야 이 API가 불리고, 그때 비로소
-#                                  분석이 백그라운드로 시작된다(후보 1개 이하면
-#                                  프론트가 선택 UI 없이 자동 호출). 여러 후보를
-#                                  한꺼번에 분석에 넘기면(콤마로 합친 문자열) 밀집도
-#                                  계산(density.py/venture.py의 target_codes)이 그
-#                                  문자열 전체를 코드 하나로 취급해 실제로는 아무
-#                                  업체와도 매칭이 안 되는 버그가 있었음 - 사용자가
-#                                  하나로 확정하게 만들어서 애초에 여러 개를 같이
-#                                  넘길 일이 없게 함.
-#   GET /{id}/report             - 분석 리포트 화면이 폴링하는 API. 아직 안 끝났으면
-#                                  {"ready": false}만 반환, 끝났으면 marketAnalysis/
-#                                  techAnalysis + Q7·Q8 앵커까지 같이 반환.
-# _report_status는 진행 상태(pending/done/error)를 세션별로 들고 있는 인메모리
-# 캐시 - ponytail: 서버 재시작하면 "pending" 기록이 날아간다(단일 프로세스 규모엔
-# 충분, 여러 워커/재시작 안전성이 필요해지면 DB 컬럼이나 Redis로 승격).
+#   POST /start        - 업종코드 매칭 후보(최대 3개)를 뽑아 즉시 응답하는 동시에,
+#                         [2026-09-13] 후보 전부에 대해 상권/기술창업 분석을
+#                         백그라운드로 바로 시작한다(사용자 확인 - 하나만 강제로
+#                         고르게 하던 걸 없애고, 사용자가 결과 화면을 읽는 동안
+#                         뒤에서 미리 돌려서 체감 대기시간을 줄임). 코드별 결과는
+#                         idea_refinement_sessions.analysis_by_code(JSONB)에
+#                         {"56221": {...}, ...} 형태로 각자 쌓인다 - 코드를 콤마로
+#                         합쳐 한꺼번에 넘기면 밀집도 계산(density.py/venture.py의
+#                         target_codes)이 문자열 전체를 코드 하나로 취급해 아무
+#                         업체와도 매칭 안 되는 버그가 있었어서, 후보마다 별도
+#                         백그라운드 태스크로 나눠 돌린다. 1순위(후보 중 첫 번째,
+#                         가장 신뢰도 높은) 결과만 market_analysis/tech_analysis
+#                         레거시 컬럼과 Q7·Q8 앵커에도 그대로 반영한다(지역은 후보가
+#                         달라도 동일해서 문제 없음, 사용자 확인). 더 이상 사용자가
+#                         화면에서 하나를 확정하는 절차가 없으므로 예전
+#                         POST /{id}/select-industry는 제거함.
+#   GET /{id}/report   - 분석 리포트 화면이 폴링하는 API. resolved_ksic_codes 전부가
+#                        analysis_by_code에 채워지기 전까지는 {"ready": false}만
+#                        반환하고, 다 채워지면 analysisByCode(코드별 결과 전체) +
+#                        1순위 기준 marketAnalysis/techAnalysis/Q7·Q8 앵커를 같이
+#                        반환한다. 프론트는 상단 셀렉박스로 analysisByCode에서 원하는
+#                        코드를 골라 보여준다.
+# _report_status는 1순위 후보의 진행 상태(done/error)+앵커 캐시만 들고 있는
+# 인메모리 캐시 - ponytail: 서버 재시작하면 기록이 날아간다(단일 프로세스 규모엔
+# 충분, 여러 워커/재시작 안전성이 필요해지면 DB 컬럼이나 Redis로 승격). 전체 후보의
+# 완료 여부 자체는 이제 DB(analysis_by_code)로 판단하므로 재시작에 안전하다.
 
 import json
 
@@ -241,26 +249,42 @@ class DiagnosisStartRequest(BaseModel):
     mode: str = "precise"
 
 
-# session_id -> {"status": "pending"|"done"|"error", "targetAnchor": str|None, "differentiatorAnchor": str|None}
+# session_id -> {"status": "done"|"error", "targetAnchor": str|None, "differentiatorAnchor": str|None}
+# [2026-09-13] "ready" 판정 자체는 더 이상 이 dict로 안 함(DB의 analysis_by_code로
+# 후보 전부 끝났는지 직접 확인 - get_diagnosis_report 참고) - 이건 1순위 후보의
+# Q7·Q8 앵커 문구만 캐싱해둔다(서버 재시작하면 유실, 그 경우 앵커 없이 폴백).
 _report_status: dict[int, dict] = {}
 
 
-def _run_report_in_background(
-    session_id: int, has_store: bool, sido: str, sigungu: str, dong: str,
-    resolved_ksic_codes: list[str], seed: str, problem: str, solution: str,
+def _run_candidate_analysis(
+    session_id: int, ksic_code: str, is_primary: bool, has_store: bool,
+    sido: str, sigungu: str, dong: str, seed: str, problem: str, solution: str,
 ) -> None:
-    """POST /start 응답을 보낸 뒤 이어서 실행 - 상권/기술창업 분석을 만들어 DB에
-    UPDATE하고, 끝났다는 걸 _report_status로 표시한다. 실패해도 "error"로 표시할 뿐
-    예외를 올리지 않는다 - 백그라운드 태스크라 터뜨려봐야 아무도 못 본다."""
+    """[2026-09-13] 업종코드 후보 하나에 대한 상권/기술창업 분석 (사용자 확인 - 후보
+    최대 3개를 하나로 강제 확정시키지 않고 전부 각자 분석해서, 분석 리포트 화면
+    상단 셀렉박스로 전환해가며 볼 수 있게 함). POST /start가 후보 개수만큼 이 함수를
+    각각 백그라운드로 걸어서, 사용자가 industry-result 화면을 읽는 동안 미리 돌게
+    한다 - 예전엔 사용자가 하나를 고른 뒤(POST /select-industry)에야 시작했음.
+
+    결과는 idea_refinement_sessions.analysis_by_code[ksic_code]에 머지해 넣는다 -
+    후보마다 독립 실행이라 하나가 실패해도 다른 후보엔 영향 없다(실패해도 그 코드
+    자리에 실패 표시를 남겨 "전체 후보 다 준비됐나" 체크가 그 후보에서 영원히
+    멈추지 않게 한다).
+
+    is_primary(1순위, resolved_ksic_codes[0])면 기존 market_analysis/tech_analysis
+    플랫 컬럼도 같이 채운다 - 마이페이지 리포트 목록 등 이 두 컬럼만 보고 "분석
+    끝났나"를 판단하는 기존 코드와의 하위호환. Q7·Q8 앵커도 여러 후보 중 하나만
+    골라야 해서 1순위로 고정한다(사용자 확인 - 지역은 후보가 달라도 동일해서
+    문제 없음)."""
     try:
         if has_store:
-            market_analysis = _resolve_market_report(sido, sigungu, dong, resolved_ksic_codes)
+            market_analysis = _resolve_market_report(sido, sigungu, dong, [ksic_code])
             tech_analysis = None
             target_anchor = _format_market_target_anchor(market_analysis)
             differentiator_anchor = _format_market_differentiator_anchor(market_analysis)
         else:
             market_analysis = None
-            tech_analysis = _resolve_tech_report(resolved_ksic_codes)
+            tech_analysis = _resolve_tech_report([ksic_code])
             patent_data = _resolve_patent_forecast(seed, problem, solution)
             if patent_data is not None:
                 tech_analysis = dict(tech_analysis) if tech_analysis else {}
@@ -268,36 +292,70 @@ def _run_report_in_background(
             target_anchor = _format_venture_anchor(tech_analysis)
             differentiator_anchor = _format_patent_anchor(patent_data)
 
+        code_payload = json.dumps(
+            {"marketAnalysis": market_analysis, "techAnalysis": tech_analysis}, ensure_ascii=False,
+        )
+
         conn = get_connection()
         try:
             cur = conn.cursor()
             cur.execute(
-                "UPDATE idea_refinement_sessions SET market_analysis = %s, tech_analysis = %s WHERE session_id = %s",
-                (
-                    Json(market_analysis) if market_analysis is not None else None,
-                    Json(tech_analysis) if tech_analysis is not None else None,
-                    session_id,
-                ),
+                """
+                UPDATE idea_refinement_sessions
+                SET analysis_by_code = COALESCE(analysis_by_code, '{}'::jsonb) || jsonb_build_object(%s, %s::jsonb)
+                WHERE session_id = %s
+                """,
+                (ksic_code, code_payload, session_id),
             )
+            if is_primary:
+                cur.execute(
+                    "UPDATE idea_refinement_sessions SET market_analysis = %s, tech_analysis = %s WHERE session_id = %s",
+                    (
+                        Json(market_analysis) if market_analysis is not None else None,
+                        Json(tech_analysis) if tech_analysis is not None else None,
+                        session_id,
+                    ),
+                )
             conn.commit()
         finally:
             conn.close()
 
-        _report_status[session_id] = {
-            "status": "done", "targetAnchor": target_anchor, "differentiatorAnchor": differentiator_anchor,
-        }
+        if is_primary:
+            _report_status[session_id] = {
+                "status": "done", "targetAnchor": target_anchor, "differentiatorAnchor": differentiator_anchor,
+            }
     except Exception:  # noqa: BLE001 - 백그라운드 태스크 전체를 감싸는 최종 안전망
-        _report_status[session_id] = {"status": "error", "targetAnchor": None, "differentiatorAnchor": None}
+        try:
+            conn = get_connection()
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    UPDATE idea_refinement_sessions
+                    SET analysis_by_code = COALESCE(analysis_by_code, '{}'::jsonb) || jsonb_build_object(%s, %s::jsonb)
+                    WHERE session_id = %s
+                    """,
+                    (ksic_code, json.dumps({"marketAnalysis": None, "techAnalysis": None, "failed": True}), session_id),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:  # noqa: BLE001
+            pass
+        if is_primary:
+            _report_status[session_id] = {"status": "error", "targetAnchor": None, "differentiatorAnchor": None}
 
 
 @router.post("/start")
 def start_diagnosis(
-    payload: DiagnosisStartRequest, user_id: int = Depends(get_current_user_id)
+    payload: DiagnosisStartRequest, background_tasks: BackgroundTasks, user_id: int = Depends(get_current_user_id)
 ) -> JSONResponse:
-    """6번째(마지막 필수) 질문 = 지역 제출 시점 - 세션을 만들고 업종코드 매칭만
-    끝내서 응답한다(11~13초). 상권/기술창업 분석은 여기서 시작하지 않는다 - 매칭
-    후보가 여러 개(최대 3개)면 사용자가 하나를 확정해야 하므로, 실제 분석은
-    POST /{id}/select-industry가 맡는다(모듈 상단 주석 참고)."""
+    """6번째(마지막 필수) 질문 = 지역 제출 시점 - 세션을 만들고 업종코드 매칭을
+    끝내서 응답한다(11~13초). [2026-09-13] 매칭 후보(최대 3개) 전부에 대해 상권/
+    기술창업 분석을 여기서 곧바로 백그라운드로 건다(사용자 확인) - 사용자가
+    industry-result 화면에서 후보를 읽는 시간 동안 미리 분석이 진행돼서, 예전에
+    "하나 확정 후에야 분석 시작"하던 것보다 체감 대기시간이 줄어든다. 후보를 하나로
+    강제 확정시키지 않으므로 POST /{id}/select-industry는 더 이상 안 씀(제거됨)."""
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -336,6 +394,13 @@ def start_diagnosis(
     finally:
         conn.close()
 
+    for i, code in enumerate(resolved_ksic_codes):
+        background_tasks.add_task(
+            _run_candidate_analysis, session_id, code, i == 0, payload.has_store,
+            payload.sido, payload.sigungu, payload.dong,
+            payload.seed_interest, payload.problem_to_solve, payload.solution_approach,
+        )
+
     return JSONResponse(content={
         "success": True,
         "data": {
@@ -353,6 +418,13 @@ def get_diagnosis_report(session_id: int, user_id: int = Depends(get_current_use
     아직이면 {"ready": false}만, 끝났으면 marketAnalysis/techAnalysis + Q7·Q8 앵커까지
     같이 반환한다.
 
+    [2026-09-13] 업종코드 후보(최대 3개) 전부를 각자 분석하는 구조로 바뀌면서,
+    "끝났다"의 기준도 인메모리 pending 플래그 대신 **DB의 analysis_by_code에 후보
+    코드가 전부 들어있는지**로 직접 판단한다(서버 재시작에도 안전 - 원래도 인메모리
+    기록 유실 시 DB로 폴백하던 방식이었는데, 이제 그게 기본 판단 기준이 됨).
+    응답에 analysisByCode(코드별 결과 전체)도 같이 내려줘서, 분석 리포트 화면
+    상단 셀렉박스가 코드 전환 시 재요청 없이 바로 전환할 수 있게 한다.
+
     [2026-09-13] 마이페이지 "분석 리포트"에서 지난 세션을 나중에 다시 열어볼 때도
     이 응답 하나로 화면을 완전히 그릴 수 있게, track/resolvedKsicCodes/mode/
     industryMatch/sido까지 같이 내려준다(전엔 sessionStorage에만 있던 값들 -
@@ -367,7 +439,7 @@ def get_diagnosis_report(session_id: int, user_id: int = Depends(get_current_use
         cur.execute(
             """
             SELECT profile_id, market_analysis, tech_analysis, business_operation_type,
-                   resolved_ksic_codes, diagnosis_mode, industry_match_summary, region
+                   resolved_ksic_codes, diagnosis_mode, industry_match_summary, region, analysis_by_code
             FROM idea_refinement_sessions WHERE session_id = %s
             """,
             (session_id,),
@@ -376,17 +448,20 @@ def get_diagnosis_report(session_id: int, user_id: int = Depends(get_current_use
         if row is None or row[0] != profile_id:
             return _error(404, f"session_id={session_id} 세션을 찾을 수 없습니다.", "SESSION_NOT_FOUND")
         (_, market_analysis, tech_analysis, business_operation_type,
-         resolved_ksic_codes, diagnosis_mode, industry_match_summary, region) = row
+         resolved_ksic_codes, diagnosis_mode, industry_match_summary, region, analysis_by_code) = row
     finally:
         conn.close()
 
-    status_entry = _report_status.get(session_id)
-    if status_entry is not None and status_entry["status"] == "pending":
+    resolved_ksic_codes = resolved_ksic_codes or []
+    analysis_by_code = analysis_by_code or {}
+    # 후보가 아예 없으면(업종 특정 실패) 기다릴 대상 자체가 없으니 바로 완료로 본다.
+    all_candidates_ready = all(code in analysis_by_code for code in resolved_ksic_codes)
+    if not all_candidates_ready:
         return JSONResponse(content={"success": True, "data": {"ready": False}})
 
-    # status_entry가 없는 경우(서버 재시작 등으로 인메모리 기록 유실, 또는 옛날에 끝난
-    # 세션을 나중에 다시 열어본 경우) - DB에 이미 채워져 있으면 완료로 간주. 앵커
-    # 문구는 그 경우 재계산 없이 비워둔다(Q7·Q8 화면이 알아서 하드코딩 문구로 폴백).
+    # 1순위 후보의 Q7·Q8 앵커 - 인메모리 캐시라 서버 재시작하면 유실될 수 있음, 그
+    # 경우 앵커 없이 폴백(Q7·Q8 화면이 알아서 하드코딩 문구로 대체).
+    status_entry = _report_status.get(session_id)
     target_anchor = status_entry["targetAnchor"] if status_entry else None
     differentiator_anchor = status_entry["differentiatorAnchor"] if status_entry else None
     industry_match_summary = industry_match_summary or {}
@@ -400,12 +475,14 @@ def get_diagnosis_report(session_id: int, user_id: int = Depends(get_current_use
             "targetAnchor": target_anchor,
             "differentiatorAnchor": differentiator_anchor,
             "track": "cafe" if business_operation_type == "오프라인" else "tech",
-            "resolvedKsicCodes": resolved_ksic_codes or [],
+            "resolvedKsicCodes": resolved_ksic_codes,
             "mode": diagnosis_mode or "precise",
             "sido": (region or "").split(" ")[0] if region else "",
+            "dong": (region or "").split(" ")[-1] if region else "",
             "industryMatchName": industry_match_summary.get("name"),
             "industryMatchState": industry_match_summary.get("state"),
             "industryMatchConfidence": industry_match_summary.get("confidence"),
+            "analysisByCode": analysis_by_code,
         },
     })
 
@@ -421,58 +498,6 @@ def _load_own_session(cur, session_id: int, profile_id: int) -> list | None:
     if row is None or row[0] != profile_id:
         return None
     return row
-
-
-class DiagnosisSelectIndustryRequest(BaseModel):
-    ksic_code: str  # 사용자가 확정한 업종코드(빈 문자열 = 업종 특정 실패, 그대로 진행)
-    has_store: bool
-    sido: str
-    sigungu: str
-    dong: str
-    seed_interest: str = ""
-    problem_to_solve: str = ""
-    solution_approach: str = ""
-
-
-@router.post("/{session_id}/select-industry")
-def select_industry(
-    session_id: int, payload: DiagnosisSelectIndustryRequest, background_tasks: BackgroundTasks,
-    user_id: int = Depends(get_current_user_id),
-) -> JSONResponse:
-    """[2026-09-12] 업종코드 매칭 후보(POST /start 응답, 최대 3개) 중 사용자가 하나를
-    확정하면 그 코드 하나로 상권/기술창업 분석을 시작한다(사용자 확인) - 후보가
-    1개 이하면 프론트가 선택 화면 없이 이 API를 자동으로 호출한다
-    (DiagnosisIndustryResult.tsx 참고). resolved_ksic_codes를 후보 목록에서 확정된
-    코드 하나짜리 배열로 덮어써서, 이후 매칭 공고 조회·아이디어카드 생성이 전부
-    이 코드 하나만 쓰게 만든다 - 모듈 상단 주석의 콤마 조인 버그를 애초에 여러 개를
-    같이 넘길 일 자체를 없애서 우회한다."""
-    conn = get_connection()
-    try:
-        cur = conn.cursor()
-        profile_id = _get_profile_id(cur, user_id)
-        if profile_id is None:
-            return _error(404, f"user_id={user_id}에 해당하는 business_profiles가 없습니다.", "PROFILE_NOT_FOUND")
-        if _load_own_session(cur, session_id, profile_id) is None:
-            return _error(404, f"session_id={session_id} 세션을 찾을 수 없습니다.", "SESSION_NOT_FOUND")
-
-        resolved_ksic_codes = [payload.ksic_code] if payload.ksic_code else []
-        cur.execute(
-            "UPDATE idea_refinement_sessions SET resolved_ksic_codes = %s WHERE session_id = %s",
-            (Json(resolved_ksic_codes), session_id),
-        )
-        conn.commit()
-    finally:
-        conn.close()
-
-    # 백그라운드 태스크가 실제로 시작되기 전에 폴링이 먼저 들어와도 "아직 안 끝남"으로
-    # 보이도록, 응답을 만들기 전에 미리 pending으로 표시해둔다.
-    _report_status[session_id] = {"status": "pending", "targetAnchor": None, "differentiatorAnchor": None}
-    background_tasks.add_task(
-        _run_report_in_background, session_id, payload.has_store, payload.sido, payload.sigungu, payload.dong,
-        resolved_ksic_codes, payload.seed_interest, payload.problem_to_solve, payload.solution_approach,
-    )
-
-    return JSONResponse(content={"success": True, "data": {"session_id": session_id, "resolvedKsicCodes": resolved_ksic_codes}})
 
 
 class DiagnosisFinishRequest(BaseModel):

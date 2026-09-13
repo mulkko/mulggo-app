@@ -67,10 +67,11 @@
   gap: 16px;
 }
 
+/* [2026-09-13, 사용자 확인] 프로토타입(13번 상권분석 화면) 원본 대조 - 19px/900 */
 .regionTitle {
   margin: 0;
-  font-size: 17px;
-  font-weight: 800;
+  font-size: 19px;
+  font-weight: 900;
   color: var(--color-ink-charcoal);
 }
 
@@ -174,19 +175,27 @@
   color: var(--color-ink-charcoal);
 }
 
+/* [2026-09-13, 사용자 확인] 막대그래프가 이제 도넛 카드 안에 중첩되는 서브 콘텐츠라
+   자체 테두리 줄(카드 안에 카드처럼 보이는 것)이 필요 없음 - .sectionCard의 inset
+   테두리만 지운다(밀집도 히트맵 등 다른 .sectionCard 사용처는 그대로 유지).
+   좌우 여백도 부모(도넛 chartCard)가 이미 16px씩 주고 있어 중첩 시 이중으로 들어가
+   보여서 좌우만 제거(상하는 도넛과의 간격 유지 위해 그대로 둠). */
+.sectionCardNested {
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 /* ===== 업종분포 막대그래프 =====
-   [2026-09-13, 사용자 확인] 640px(common.css .pageContainer 최대폭과 동일 기준 재사용 -
-   그 이상은 태블릿 세로/데스크톱이라 어차피 640px로 캡되는 화면이라 더 쪼갤 필요 없음)
-   기준으로 라벨 배치 방식이 갈린다:
-   - 640px 이상(기본값, 아래 .barLabel): 막대 왼쪽 전용 칸에 라벨 표시, 폭을 넉넉히
-     주고 2줄까지 허용해서 긴 업종명도 안 잘리게 한다.
-   - 640px 미만(맨 아래 미디어쿼리): 전용 칸 대신 라벨을 막대(트랙) 위에 겹쳐서 그린다
-     (좁은 화면에서 52px 고정폭에 업종명이 잘리는 문제 해결, 사용자 확인). */
+   [2026-09-13, 사용자 확인] 좁은 화면에서 라벨을 막대 위에 겹쳐 그리던 방식(모바일
+   전용)이 오히려 복잡해 보인다는 피드백으로 폐기 - 이제 화면 폭과 무관하게 항상
+   막대 왼쪽 전용 칸에 라벨을 표시하고, 폭을 넉넉히 주고 2줄까지 허용해서 긴
+   업종명은 말줄임 대신 2줄로 보이게 한다(640px 이상 기준이었던 기본 스타일을
+   전체 폭에 그대로 적용). */
 .barRow {
   display: flex;
   align-items: center;
   gap: 10px;
-  position: relative; /* 640px 미만에서 라벨을 이 기준으로 막대 위에 겹쳐 배치 */
 }
 
 .barLabel {
@@ -239,40 +248,117 @@
   color: var(--color-ink-charcoal);
 }
 
-/* [2026-09-13] 상위 4개 막대 위에 얹히는 라벨 전용 색 - 640px 이상에서는 라벨이
-   막대 위가 아니라 왼쪽 칸(흰 배경)에 있어서 무의미(아래 미디어쿼리가 다시 덮어씀). */
-.barLabelOnFill {
-  color: var(--color-ink-charcoal);
-}
-
-@media (max-width: 639px) {
-  .barLabel {
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: auto;
-    max-width: calc(100% - 66px);
-    white-space: nowrap;
-    -webkit-line-clamp: 1;
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  /* ponytail: 상위 4개는 색이 채워진 막대라 흰 글씨로 - 다만 그 막대 자체가 아주
-     짧아서 라벨이 빈 트랙(회색 배경)까지 삐져나오면 흰 글씨가 안 보일 수 있다.
-     지금 데이터(업종별 건수)에서는 상위 4개가 항상 가장 긴 막대라 실제로 거의
-     안 생기는 케이스라 픽셀 단위 겹침 계산은 생략함 - 문제 생기면 그때 보강. */
-  .barLabelOnFill {
-    color: var(--color-white);
-  }
-}
-
 .emptyText {
   margin: 0;
   font-size: 12px;
   color: var(--color-stone-gray);
   line-height: 1.5;
+}
+
+/* [2026-09-13, 사용자 확인] 밀집도 격자 소제목 - 프로토타입(13번 상권분석 화면)
+   원본 문구 "{동} 반경 500m {업종명}({코드}) 밀집도"를 그대로 옮김. */
+.densitySubtitle {
+  font-size: 11px;
+  color: var(--color-ink-charcoal);
+  text-align: center;
+}
+
+/* [2026-09-13, 사용자 확인] 동일업종 밀집도 격자 옆 범례 - 프로토타입(13번 상권분석
+   화면) 원본 대조로 추가. 격자 색(getDensityColor, DiagnosisReport.tsx)과 같은
+   그라데이션을 그대로 써서 위(진한 러스트)=밀집도 높음, 아래(연한 크림)=낮음을
+   보여준다. */
+.densityRow {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.densityRow > *:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.densityLegend {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.densityLegendBar {
+  width: 12px;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, rgb(122, 42, 10), rgb(240, 168, 104) 55%, rgb(251, 241, 228));
+  flex-shrink: 0;
+}
+
+.densityLegendTicks {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 8px;
+  color: var(--color-stone-gray);
+}
+
+.densityLegendCaption {
+  writing-mode: vertical-rl;
+  font-size: 8px;
+  color: var(--color-stone-gray);
+  align-self: center;
+}
+
+/* [2026-09-13, 사용자 확인] 격자 칸 위 "내 위치" 점 마커 + 아래 캡션 줄의 같은 점
+   범례 - 프로토타입의 "●= 내 위치". DensityGrid의 .densityCell(techStyles, 부모
+   .sectionCard 기준 상대위치가 필요해 techReport.module.css에서 position:relative
+   추가)에 겹쳐 그린다. */
+/* [2026-09-13, 사용자 확인] 진한 러스트 칸 위에서 잘 안 보인다는 피드백으로 흰색을
+   검토했으나, 흰색 단색은 반대로 저밀도(연한 크림) 칸에서 안 보인다 - 배경색과
+   무관하게 항상 보이도록 흰 배경 + 어두운 테두리 조합으로 변경. */
+.densityCellMarker {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-white);
+  border: 1px solid var(--color-ink-charcoal);
+}
+
+.densityCellMarkerLegend {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-white);
+  border: 1px solid var(--color-ink-charcoal);
+  box-sizing: border-box;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.densityCaptionRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-stone-gray);
+}
+
+/* [2026-09-13, 사용자 확인] "* 실제 지도가 아닌..." 안내문구가 .densityCaptionRow
+   (11px)와 같은 레벨이어야 하는데 공용 .emptyText(12px)를 갖다 써서 미세하게 더
+   컸다 - 전용 클래스로 분리해서 11px로 맞춤(.emptyText는 다른 곳에서 계속 12px로 씀). */
+.densityNote {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-stone-gray);
+  line-height: 1.5;
+}
+
+.sourceText {
+  margin: -10px 0 0;
+  font-size: 11px;
+  color: var(--color-stone-gray);
+  line-height: 1.6;
 }
 
 /* ===== 로딩/에러 ===== */

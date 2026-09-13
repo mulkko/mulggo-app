@@ -1,9 +1,25 @@
 /* 앱 하단 고정 네비게이션 (공통 컴포넌트 BottomNav 짝꿍 스타일).
    값은 webTokens.css 토큰만 사용한다. 스펙 출처: 프로토타입 "공고 매칭 리스트" 화면. */
 
+/* [2026-09-13, 사용자 확인] sticky는 콘텐츠가 뷰포트보다 짧으면 화면 하단에 붙지
+   않고 콘텐츠 바로 아래에서 끝나버리는 문제가 있었다("콘텐츠 높이에 따라 붙어다님") -
+   fixed로 바꿔서 항상 화면 하단에 고정한다. .pageContainer(common.css, max-width:640px
+   가운데 정렬)와 같은 폭으로 맞추기 위해 left:50%+translateX(-50%) 트릭을 쓴다.
+   fixed가 되면 문서 흐름에서 빠지므로, 밑에 있는 .navSpacer가 같은 높이만큼 자리를
+   대신 차지해서 실제 콘텐츠가 nav에 가려지지 않게 한다(이 컴포넌트를 쓰는 모든
+   화면에 일일이 padding-bottom을 추가하지 않아도 되게). */
+.navSpacer {
+  flex-shrink: 0;
+  height: 74px;
+}
+
 .nav {
-  position: sticky;
+  position: fixed;
+  left: 50%;
   bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 640px;
   z-index: 10;
   display: flex;
   align-items: center;
