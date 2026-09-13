@@ -15,34 +15,6 @@
   color: var(--color-ink-charcoal);
 }
 
-/* 우측 하단 챗봇 FAB — 이 화면 전용 시험 적용(2026-09-13). .page가 데스크톱에서
-   640px로 가운데 정렬되므로 position:absolute로 그 컨테이너 기준 우측하단에 고정한다.
-   bottom 값은 BottomNav 높이(74px, bottomNav.module.css) 위로 16px 띄운 값. */
-.fab {
-  position: absolute;
-  right: 16px;
-  bottom: 90px;
-  width: 56px;
-  height: 56px;
-  border: none;
-  border-radius: 50%;
-  overflow: hidden;
-  padding: 0;
-  background: var(--color-white);
-  cursor: pointer;
-  box-shadow:
-    0 10px 24px -6px rgba(21, 50, 140, 0.45),
-    0 4px 10px -2px rgba(21, 50, 140, 0.3);
-  z-index: 10;
-}
-
-.fabImg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .header {
   flex-shrink: 0;
   height: 50px;

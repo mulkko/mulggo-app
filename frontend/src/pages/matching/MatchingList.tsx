@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "../../styles/matchingList.module.css";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import ChatFab from "../../components/ChatFab/ChatFab";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
@@ -561,6 +562,8 @@ function MatchingList() {
           </div>
         )}
       </div>
+
+      <ChatFab variant="withBottomNav" />
 
       <BottomNav active="matching" />
     </div>

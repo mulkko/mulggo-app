@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.svg";
 import styles from "../../styles/diagnosisReportSummary.module.css";
+import ChatFab from "../../components/ChatFab/ChatFab";
 
 export interface IdeaCard {
   axis: string;
@@ -78,6 +79,8 @@ function DiagnosisReportSummary({
         <span className={styles.brandName}>MULKKO REPORT</span>
         <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
       </header>
+
+      <ChatFab variant="top" />
 
       <div className={styles.subHeader}>이렇게 정리했어요</div>
 

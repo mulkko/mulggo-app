@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.svg";
 import styles from "../../styles/diagnosisChoice.module.css";
 import { saveDiagnosisAnswers } from "./diagnosisAnswers";
+import ChatFab from "../../components/ChatFab/ChatFab";
 
 /**
  * 진단 방식 선택 화면 (`/diagnosis/choice`).
@@ -85,6 +86,8 @@ function DiagnosisChoice() {
           </span>
         </button>
       </main>
+
+      <ChatFab variant="default" />
     </div>
   );
 }

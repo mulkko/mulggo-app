@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/customerSupport.module.css";
-import fabIcon from "../../assets/8_white.png";
 import chatCardAvatarIcon from "../../assets/9_mint.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import ChatFab from "../../components/ChatFab/ChatFab";
 
 /**
  * 1:1 문의 화면 (19번, /support). 하위 화면: 19-1번 고객센터 챗봇(/support/chat, CustomerSupportChat.tsx).
@@ -178,9 +178,7 @@ function CustomerSupport() {
         </section>
       </main>
 
-      <button type="button" className={styles.fab} onClick={handleChatCardClick} aria-label="챗봇 상담 시작하기">
-        <img className={styles.fabImg} src={fabIcon} alt="" />
-      </button>
+      <ChatFab variant="withBottomNav" />
 
       <BottomNav active="my" />
     </div>

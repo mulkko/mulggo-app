@@ -4,6 +4,7 @@
    값은 webTokens.css 토큰만 사용. 레이아웃: 모바일 우선 + 데스크톱 .pageContainer(최대 640px). */
 
 .page {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
