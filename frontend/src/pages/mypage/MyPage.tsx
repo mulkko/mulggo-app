@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/myPage.module.css";
+import logo from "../../assets/logo.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
 import AnnouncementCard, {
@@ -55,6 +56,19 @@ interface ProfileSummary {
  * 삭제 state 구조: 삭제 가능한 섹션마다 별도의 useState 배열을 두고,
  * 삭제 시 `setX(prev => prev.filter(item => item.id !== id))` 로 해당 id만 걸러낸다.
  * 관심 지원사업 카드는 공고 리스트와 동일한 공통 컴포넌트 AnnouncementCard 를 재사용한다.
+ *
+ * [2026-09-14] "나의 분석 리포트"를 제외한 3개 섹션(관심있는 지원사업/채우기 이용내역/
+ * 나의 지원내역)의 삭제(X) 버튼을 "삭제 확인 팝업 → 확인 시 실제 삭제 + 완료 토스트"
+ * 흐름으로 교체함(사용자 확인, 시나리오 보드 19/20번 기준). confirmTarget(section/id/label)
+ * 하나로 3개 섹션 팝업을 공용 처리하고, 확인 시 섹션별 삭제 함수(handleConfirmDelete
+ * 내부 분기)를 실행 - 관심있는 지원사업은 기존 실연동 DELETE 그대로, 채우기 이용내역은
+ * 새로 만든 DELETE /api/mypage/fill-history/:id, 나의 지원내역은 DELETE
+ * /api/mypage/apply-history/:id(대응 테이블 apply_status, PK submission_id - describe_table로
+ * 실측 확인, schema.sql엔 없음)를 호출한다. 셋 다 실패해도 화면에서는 이미 지운 채로
+ * 둔다(fire-and-forget, 일회성 서비스라 재시도/롤백 불필요 - 사용자 확인). 토스트는
+ * MatchingDetail.tsx의 .toast 패턴(1.5초 후 자동 소멸) 재사용. 나의 지원내역은 목록
+ * 조회(GET) 자체가 아직 없어(사용자 확인, 범위 밖) applyHistory가 항상 빈 배열이라
+ * 삭제 핸들러/팝업 연결은 만들어뒀지만 화면에서 확인은 안 됨.
  */
 
 interface AnalysisReport {
@@ -111,6 +125,38 @@ function DeleteButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+/** 삭제 확인 팝업 (시나리오 보드 19번, 문구만 수정) — 관심있는 지원사업/채우기 이용내역/
+ * 나의 지원내역 3개 섹션이 공용으로 쓴다. `label`이 문구의 "나의 {리스트명}"에 들어간다. */
+function ConfirmDeleteModal({
+  label,
+  onCancel,
+  onConfirm,
+}: {
+  label: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className={styles.confirmOverlay}>
+      <div className={styles.confirmCard}>
+        <p className={styles.confirmText}>
+          이 공고를 삭제할까요?
+          <br />
+          나의 {label}에서 사라지고, 다시 불러올 수 없어요.
+        </p>
+        <div className={styles.confirmButtons}>
+          <button type="button" className={styles.confirmCancelBtn} onClick={onCancel}>
+            취소
+          </button>
+          <button type="button" className={styles.confirmDeleteBtn} onClick={onConfirm}>
+            삭제
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MyPage() {
   const navigate = useNavigate();
 
@@ -125,6 +171,15 @@ function MyPage() {
   const [applyHistory, setApplyHistory] = useState<ApplyHistoryItem[]>([]);
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [fillError, setFillError] = useState("");
+
+  // 삭제 확인 팝업 대상 - 3개 섹션(interest/fill/apply) 공용. label은 팝업/토스트 문구의
+  // "나의 {리스트명}"에 그대로 들어간다(섹션 제목과 동일 문구).
+  const [confirmTarget, setConfirmTarget] = useState<{
+    section: "interest" | "fill" | "apply";
+    id: string;
+    label: string;
+  } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${getUserId() ?? FALLBACK_USER_ID}`)
@@ -199,14 +254,50 @@ function MyPage() {
     navigate(`/matching/${item.id}`);
   };
 
-  const handleRemoveInterest = (id: string) => {
-    removeById(setInterests)(id);
-    fetch(`${API_BASE_URL}/api/matching/${id}/bookmark`, {
-      method: "DELETE",
-      headers: authHeaders(),
-    }).catch(() => {
-      /* 실패해도 화면에선 이미 지운 채로 둔다 - 다음 진입 시 서버 목록으로 다시 맞춰짐 */
-    });
+  // 3개 섹션(interest/fill/apply) 공용 - X 버튼은 바로 지우지 않고 확인 팝업부터 띄운다.
+  const handleRequestDelete = (
+    section: "interest" | "fill" | "apply",
+    id: string,
+    label: string
+  ) => {
+    setConfirmTarget({ section, id, label });
+  };
+
+  // 확인 팝업에서 "삭제"를 눌렀을 때만 실제로 지운다. 실패해도 화면에선 이미 지운
+  // 채로 둔다(fire-and-forget) - 일회성 서비스라 엄격한 재시도/롤백은 불필요(사용자 확인).
+  const handleConfirmDelete = () => {
+    if (!confirmTarget) return;
+    const { section, id, label } = confirmTarget;
+
+    if (section === "interest") {
+      removeById(setInterests)(id);
+      fetch(`${API_BASE_URL}/api/matching/${id}/bookmark`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      }).catch(() => {
+        /* 실패해도 화면에선 이미 지운 채로 둔다 - 다음 진입 시 서버 목록으로 다시 맞춰짐 */
+      });
+    } else if (section === "fill") {
+      removeById(setFillHistory)(id);
+      fetch(`${API_BASE_URL}/api/mypage/fill-history/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      }).catch(() => {
+        /* 실패해도 화면에선 이미 지운 채로 둔다 */
+      });
+    } else {
+      removeById(setApplyHistory)(id);
+      fetch(`${API_BASE_URL}/api/mypage/apply-history/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      }).catch(() => {
+        /* 실패해도 화면에선 이미 지운 채로 둔다 */
+      });
+    }
+
+    setConfirmTarget(null);
+    setToastMessage(`나의 ${label}에서 삭제됐어요.`);
+    setTimeout(() => setToastMessage(null), 1500);
   };
 
   const handleFillHistoryClick = async (item: FillHistoryItem) => {
@@ -226,18 +317,7 @@ function MyPage() {
       <header className={styles.header}>
         <span className={styles.logo}>
           <span className={styles.logoText}>MULKKO PAGE</span>
-          <svg
-            className={styles.logoMark}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--color-light-teal)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 3c3 3.6 6 6.9 6 10.5A6 6 0 0 1 6 13.5C6 9.9 9 6.6 12 3Z" />
-          </svg>
+          <img className={styles.logoMark} src={logo} alt="물꼬 로고" />
         </span>
         <button
           type="button"
@@ -324,7 +404,7 @@ function MyPage() {
               key={item.id}
               item={item}
               onClick={handleInterestCardClick}
-              onDelete={handleRemoveInterest}
+              onDelete={(itemId) => handleRequestDelete("interest", itemId, "관심있는 지원사업")}
             />
           ))}
         </section>
@@ -351,7 +431,9 @@ function MyPage() {
                   <span className={styles.fillExpiredSub}>문서 다운로드는 가능합니다</span>
                 </div>
               )}
-              <DeleteButton onClick={() => removeById(setFillHistory)(item.id)} />
+              <DeleteButton
+                onClick={() => handleRequestDelete("fill", item.id, "채우기 이용내역")}
+              />
             </div>
           ))}
         </section>
@@ -367,7 +449,9 @@ function MyPage() {
                 <span className={styles.applyStatus}>{item.status}</span>
                 <span className={styles.applyDate}>{item.date}</span>
               </span>
-              <DeleteButton onClick={() => removeById(setApplyHistory)(item.id)} />
+              <DeleteButton
+                onClick={() => handleRequestDelete("apply", item.id, "나의 지원내역")}
+              />
             </div>
           ))}
         </section>
@@ -384,6 +468,20 @@ function MyPage() {
 
       {/* 8. 하단 네비게이션 ("마이페이지" 탭 활성) */}
       <BottomNav active="my" />
+
+      {confirmTarget && (
+        <ConfirmDeleteModal
+          label={confirmTarget.label}
+          onCancel={() => setConfirmTarget(null)}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
+
+      {toastMessage && (
+        <div className={styles.toast} role="status">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

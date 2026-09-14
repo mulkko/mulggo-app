@@ -51,6 +51,15 @@ const MYPAGE_COLORS = [
   { name: "Delete Hover", hex: "rgba(139,141,147,0.15)", usage: "카드 삭제(X) 버튼 hover 배경", varName: "--color-delete-hover" },
 ];
 
+// 마이페이지 삭제 확인 팝업(19/20번)에서 추가된 색상 토큰 - 오버레이는 --color-scrim-download,
+// 카드 배경/문구는 --color-white + --color-ink-charcoal, 완료 토스트는 matchingDetail.module.css
+// .toast와 동일 스펙(--color-ink-charcoal 배경 + --color-white 텍스트)이라 재사용.
+const MYPAGE_CONFIRM_COLORS = [
+  { name: "Danger BG", hex: "#E0273F", usage: '삭제 확인 팝업 "삭제" 버튼 배경', varName: "--color-danger-bg" },
+  { name: "Cancel BG", hex: "#ECEEF1", usage: '삭제 확인 팝업 "취소" 버튼 배경', varName: "--color-cancel-bg" },
+  { name: "Cancel Text", hex: "#4B5160", usage: '삭제 확인 팝업 "취소" 버튼 텍스트', varName: "--color-cancel-text" },
+];
+
 // 프로필 수정 화면에서 추가된 색상 토큰
 const PROFILE_COLORS = [
   {
@@ -480,6 +489,54 @@ function WebStyleGuide() {
           <div className={styles.specRow}><span>--shadow-inset-report-hover</span><span>inset 0 0 0 1.2px #3FB6A8 (분석 리포트 카드 hover)</span></div>
           <div className={styles.specRow}><span>--shadow-inset-amber</span><span>inset 0 0 0 1.2px rgba(232,169,60,.45) (채우기 이용내역 카드)</span></div>
           <div className={styles.specRow}><span>--shadow-inset-neutral</span><span>inset 0 0 0 1.2px #E3E3E6 (나의 지원내역 카드)</span></div>
+        </div>
+
+        <p className={styles.subheading}>
+          삭제 확인 팝업 · 완료 토스트 (시나리오 보드 19/20번, 관심있는 지원사업 · 채우기 이용내역 ·
+          나의 지원내역 3개 섹션 공용)
+        </p>
+        <div className={styles.colorGrid}>
+          {MYPAGE_CONFIRM_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <div className={styles.specList}>
+          <div className={styles.specRow}><span>--radius-confirm-card</span><span>20px (팝업 카드)</span></div>
+          <div className={styles.specRow}><span>--radius-confirm-btn</span><span>10px (취소/삭제 버튼)</span></div>
+          <div className={styles.specRow}><span>--shadow-confirm-card</span><span>0 20px 40px rgba(0,0,0,.25) (팝업 카드)</span></div>
+        </div>
+        <div className={styles.componentCard}>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.confirmPreviewCard}>
+                <p className={styles.confirmPreviewText}>
+                  이 공고를 삭제할까요?
+                  <br />
+                  나의 관심있는 지원사업에서 사라지고, 다시 불러올 수 없어요.
+                </p>
+                <div className={styles.confirmPreviewButtons}>
+                  <span className={styles.confirmPreviewCancelBtn}>취소</span>
+                  <span className={styles.confirmPreviewDeleteBtn}>삭제</span>
+                </div>
+              </div>
+              <span className={styles.codeLabel}>
+                삭제 확인 팝업 · --radius-confirm-card · --shadow-confirm-card · 오버레이는
+                --color-scrim-download 재사용
+              </span>
+            </div>
+            <div className={styles.componentItem}>
+              <div className={styles.toastPreview}>나의 관심있는 지원사업에서 삭제됐어요.</div>
+              <span className={styles.codeLabel}>
+                삭제 완료 토스트 · matchingDetail.module.css .toast와 동일 스펙(1.5초 후 자동 소멸)
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
