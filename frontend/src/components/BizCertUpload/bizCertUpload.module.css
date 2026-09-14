@@ -184,6 +184,13 @@
   margin-bottom: 12px;
 }
 
+.reviewDesc2 {
+  margin: 0 0 12px;
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-h2);
+  color: var(--color-ink-charcoal);
+}
+
 .fieldRow {
   margin-bottom: 12px;
 }
@@ -236,7 +243,9 @@
 }
 
 /* 값 표시 + "누르면 수정" 버튼을 겸한다(별도 수정 버튼 없음, 2026-09-10).
-   평소엔 흰 배경, 누르는 순간(:active)만 회색으로 바뀌어서 "눌렀다"는 반응을 줌. */
+   .input과 동일한 테두리색/모서리/배경(회색 필드 스타일)을 초기 상태부터 그대로
+   적용해서 업태/종목 필드와 시각적으로 통일되게 함 — 누르는 순간(:active)만
+   --color-bg-hover-mist로 바뀌어서 "눌렀다"는 반응을 줌. */
 .viewText {
   width: 100%;
   box-sizing: border-box;
@@ -244,10 +253,10 @@
   display: flex;
   align-items: center;
   padding: var(--input-padding-y-min) var(--input-padding-x-min);
-  border: 1px solid var(--color-border-web);
-  border-radius: var(--radius-check);
-  background: var(--color-white);
-  font-family: inherit;
+  border: 1px solid var(--color-stone-gray);
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  font-family: var(--font-family-base);
   font-size: var(--font-size-body);
   color: var(--color-ink-charcoal);
   text-align: left;
@@ -255,7 +264,7 @@
 }
 
 .viewText:active {
-  background: var(--color-stone-mist);
+  background: var(--color-bg-hover-mist);
 }
 
 .confirmBtn {
@@ -273,7 +282,9 @@
 }
 
 /* 법인/개인 — 진짜 <select>가 아니라 누르면 팝업이 뜨는 버튼이라, 오른쪽 화살표
-   아이콘과 텍스트 사이에 여백을 넉넉히 둬서 select처럼 보이게 함. */
+   아이콘과 텍스트 사이에 여백을 넉넉히 둬서 select처럼 보이게 함.
+   배경을 .input/.viewText와 동일한 --color-stone-mist로 맞춰서 다른 필드들과
+   시각적으로 통일되게 함. */
 .entityValueBtn {
   width: 100%;
   box-sizing: border-box;
@@ -281,7 +292,7 @@
   padding: var(--input-padding-y-min) 20px var(--input-padding-y-min) var(--input-padding-x-min);
   border: 1px solid var(--color-stone-gray);
   border-radius: var(--radius-input);
-  background: var(--color-white);
+  background: var(--color-stone-mist);
   font-family: var(--font-family-base);
   font-size: var(--font-size-body);
   color: var(--color-ink-charcoal);
@@ -292,7 +303,7 @@
 }
 
 .entityValueBtn:active {
-  background: var(--color-stone-mist);
+  background: var(--color-bg-hover-mist);
 }
 
 /* [2026-09-11] flex row 안 텍스트 - 긴 KSIC 업종명이 들어오면 min-width 기본값(auto)

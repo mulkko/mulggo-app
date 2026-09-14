@@ -155,6 +155,27 @@
   background: var(--color-navy-sphere-hover); /* #0b3868 */
 }
 
+
+
+.signupBtn2 {
+  width: 100%;
+  height: 48px;
+  border: 1px solid #2A6DB0;
+  border-radius: var(--radius-btn);
+  background: #FFFFFF;
+  color: #19589D;
+  font-family: var(--font-family-base);
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.signupBtn2:hover {
+  background: #EAF2FA; /* 연한 하늘색 톤. 마음에 드는 밝기로 조절해도 돼 */
+}
+
+
+
 .loginPrompt {
   margin: 0;
   font-size: 13px;
