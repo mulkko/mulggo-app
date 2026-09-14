@@ -9,4 +9,12 @@ export default defineConfig({
   server: {
     host: true,
   },
+  // [2026-09-14, 사용자 확인] 실서버(EC2)에서 `vite`(개발서버, 요청마다 즉석 변환이라
+  // 느림)를 그대로 띄워서 체감 속도가 느렸던 문제 - `npm run build`로 빌드한 정적
+  // 파일을 `npm run preview`로 서빙하도록 바꾼다. server와 동일하게 0.0.0.0:5173으로
+  // 고정해서 --host 플래그 없이도 외부 접속 가능하게 함.
+  preview: {
+    host: true,
+    port: 5173,
+  },
 })

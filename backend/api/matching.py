@@ -33,6 +33,16 @@ def _lookup_profile_ksic_code(conn, user_id: int) -> str | None:
     row = cur.fetchone()
     return row[0] if row else None
 
+
+def _lookup_profile_regions(conn, user_id: int) -> list[str]:
+    """로그인한 user_id 본인이 사업자등록증 주소에서 자동으로 뽑혔거나 직접 추가한
+    희망 지역(business_profiles.regions). 없으면 빈 배열 - 호출부는 이 경우 region
+    필터 없이(전체 지역) 보여준다."""
+    cur = conn.cursor()
+    cur.execute("SELECT regions FROM business_profiles WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    return row[0] if row and row[0] else []
+
 DEFAULT_LIMIT = 20
 MAPPING_XLSX = os.path.join("data", "field_mapping.xlsx")
 
@@ -158,6 +168,8 @@ def list_announcements(
     region: 콤마로 구분된 시/도 목록 (예: "서울특별시,경기도"). 공고의 regions
     배열과 하나라도 겹치는 것만 필터. regions는 시/군 단위까지만 있고 구 단위는
     없음(extract_region.py 팀 결정 - 오탐 위험 때문에 의도적으로 제외).
+    [2026-09-14] 비워서 호출하고 로그인 상태면, ksic과 동일한 패턴으로 사업자등록증
+    주소에서 자동으로 뽑힌(또는 직접 추가한) business_profiles.regions로 대신 채운다.
 
     company: 콤마로 구분된 기업유형 목록 (예: "소상공인,중소기업"). target_summary가
     그중 하나와 정확히 일치하는 것만 필터. bizinfo만 값이 있음(kstartup의
@@ -195,6 +207,8 @@ def list_announcements(
             profile_ksic = _lookup_profile_ksic_code(conn, user_id)
             if profile_ksic:
                 ksic_codes = [profile_ksic]
+        if not regions and user_id is not None:
+            regions = _lookup_profile_regions(conn, user_id)
 
         # [2026-09-09] 이미 마감 지난 공고는 리스트에서 아예 뺀다. announcements 원본
         # 데이터는 안 지운다(raw/가공 원칙) - 여기 조회 조건에서만 제외. 마감일이

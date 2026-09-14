@@ -22,5 +22,11 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // [2026-09-14, 사용자 확인] _backup(팀원 원본 백업, 라이브 라우트 아님)/개인용 _test
+  // 파일들도 include:["src"]에 걸려서 tsc -b(npm run build)가 여기 타입 에러로 막히는
+  // 문제가 있었다(실서버 빌드 시도 중 발견) - 이 프로젝트 컨벤션상 둘 다 배포 대상이
+  // 아니라서 빌드 범위에서 제외. 실행에는 영향 없음(어차피 어떤 라우트도 이 파일들을
+  // import 안 함).
+  "exclude": ["src/**/_backup/**", "src/**/*_test.tsx", "src/**/*_test.ts"]
 }
