@@ -38,6 +38,7 @@ app.add_middleware(
     # 이 서버가 실제로 뜨는 포트가 일치해야 한다.
     allow_methods=["*"],
     allow_headers=["*"],
+    
 )
 
 app.include_router(auth_router)

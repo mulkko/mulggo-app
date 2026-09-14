@@ -396,6 +396,24 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     CONSTRAINT uq_bookmarks_user_announcement UNIQUE (user_id, announcement_id)
 );
 
+-- 공고 "지원하기" 표시. 실 DB엔 원래 application_submissions로 만들어졌다가 apply_status로
+-- 이름이 바뀜(PK 시퀀스·제약조건 이름에 옛 이름이 남아있음) - 이 파일엔 문서화가 안
+-- 돼있었음(2026-09-14 확인, bookmarks와 같은 사유로 뒤늦게 채워넣음). bookmarks와 달리
+-- user_id가 아니라 profile_id(business_profiles FK) 기준이고, 찜하기와 달리 취소해도
+-- 행을 지우지 않고 is_applied만 false로 바꾼다(checked_at 이력 보존 목적) - 그래서
+-- (profile_id, announcement_id) UNIQUE 제약이 없다(있으면 이력이 아니라 최신 상태 1건만
+-- 남는 구조가 되어야 하는데, 현재 앱 코드는 존재하는 행을 찾아 갱신하는 방식이라 사실상
+-- 1건만 유지됨 - 다만 DB 차원 제약은 아직 없음). [2026-09-14] API(backend/api/matching.py
+-- POST·DELETE .../apply, backend/api/mypage.py GET /apply-status) + 프론트
+-- (MatchingDetail.tsx, MyPage.tsx) 연동 완료.
+CREATE TABLE IF NOT EXISTS apply_status (
+    submission_id   BIGSERIAL PRIMARY KEY,
+    profile_id      BIGINT NOT NULL REFERENCES business_profiles(profile_id),
+    announcement_id BIGINT NOT NULL REFERENCES announcements(announcement_id),
+    is_applied      BOOLEAN NOT NULL,
+    checked_at      TIMESTAMPTZ
+);
+
 -- 행정구역 계층(시/도 → 시/군/구 → 행정동), 3,924행. 실 DB엔 있었는데 이 파일에 문서화가
 -- 안 돼있었음(2026-09-10 확인) - backend/api/analysis.py::_load_administrative_dong()이
 -- 상권분석(GET /analysis/market)에서 지역 중심좌표 계산용으로 이미 쓰고 있었고,
@@ -459,5 +477,16 @@ CREATE TABLE IF NOT EXISTS idea_refinement_sessions (
     -- 만드는 업종명/확정상태/신뢰도 요약(state/name/confidence/question) - 지금까지는
     -- resolved_ksic_codes(코드 숫자)만 남고 이 사람이 읽는 텍스트는 응답 한 번으로 소실됨.
     diagnosis_mode           VARCHAR(10),
-    industry_match_summary   JSONB
+    industry_match_summary   JSONB,
+    -- [2026-09-13] 업종코드 후보(최대 3개, resolved_ksic_codes) 강제로 하나만 고르게
+    -- 하던 걸 없애고, 후보 전부를 각자 분석해서 분석 리포트 상단 셀렉박스로 전환해가며
+    -- 보게 바꿈(사용자 확인) - {"56221": {"market_analysis":..., "tech_analysis":...}, ...}
+    -- 형태로 코드별 결과를 담는다. 새 테이블(코드당 1행)로 정규화하는 방식도 검토했으나
+    -- (이 프로젝트의 다른 1:N 관계는 대부분 별도 테이블 - biz_registration_docs 등과
+    -- 같은 패턴) 기간 부족으로 보류, JSON 컬럼으로 진행(사용자 확인,
+    -- [[industry-code-multi-select-deferred]] 메모리 참고 - row 방식은 나중 개선 후보).
+    -- market_analysis/tech_analysis(위 컬럼들)는 이 중 1순위(가장 신뢰도 높은) 후보의
+    -- 결과를 그대로 복사해서 계속 채운다 - 마이페이지 리포트 목록 등 기존 코드가
+    -- 이 두 컬럼만 보고 "분석 끝났나"를 판단하므로 하위호환 위해 유지.
+    analysis_by_code         JSONB
 );

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "../../styles/matchingList.module.css";
 import logo from "../../assets/logo.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import logo from "../../assets/logo.svg";
 import ChatFab from "../../components/ChatFab/ChatFab";
 import AnnouncementCard, {
   type AnnouncementCardData,
@@ -358,9 +359,9 @@ function MatchingList() {
     }).finally(() => setLoadingMoreUnclassified(false));
   };
 
-  const handleAnalysisClick = () => {
-    // TODO: "물꼬 분석"(분석 리포트) 화면으로 이동
-  };
+  // [2026-09-13, 사용자 확인] 다른 MULKKO 화면들(레이아웃 공용 헤더)처럼 "<" 뒤로가기
+  // 버튼 추가 - 이 화면은 탭 루트라 뒤로갈 이전 화면 개념이 없어서 홈으로 보낸다.
+  const handleBack = () => navigate("/home");
 
   const handleFilterClick = () => {
     // 지금 적용 중인 필터(company/field/biz_age/age)를 그대로 들고 들어가서,
@@ -378,15 +379,20 @@ function MatchingList() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      {/* 헤더: 로고 + "물꼬 분석" 링크 */}
+      {/* [2026-09-13, 사용자 확인] "<" 뒤로가기 버튼 추가(다른 MULKKO 화면들과 동일
+          레이아웃) + "물꼬 분석" 링크는 삭제(사용자 확인) */}
       <header className={styles.header}>
-        <span className={styles.logo}>
-          <span className={styles.logoText}>MULKKO MATCHING</span>
-          <img className={styles.logoMark} src={logo} alt="물꼬 로고" />
+        <span className={styles.headerLeft}>
+          <button type="button" className={styles.backButton} onClick={handleBack} aria-label="뒤로가기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M16 5l-8 7 8 7" />
+            </svg>
+          </button>
+          <span className={styles.logo}>
+            <span className={styles.logoText}>MULKKO MATCHING</span>
+            <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
+          </span>
         </span>
-        <button type="button" className={styles.analysisLink} onClick={handleAnalysisClick}>
-          물꼬 분석
-        </button>
       </header>
 
       {/* 필터바: 지역/업종/정렬 칩(누르면 시트 팝업) + 상세 필터 버튼, 전부 실동작 */}
@@ -490,7 +496,10 @@ function MatchingList() {
 
         <div className={styles.countBox}>
           <span className={styles.countLabel}>총 매칭 사업</span>
-          <span className={styles.countValue}>{total}건</span>
+          {/* [2026-09-13] 업종코드 필터가 걸려있으면(분석 리포트에서 넘어온 경우) 업종
+              맞춤 섹션(total)만이 아니라 업종무관 섹션(unclassifiedTotal)까지 합친 값을
+              보여준다(사용자 확인) - 필터 없을 땐 unclassifiedTotal이 0이라 total 그대로. */}
+          <span className={styles.countValue}>{total + unclassifiedTotal}건</span>
         </div>
 
         {loading && <p className={styles.guide}>불러오는 중...</p>}

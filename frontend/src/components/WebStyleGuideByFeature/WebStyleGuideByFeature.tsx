@@ -19,54 +19,48 @@ interface ColorToken {
 // REPORTSUMMARY_COLORS를 한데 모은 것 - 각 변수는 그쪽에서도 딱 한 번씩만 정의돼 있어서
 // (재사용은 프로즈 설명으로만 언급) 합쳐도 중복 항목은 없다. role은 usage 문구 기준으로
 // 배경/텍스트/테두리/기타로만 분류한 것(엄밀한 CSS 적용 검사 아님).
+//
+// [2026-09-14, 사용자 확인] webTokens.css에서 근접한 톤끼리 대표색 하나로 통일한 것을
+// 여기도 반영 - 흡수된 항목은 배열에서 빼고, 대표색의 usage에 흡수한 용도를 같이 적었다.
+//   Light Teal ← Light Teal Hover, Light Teal Hover Strong
+//   Teal Mist ← Report BG, Teal Mist Hover, Card Target BG
+//   Navy Mist ← AI Comment BG, Industry Anchor BG, Badge Revenue BG
+//   D-day BG ← Badge Skill BG / D-day Text ← Badge Skill Text
+//   Badge Download BG ← Fill History BG
+//   Scrim ← Scrim Download
+//   Stone Mist ← Autofill Banner BG, Delete Hover, BG Doc Preview
+//   AI Comment Text ← Badge Revenue Text / Teal Green ← Badge Target Text
+//   Stone Gray ← Text Placeholder / Section Subtitle ← Caption Faint
 const ALL_COLORS: ColorToken[] = [
   { name: "Navy Sphere", hex: "#104A8F", usage: "주요 액션 버튼(CTA), 핵심 활성화 링크", varName: "--color-navy-sphere", role: "bg" },
-  { name: "Teal Green", hex: "#0F6E62", usage: "안내 링크 텍스트, 보조 상호작용 요소", varName: "--color-teal-green", role: "text" },
-  { name: "Light Teal", hex: "#3FB6A8", usage: "지역칩·저장버튼 등 배경 (팔레트 등록값)", varName: "--color-light-teal", role: "bg" },
-  { name: "Teal Mist", hex: "#DFF3EF", usage: "아바타·배지 등 배경 (팔레트 등록값)", varName: "--color-teal-mist", role: "bg" },
+  { name: "Teal Green", hex: "#0F6E62", usage: '안내 링크 텍스트, 보조 상호작용 요소 + "타깃 관점" 뱃지 텍스트 통합', varName: "--color-teal-green", role: "text" },
+  { name: "Light Teal", hex: "#3FB6A8", usage: "지역칩·저장버튼 등 배경 + hover 2종(#2E9C8F, #34A296) 통합 (팔레트 등록값)", varName: "--color-light-teal", role: "bg" },
   { name: "Ink Charcoal", hex: "#2E312E", usage: "주요 텍스트, 입력란 타이틀 라벨", varName: "--color-ink-charcoal", role: "text" },
-  { name: "Stone Gray", hex: "#8B8D93", usage: "서브텍스트, 버튼 테두리, 공통 인풋 테두리", varName: "--color-stone-gray", role: "text" },
-  { name: "Text Placeholder", hex: "#757575", usage: "입력란 placeholder 텍스트", varName: "--color-text-placeholder", role: "text" },
-  { name: "Stone Mist", hex: "#EFEFF1", usage: "공통 인풋 필드 배경", varName: "--color-stone-mist", role: "bg" },
+  { name: "Stone Gray", hex: "#8B8D93", usage: "서브텍스트, 버튼 테두리, 공통 인풋 테두리 + 입력란 placeholder 텍스트 통합", varName: "--color-stone-gray", role: "text" },
+  { name: "Stone Mist", hex: "#EFEFF1", usage: "공통 인풋 필드 배경 + 서류 자동채움 배너/카드 삭제 hover/서류 미리보기 배경 통합", varName: "--color-stone-mist", role: "bg" },
   { name: "Border Web", hex: "#DCD8CC", usage: "구분선, 파일 업로드 점선 테두리", varName: "--color-border-web", role: "border" },
   { name: "White", hex: "#FFFFFF", usage: "앱 기본 배경, 카드 배경, 활성 버튼 텍스트", varName: "--color-white", role: "bg" },
-  { name: "Scrim", hex: "rgba(0,0,0,0.3)", usage: "모달/팝업 뒤 배경 딤", varName: "--color-scrim", role: "bg" },
+  { name: "Scrim", hex: "rgba(0,0,0,0.3)", usage: "모달/팝업 뒤 배경 딤 + 다운로드 모달 오버레이 딤 통합", varName: "--color-scrim", role: "bg" },
   { name: "Error BG", hex: "#F2D1D1", usage: "에러 배지 배경", varName: "--color-error-bg-web", role: "bg" },
   { name: "Error Text", hex: "#C04040", usage: "에러 텍스트/보더", varName: "--color-error-text", role: "text" },
   { name: "Deep Navy", hex: "#15328C", usage: "매칭 화면 로고·기관명·카운트 숫자", varName: "--color-deep-navy", role: "text" },
-  { name: "D-day BG", hex: "#F6DFAF", usage: "D-day(모집중) 뱃지 배경", varName: "--color-dday-bg", role: "bg" },
-  { name: "D-day Text", hex: "#8A6212", usage: "D-day(모집중) 뱃지 텍스트", varName: "--color-dday-text", role: "text" },
+  { name: "D-day BG", hex: "#F6DFAF", usage: 'D-day(모집중) 뱃지 배경 + "보유역량 활용" 뱃지 배경 통합', varName: "--color-dday-bg", role: "bg" },
+  { name: "D-day Text", hex: "#8A6212", usage: 'D-day(모집중) 뱃지 텍스트 + "보유역량 활용" 뱃지 텍스트 통합', varName: "--color-dday-text", role: "text" },
   { name: "Border Nav", hex: "#EDEDF0", usage: "하단 네비게이션 상단 구분선, 카드 구분선", varName: "--color-border-nav", role: "border" },
   { name: "Tab Active Icon", hex: "#E8A93C", usage: "하단 네비 활성 탭 아이콘 stroke", varName: "--color-tab-active-icon", role: "other" },
   { name: "Tab Active Label", hex: "#B5761A", usage: "하단 네비 활성 탭 라벨", varName: "--color-tab-active-label", role: "text" },
-  { name: "Section Subtitle", hex: "#B5B6BB", usage: "[draft] 업종맞춤/업종무관 그룹 제목 아래 안내문구", varName: "--color-section-subtitle", role: "text" },
-  { name: "AI Comment BG", hex: "#EEF1FA", usage: "AI 코멘트 박스 배경", varName: "--color-ai-comment-bg", role: "bg" },
-  { name: "AI Comment Text", hex: "#2E3A6B", usage: "AI 코멘트 박스 라벨/본문", varName: "--color-ai-comment-text", role: "text" },
+  { name: "Section Subtitle", hex: "#B5B6BB", usage: "[draft] 업종맞춤/업종무관 그룹 제목 아래 안내문구 + AI 참고 캡션 텍스트 통합", varName: "--color-section-subtitle", role: "text" },
+  { name: "AI Comment Text", hex: "#2E3A6B", usage: 'AI 코멘트 박스 라벨/본문 + "수익모델 관점" 뱃지 텍스트 통합', varName: "--color-ai-comment-text", role: "text" },
   { name: "Overview Icon", hex: "#C4841E", usage: "사업개요 카드 항목 아이콘 stroke", varName: "--color-overview-icon", role: "other" },
-  { name: "Autofill Banner BG", hex: "#FAFAF9", usage: "서류 자동채움 안내 배너 배경", varName: "--color-autofill-banner-bg", role: "bg" },
-  { name: "Teal Mist Hover", hex: "#CDEDE6", usage: '"채우기" 필 버튼 hover 배경', varName: "--color-teal-mist-hover", role: "bg" },
-  { name: "Light Teal Hover", hex: "#2E9C8F", usage: '"원 공고 홈페이지로 이동" 버튼 hover 배경', varName: "--color-light-teal-hover", role: "bg" },
-  { name: "Report BG", hex: "#EAF7F4", usage: '"나의 분석 리포트" 카드 배경', varName: "--color-report-bg", role: "bg" },
-  { name: "Fill History BG", hex: "#FDF6E7", usage: '"채우기 이용내역" 카드 배경', varName: "--color-fill-history-bg", role: "bg" },
-  { name: "Badge Download BG", hex: "#FFF3D6", usage: '"다운로드 가능" 뱃지 배경', varName: "--color-badge-download-bg", role: "bg" },
+  { name: "Teal Mist", hex: "#DFF3EF", usage: '아바타·배지 등 배경 (팔레트 등록값) + "나의 분석 리포트" 카드, "채우기" 버튼 hover, "타깃 관점" 카드 배경 통합', varName: "--color-teal-mist", role: "bg" },
+  { name: "Badge Download BG", hex: "#FFF3D6", usage: '"다운로드 가능" 뱃지 배경 + "채우기 이용내역" 카드 배경 통합', varName: "--color-badge-download-bg", role: "bg" },
   { name: "Border Dashed", hex: "rgba(139,141,147,0.3)", usage: '"+ 새 분석 시작하기" 점선 버튼 테두리 · 진단 진행바 인디케이터 배경(--color-dot-inactive는 이 값을 참조하는 별칭, 2026-09-13 통합)', varName: "--color-border-dashed", role: "border" },
-  { name: "Delete Hover", hex: "rgba(139,141,147,0.15)", usage: "카드 삭제(X) 버튼 hover 배경", varName: "--color-delete-hover", role: "bg" },
-  { name: "Light Teal Hover Strong", hex: "#34A296", usage: '"저장하기" 버튼 hover 배경 (공고 상세 CTA hover와 다른 값)', varName: "--color-light-teal-hover-strong", role: "bg" },
-  { name: "BG Doc Preview", hex: "#F7F7F8", usage: "서류 미리보기 본문·헤더 배경", varName: "--color-bg-doc-preview", role: "bg" },
-  { name: "Scrim Download", hex: "rgba(23,26,25,0.45)", usage: "다운로드 모달 오버레이 딤 (--color-scrim보다 진함)", varName: "--color-scrim-download", role: "bg" },
-  { name: "Navy Mist", hex: "#E7ECF8", usage: '"정밀 구체화" 카드 pill 배경 (Teal Mist의 네이비 버전)', varName: "--color-navy-mist", role: "bg" },
+  { name: "Navy Mist", hex: "#E7ECF8", usage: '"정밀 구체화" 카드 pill 배경 + AI 코멘트 박스, "업종코드를 찾았어요" 안내박스, "수익모델 관점" 뱃지 배경 통합', varName: "--color-navy-mist", role: "bg" },
   { name: "Purple Accent", hex: "#7C5CBF", usage: '4축요약카드 "차별점" 아이콘 배경', varName: "--color-purple-accent", role: "other" },
   { name: "CTA Hover Navy", hex: "#0B2170", usage: '"지원사업 매칭 보기 →" CTA 버튼 hover 배경', varName: "--color-cta-hover-navy", role: "bg" },
-  { name: "Caption Faint", hex: "#A9ABB2", usage: "AI 참고 캡션 텍스트", varName: "--color-caption-faint", role: "text" },
-  { name: "Card Target BG", hex: "rgba(63,182,168,.06)", usage: '"타깃 관점" 아이디어 카드 배경', varName: "--color-card-target-bg", role: "bg" },
   { name: "Card Revenue BG", hex: "rgba(21,50,140,.05)", usage: '"수익모델 관점" 아이디어 카드 배경', varName: "--color-card-revenue-bg", role: "bg" },
   { name: "Card Skill BG", hex: "rgba(232,169,60,.08)", usage: '"보유역량 활용" 아이디어 카드 배경', varName: "--color-card-skill-bg", role: "bg" },
   { name: "Badge Target BG", hex: "#BFEAE1", usage: '"타깃 관점" 뱃지 배경', varName: "--color-badge-target-bg", role: "bg" },
-  { name: "Badge Target Text", hex: "#0B5A50", usage: '"타깃 관점" 뱃지 텍스트', varName: "--color-badge-target-text", role: "text" },
-  { name: "Badge Revenue BG", hex: "#C9D6F6", usage: '"수익모델 관점" 뱃지 배경', varName: "--color-badge-revenue-bg", role: "bg" },
-  { name: "Badge Revenue Text", hex: "#102569", usage: '"수익모델 관점" 뱃지 텍스트', varName: "--color-badge-revenue-text", role: "text" },
-  { name: "Badge Skill BG", hex: "#F3DA9B", usage: '"보유역량 활용" 뱃지 배경', varName: "--color-badge-skill-bg", role: "bg" },
-  { name: "Badge Skill Text", hex: "#714800", usage: '"보유역량 활용" 뱃지 텍스트', varName: "--color-badge-skill-text", role: "text" },
   { name: "Market Density", hex: "#7A2A0A", usage: '상권분석 "동일업종 밀집도" 히트맵 그라데이션 진한 끝', varName: "--color-market-density", role: "other" },
   { name: "Industry Anchor BG", hex: "#F3F8FF", usage: '"업종코드를 찾았어요" 화면 안내박스 배경', varName: "--color-industry-anchor-bg", role: "bg" },
   { name: "Danger BG", hex: "#E0273F", usage: '마이페이지 삭제 확인 팝업 "삭제" 버튼 배경', varName: "--color-danger-bg", role: "bg" },
@@ -88,6 +82,47 @@ const ROLE_LABEL: Record<ColorRole, string> = {
   border: "테두리·구분선",
   other: "기타(아이콘 등)",
 };
+
+// [2026-09-14, 사용자 확인] 그래프(막대·도넛·밀집도 히트맵)에 실제로 쓰이는 색만 모은 것 -
+// DiagnosisReport.tsx의 RANK_BAR_COLORS / DONUT_OTHER_COLOR / getMarketDensityColor /
+// getDensityColor 원본 대조. 대부분 위 01 색상 토큰을 그대로 재사용하지만(varName 있음),
+// 히트맵 그라데이션 중간·옅은 끝과 도넛 "기타" 조각은 토큰 없이 코드에 값이 직접
+// 하드코딩돼 있다(varName 없음 - 향후 토큰화 대상).
+interface GraphColorToken {
+  name: string;
+  value: string;
+  hex: string;
+  usage: string;
+  varName?: string;
+}
+
+const GRAPH_COLORS: GraphColorToken[] = [
+  { name: "Rank 1st", value: "var(--color-light-teal)", hex: "#3FB6A8", usage: "막대그래프·도넛 1위 색상 (반경 500m 업종 구성 등)", varName: "--color-light-teal" },
+  { name: "Rank 2nd", value: "var(--color-tab-active-icon)", hex: "#E8A93C", usage: "막대그래프·도넛 2위 색상", varName: "--color-tab-active-icon" },
+  { name: "Rank 3rd", value: "var(--color-deep-navy)", hex: "#15328C", usage: "막대그래프·도넛 3위 색상", varName: "--color-deep-navy" },
+  { name: "Rank 4th", value: "var(--color-purple-accent)", hex: "#7C5CBF", usage: "막대그래프·도넛 4위 색상", varName: "--color-purple-accent" },
+  { name: "Donut Other", value: "rgba(139,141,147,0.35)", hex: "rgba(139,141,147,.35)", usage: '도넛 "기타" 조각 (Stone Gray 계열, 토큰 없이 하드코딩)' },
+  { name: "Market Density High", value: "var(--color-market-density)", hex: "#7A2A0A", usage: "상권분석(카페형) 밀집도 히트맵 그라데이션 진한 끝(러스트)", varName: "--color-market-density" },
+  { name: "Market Density Mid", value: "rgb(240,168,104)", hex: "#F0A868", usage: "상권분석(카페형) 밀집도 히트맵 그라데이션 중간 지점(55%, 토큰 없이 하드코딩)" },
+  { name: "Market Density Low", value: "rgb(251,241,228)", hex: "#FBF1E4", usage: "상권분석(카페형) 밀집도 히트맵 그라데이션 옅은 끝(토큰 없이 하드코딩)" },
+  { name: "Tech Density", value: "rgba(21,50,140,0.5)", hex: "#15328C", usage: "기술창업형 밀집도 히트맵 - Deep Navy 단색 + 투명도 0.1~0.8 (미리보기는 중간값 0.5)", varName: "--color-deep-navy" },
+];
+
+function GraphColorGrid({ items }: { items: GraphColorToken[] }) {
+  return (
+    <div className={styles.colorGrid}>
+      {items.map((color) => (
+        <div className={styles.colorCard} key={color.name}>
+          <div className={styles.swatch} style={{ backgroundColor: color.value }} />
+          <p className={styles.colorName}>{color.name}</p>
+          <p className={styles.colorHex}>{color.hex}</p>
+          <p className={styles.colorUsage}>{color.usage}</p>
+          <span className={styles.codeLabel}>{color.varName ?? "하드코딩 (토큰 없음)"}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function ColorGrid({ items }: { items: ColorToken[] }) {
   return (
@@ -112,10 +147,10 @@ function WebStyleGuideByFeature() {
     <div className={styles.page}>
       <header className={styles.header}>
         <p className={styles.eyebrow}>MULKKO DESIGN SYSTEM · BY FEATURE</p>
-        <h1 className={styles.title}>기능 단위 스타일가이드 (색상 · 폰트 · 버튼 · 팝업)</h1>
+        <h1 className={styles.title}>기능 단위 스타일가이드 (색상 · 폰트 · 버튼 · 팝업 · 그래프)</h1>
         <p className={styles.subheading}>
-          /dev/web-style-guide(화면/메뉴 단위)와 같은 값을 색상 / 폰트 색상 / 폰트 크기 / 버튼 / 팝업
-          5개 기능으로 재구성한 것. 화면별로 반복되던 설명은 각 항목의 사용처(usage) 문구로만 남긴다.
+          /dev/web-style-guide(화면/메뉴 단위)와 같은 값을 색상 / 폰트 색상 / 폰트 크기 / 버튼 / 팝업 / 그래프
+          6개 기능으로 재구성한 것. 화면별로 반복되던 설명은 각 항목의 사용처(usage) 문구로만 남긴다.
         </p>
       </header>
 
@@ -334,6 +369,17 @@ function WebStyleGuideByFeature() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section>
+        <div className={styles.sectionTitleRow}>
+          <span className={styles.sectionBar} />
+          <h2 className={styles.sectionTitle}>06. 그래프</h2>
+        </div>
+        <p className={styles.subheading}>
+          막대그래프·도넛차트·밀집도 히트맵(DiagnosisReport.tsx)에서 실제로 쓰이는 색만 모음 ({GRAPH_COLORS.length}개)
+        </p>
+        <GraphColorGrid items={GRAPH_COLORS} />
       </section>
     </div>
   );

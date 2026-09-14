@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import { consumeDiagnosisReturnTo, getDiagnosisAnswers, saveDiagnosisAnswers, type Origin } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 /**
  * 사업구체화 진단 2/5 — "진단방식선택" = Q2 (dev_links.html 목업 이름, 프로토타입 qMeta.q1/Q2).
@@ -38,7 +39,7 @@ function DiagnosisSelect() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      <DiagnosisHeader onBack={handleBack} pct="40%" stepLabel="AI 제안 · 2/6" />
+      <DiagnosisHeader onBack={handleBack} pct="40%" stepLabel="2/6" />
 
       <div className={styles.scrollArea}>
         <h1 className={styles.questionTitle}>이 아이디어는 어디서 출발했나요?</h1>
@@ -78,9 +79,23 @@ function DiagnosisSelect() {
           disabled={selected === null}
           onClick={() => selected && choose(selected)}
         >
-          다음 →
+          다음
+          <svg
+            className={styles.nextButtonIcon}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M8 5l8 7-8 7" />
+          </svg>
         </button>
       </div>
+
+      <BottomNav active="idea" />
     </div>
   );
 }

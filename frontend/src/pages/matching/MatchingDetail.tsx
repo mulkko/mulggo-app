@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "../../styles/matchingDetail.module.css";
 import type { AnnouncementDetail } from "./matchingDetailData";
 import { authHeaders } from "../../auth/session";
+import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
 
 /**
@@ -11,7 +12,8 @@ import ChatFab from "../../components/ChatFab/ChatFab";
  * 공고 리스트(`/matching`)에서 카드를 누르면 `/matching/:id`로 들어온다.
  * URL의 id로 GET /api/matching/:id를 호출해 렌더한다 (id = announcements.announcement_id).
  *
- * 이 화면에는 하단 네비게이션(BottomNav)이 없다 — 상단에 뒤로가기 헤더만 있는 구조.
+ * [2026-09-13, 사용자 확인] 하단 네비게이션(BottomNav, active="matching") 추가함
+ * (이전엔 상단에 뒤로가기 헤더만 있는 구조였음).
  *
  * 실제 동작으로 만든 것: 뒤로가기, 북마크(저장) 토글, 지원 여부 토글.
  * TODO로만 남긴 것: "채우기"(16-1 서류 미리보기 화면 예정), "원 공고 홈페이지로 이동"(외부 URL 미정).
@@ -67,6 +69,7 @@ function MatchingDetail() {
       .then((body: { success: boolean; data?: AnnouncementDetail }) => {
         setDetail(body.success ? body.data : undefined);
         setSaved(body.success ? Boolean(body.data?.bookmarked) : false);
+        setApplied(body.success ? Boolean(body.data?.applied) : false);
       })
       .catch(() => setDetail(undefined))
       .finally(() => setLoading(false));
@@ -100,7 +103,20 @@ function MatchingDetail() {
   };
 
   const handleToggleApplied = () => {
-    setApplied((prev) => !prev);
+    // 낙관적으로 먼저 바꾸고, 실패하면(비로그인 401 등) 원래 상태로 되돌린다 (handleToggleSave와 동일 패턴).
+    const next = !applied;
+    setApplied(next);
+    fetch(`${API_BASE_URL}/api/matching/${id}/apply`, {
+      method: next ? "POST" : "DELETE",
+      headers: authHeaders(),
+    }).then((res) => {
+      if (!res.ok) {
+        setApplied(!next);
+        return;
+      }
+      setToastMessage(next ? "지원한 공고로 표시되었습니다" : "지원 표시가 취소되었습니다");
+      setTimeout(() => setToastMessage(null), 1500);
+    }).catch(() => setApplied(!next));
   };
 
   const handleFill = (doc: { fileName: string; attachmentId: number }) => {
@@ -328,7 +344,8 @@ function MatchingDetail() {
         </div>
       )}
 
-      <ChatFab variant="default" />
+      <BottomNav active="matching" />
+      <ChatFab variant="withBottomNav" />
     </div>
   );
 }

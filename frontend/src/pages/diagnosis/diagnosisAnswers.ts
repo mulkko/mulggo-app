@@ -39,6 +39,10 @@ export interface DiagnosisAnswers {
   industryMatchName?: string;
   industryMatchState?: string;
   industryMatchConfidence?: string;
+  // [2026-09-14] 후보(최대 3개) 코드별 업종명 - code -> name. industryMatchName은
+  // 1순위 이름만 담아서, 업종코드 결과/분석 리포트 셀렉박스가 후보 3개 전부에 같은
+  // 이름을 보여주던 버그가 있었음(사용자 확인) - 이제 코드마다 자기 이름을 찾아 쓴다.
+  industryMatchCodeNames?: Record<string, string>;
   // /start 응답으로 같이 받는 앵커 문구(있으면 7·8번 화면 하드코딩 문구 대신 사용) -
   // 매장형태로 카페형/기술창업형이 갈려 내용 출처가 다르지만 프론트는 그냥 문자열로 받아 쓴다.
   targetAnchor?: string;
@@ -50,6 +54,12 @@ export interface DiagnosisAnswers {
   marketAnalysis?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   techAnalysis?: any;
+  // [2026-09-13] 업종코드 후보(최대 3개) 전부를 각자 분석한 결과 - 코드 -> {marketAnalysis,
+  // techAnalysis} 맵. 분석 리포트 화면(DiagnosisReport) 상단 셀렉박스가 이걸로 후보를
+  // 전환해가며 보여준다. marketAnalysis/techAnalysis(위 두 필드)는 그중 1순위(후보
+  // 배열의 첫 코드) 결과와 항상 같다(하위호환 - Q7·Q8 앵커는 계속 1순위 기준).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  analysisByCode?: Record<string, { marketAnalysis?: any; techAnalysis?: any; failed?: boolean }>;
   sido?: string;
   sigungu?: string;
   dong?: string;

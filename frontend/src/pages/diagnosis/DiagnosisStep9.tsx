@@ -6,6 +6,7 @@ import DiagnosisTextQuestion from "./DiagnosisTextQuestion";
 import DiagnosisReportSummary, { type IdeaCard } from "./DiagnosisReportSummary";
 import { authHeaders } from "../../auth/session";
 import { clearDiagnosisAnswers, getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -55,7 +56,8 @@ function DiagnosisStep9() {
 
   useEffect(() => {
     const answers = getDiagnosisAnswers();
-    if (!answers.sido || !answers.sigungu || !answers.dong || !answers.sessionId) {
+    // dong은 기술창업형(오프라인 매장 아님)이면 비어있는 게 정상(DiagnosisStep5.tsx 참고).
+    if (!answers.sido || !answers.sigungu || !answers.sessionId) {
       navigate("/diagnosis/6", { replace: true });
       return;
     }
@@ -151,6 +153,8 @@ function DiagnosisStep9() {
           </div>
         </div>
       )}
+
+      <BottomNav active="idea" />
     </div>
   );
 }

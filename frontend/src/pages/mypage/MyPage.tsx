@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/myPage.module.css";
 import logo from "../../assets/logo.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import logo from "../../assets/logo.svg";
 import ChatFab from "../../components/ChatFab/ChatFab";
 import AnnouncementCard, {
   type AnnouncementCardData,
@@ -40,18 +41,20 @@ interface ProfileSummary {
  * 마감됐어도 개인 기록이라 목록에서 안 지우고 카드에 "공고마감" 오버레이만 표시
  * (마감된 공고도 원본 첨부는 며칠간 정상 응답 확인함, 다만 장기 보장은 안 됨이라
  * 다운로드 실패 시 에러 메시지로 자연스럽게 안내되게 함 - 사용자 확인, 2026-09-10).
- * [2026-09-10] 나머지 2개 섹션(분석 리포트/지원내역)은 대응 테이블이 실제로 0건이라
- * (idea_refinement_sessions/apply_status - fetch해도 항상 빈 배열) API 연동 자체를
- * 안 만들고, 그냥 빈 배열로 시작해서 각 섹션에 안내 문구("~이 없습니다")만 보여준다
- * (사용자 확인). 더미데이터는 MyPage.tsx.bak에 남겨뒀다.
+ * [2026-09-10] 애초엔 분석 리포트/지원내역 대응 테이블이 실제로 0건이라(idea_refinement_
+ * sessions/apply_status - fetch해도 항상 빈 배열) API 연동 자체를 안 만들고, 빈 배열로
+ * 시작해서 각 섹션에 안내 문구("~이 없습니다")만 보여줬다. 더미데이터는 MyPage.tsx.bak에
+ * 남겨뒀다.
  * [2026-09-12] 분석 리포트는 실제로 채워지기 시작해서(backend/api/diagnosis.py의
  * POST /api/diagnosis/start가 idea_refinement_sessions에 저장) backend/api/
- * mypage.py(GET /reports) 연동함(사용자 확인) - 지원내역(apply_status)은 아직
- * 0건이라 그대로 미구현.
+ * mypage.py(GET /reports) 연동함(사용자 확인).
+ * [2026-09-14] 지원내역도 연동함 - MatchingDetail.tsx "지원하기" 버튼이 이제 실제로
+ * apply_status에 저장하도록 backend/api/matching.py에 POST·DELETE .../apply를
+ * 추가했고, backend/api/mypage.py GET /apply-status로 목록을 받아온다(사용자 확인).
  *
- * 삭제(X) 버튼은 "로컬 state에서 해당 항목 제거"만 하는 임시 동작(새로고침하면
- * 사라짐) - 실제 서버 삭제 API는 없음. 화면 이동은 TODO 주석으로만 표시.
- * (관심있는 지원사업은 위처럼 실연동이라 삭제 시 서버에서도 찜 해제됨.)
+ * 삭제(X) 버튼은 채우기 이용내역만 "로컬 state에서 해당 항목 제거"하는 임시 동작
+ * (새로고침하면 사라짐) - 실제 서버 삭제 API는 없음. 관심있는 지원사업/지원내역은
+ * 실연동이라 삭제 시 서버에도 반영된다. 화면 이동은 TODO 주석으로만 표시.
  *
  * 삭제 state 구조: 삭제 가능한 섹션마다 별도의 useState 배열을 두고,
  * 삭제 시 `setX(prev => prev.filter(item => item.id !== id))` 로 해당 id만 걸러낸다.
@@ -75,7 +78,8 @@ interface AnalysisReport {
   id: string;
   /** 업종명 (예: "숙박 및 음식점업 (커피 전문점)") */
   industry: string;
-  /** 업종코드 + 분석 요약 */
+  /** "업종코드 {코드} · {동} 주변 상권 동향"(카페형) 또는 "업종코드 {코드} · 업종 및
+   * 특허 분석 지표"(기술창업형) - backend/api/mypage.py::list_reports 참고 */
   summary: string;
   /** 생성일 문구 */
   createdAt: string;
@@ -160,11 +164,8 @@ function ConfirmDeleteModal({
 function MyPage() {
   const navigate = useNavigate();
 
-  // 삭제 가능한 섹션마다 별도 로컬 state (백엔드 연동 전이라 새로고침 시 초기화됨)
-  // [2026-09-10] 분석 리포트/지원내역은 대응 테이블이 실제로 0건이라(idea_refinement_
-  // sessions/apply_status) API를 만들어도 항상 빈 배열이므로, 더미데이터 대신 처음부터
-  // 빈 배열로 시작하고 각 섹션에 안내 문구를 보여준다(사용자 확인, 2026-09-10).
-  // 채워지는 테이블이 생기면 그때 프로필/관심지원사업처럼 useEffect에서 fetch로 교체.
+  // 삭제 가능한 섹션마다 별도 로컬 state - 초기값은 빈 배열, 아래 useEffect가 각자
+  // 실제 API로 채운다(분석 리포트/지원내역도 2026-09-12/2026-09-14에 연동 완료).
   const [reports, setReports] = useState<AnalysisReport[]>([]);
   const [interests, setInterests] = useState<AnnouncementCardData[]>([]);
   const [fillHistory, setFillHistory] = useState<FillHistoryItem[]>([]);
@@ -219,6 +220,18 @@ function MyPage() {
       .then((res) => res.json())
       .then((res: { success: boolean; data?: AnalysisReport[] }) => {
         if (res.success && res.data) setReports(res.data);
+      })
+      .catch(() => {
+        /* 조회 실패 시 빈 목록 그대로 */
+      });
+
+    // [2026-09-14] 지원내역도 실데이터 연동함 - apply_status가 채워지기 시작해서
+    // (backend/api/matching.py::set_applied, MatchingDetail.tsx "지원하기" 토글)
+    // 더 이상 항상 빈 배열이 아니다. 위 섹션들과 동일하게 로그인 세션 기준.
+    fetch(`${API_BASE_URL}/api/mypage/apply-status`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((res: { success: boolean; data?: ApplyHistoryItem[] }) => {
+        if (res.success && res.data) setApplyHistory(res.data);
       })
       .catch(() => {
         /* 조회 실패 시 빈 목록 그대로 */
@@ -286,8 +299,12 @@ function MyPage() {
         /* 실패해도 화면에선 이미 지운 채로 둔다 */
       });
     } else {
+      // [2026-09-14] apply-status 목록의 id는 submission_id가 아니라 announcement_id라
+      // (backend/api/mypage.py::list_apply_status 참고) 삭제도 같은 키를 쓰는
+      // matching.py의 지원취소 엔드포인트를 호출해야 한다(MatchingDetail.tsx "지원하기"
+      // 토글의 DELETE와 동일 - 행을 지우지 않고 is_applied만 false로 바꿔서 다시 안 나타남).
       removeById(setApplyHistory)(id);
-      fetch(`${API_BASE_URL}/api/mypage/apply-history/${id}`, {
+      fetch(`${API_BASE_URL}/api/matching/${id}/apply`, {
         method: "DELETE",
         headers: authHeaders(),
       }).catch(() => {
@@ -317,7 +334,7 @@ function MyPage() {
       <header className={styles.header}>
         <span className={styles.logo}>
           <span className={styles.logoText}>MULKKO PAGE</span>
-          <img className={styles.logoMark} src={logo} alt="물꼬 로고" />
+          <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
         </span>
         <button
           type="button"
@@ -370,7 +387,7 @@ function MyPage() {
               >
                 <span className={styles.reportIndustry}>{report.industry}</span>
                 <span className={styles.reportSummary}>{report.summary}</span>
-                <span className={styles.reportDate}>{report.createdAt}</span>
+                <span className={styles.reportDate}>{report.createdAt} 생성</span>
               </button>
               <DeleteButton onClick={() => removeById(setReports)(report.id)} />
             </div>

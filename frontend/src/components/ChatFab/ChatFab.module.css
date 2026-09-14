@@ -1,10 +1,15 @@
 /* 우측 고정 챗봇 FAB (공통 컴포넌트). 짝꿍 컴포넌트: components/ChatFab/ChatFab.tsx.
-   position:absolute로 페이지 컨테이너(.page, position:relative 필요) 기준 고정한다 —
-   .page가 데스크톱에서 640px로 가운데 정렬되므로 이렇게 해야 브라우저 창 우측이 아니라
-   그 컨테이너 기준 우측에 고정된다(원본: pages/support/CustomerSupport.tsx, 2026-09-13). */
+   [2026-09-14, 사용자 확인] 원래 position:absolute로 페이지 컨테이너(.page) 기준
+   고정했었는데, 이러면 콘텐츠가 뷰포트보다 긴 화면에서 "문서 전체 높이 기준 90px"에
+   고정돼버려 스크롤 중엔 화면에서 사라지거나 맨 아래로 갔을 때 하단 네비(BottomNav,
+   position:fixed)와 겹쳐 보이는 문제가 있었다 — BottomNav가 예전에 겪었던 것과
+   똑같은 문제(bottomNav.module.css 상단 주석 참고). position:fixed로 바꿔서 항상
+   뷰포트 기준으로 떠 있게 하고, 데스크톱에서 .pageContainer(max-width:640px, 가운데
+   정렬)와 같은 우측 경계에 맞추기 위해 CSS max()로 "실제 화면 우측에서 16px" vs
+   "가운데정렬 640px 박스 우측에서 16px" 중 더 안쪽 값을 쓴다. */
 .fab {
-  position: absolute;
-  right: 16px;
+  position: fixed;
+  right: max(16px, calc(50% - 304px));
   bottom: 24px;
   width: 56px;
   height: 56px;
@@ -17,7 +22,7 @@
   box-shadow:
     0 10px 24px -6px rgba(21, 50, 140, 0.45),
     0 4px 10px -2px rgba(21, 50, 140, 0.3);
-  z-index: 10;
+  z-index: 11;
 }
 
 .fabImg {

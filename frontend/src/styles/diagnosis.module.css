@@ -14,16 +14,18 @@
   color: var(--color-ink-charcoal);
 }
 
-/* ===== 헤더 (진행바 + 단계뱃지) =====
+/* ===== 진행바 + 단계뱃지 행 =====
    [2026-09-13, 사용자 확인] 프로토타입(260911_Mulkko Prototype) "PSST 확정" 화면의
    실제 헤더 마크업과 대조해서 3곳 수정: 여백 24px→22px, 뒤로가기 버튼 24px→20px,
    단계 라벨을 알약(pill) 뱃지에서 배경 없는 순수 텍스트로. 처음 만들 때 이 프로토타입
    대신 다른 화면(matchingDetail.module.css) 헤더 스펙을 재사용해서 생긴 차이 - 로직은
    그대로, DiagnosisHeader.tsx는 onBack/pct/stepLabel만 받는 순수 표시 컴포넌트라
-   이 파일 하나만 고치면 이 컴포넌트를 쓰는 모든 화면에 안전하게 반영됨. */
+   이 파일 하나만 고치면 이 컴포넌트를 쓰는 모든 화면에 안전하게 반영됨.
+   [2026-09-13] 뒤로가기 버튼은 위에 새로 추가된 "MULKKO IDEA" 브랜드 행
+   (.reportHeaderTop)으로 옮겨서, 이 행은 이제 진행바+단계뱃지만 담는다(사용자 확인). */
 .header {
   flex-shrink: 0;
-  height: 52px;
+  height: 40px;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -50,6 +52,64 @@
   height: 100%;
 }
 
+/* [2026-09-13, 사용자 확인] 2단 헤더의 상단(브랜드) 행 - 원래 분석 리포트(DiagnosisReport.tsx)
+   전용이었으나, 진단 질응답 화면(DiagnosisHeader.tsx, "MULKKO IDEA")도 같이 재사용한다.
+   프로토타입(260911_Mulkko Prototype) 13번 상권분석/14번 기술창업분석 화면 원본 대조로
+   확인. .logo/.logoText/.logoMark는 matchingList.module.css의 "MULKKO MATCHING"
+   워드마크와 완전히 동일한 스펙이라(폰트/굵기/크기/자간/색 전부 일치) 그대로
+   복사해왔다 - 문구만 화면마다 다르다("MULKKO REPORT"/"MULKKO IDEA"). */
+.reportHeader {
+  flex-shrink: 0;
+}
+
+.reportHeaderTop {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 22px;
+  box-sizing: border-box;
+  background: var(--color-white);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.logoText {
+  font-family: var(--font-family-logo);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  color: var(--color-deep-navy);
+}
+
+/* [2026-09-13, 사용자 확인] 인라인 SVG 리프 아이콘 대신, DiagnosisReportSummary가
+   쓰던 이미지 로고(logo.svg)로 전부 통일 - 그쪽 .logoMark 스펙(width:28px, 높이 auto)
+   그대로 재사용. */
+.logoMark {
+  width: 28px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.reportHeaderBar {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  box-sizing: border-box;
+  background: var(--color-light-teal);
+}
+
+.reportHeaderBarText {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-white);
+}
+
 .progressTrack {
   flex: 1;
   height: 5px;
@@ -70,6 +130,16 @@
   white-space: nowrap;
   color: var(--color-stone-gray);
   font-size: 11px;
+  border: solid 1px var(--color-stone-mist);
+  border-radius: 99px;
+  background-color: var(--color-stone-mist);
+  padding: 4px 10px;
+}
+
+/* [2026-09-13, 사용자 확인] "N/6"의 현재 페이지 번호(N)만 더 진한 회색으로 구분 */
+.stepBadgeCurrent {
+  color: var(--color-ink-charcoal);
+  font-weight: 700;
 }
 
 /* 상단 토픽뱃지 (Q1 · 사업 아이템 구상 등) — ideaQuestions.module.css .topicBadge 그대로 포팅 */
@@ -282,6 +352,26 @@
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease;
+  /* [2026-09-14, 사용자 확인] 텍스트만 있던 버튼에 아이콘(.nextButtonIcon)이 들어갈
+     수 있어서 flex로 정렬 - 아이콘 없이 텍스트만 있는 다른 화면 버튼도 그대로 동작.
+     line-height:1은 텍스트 줄상자 여백 때문에 아이콘과 글자가 미묘하게 안 맞아
+     보이는 것 방지(사용자 확인 - "아이콘과 text 상하 정렬"). */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+/* 뒤로가기(.backButton) 화살표를 좌우 반전한 모양 - "업종코드 확인하기" 버튼처럼
+   텍스트 옆에 ">" 대신 실제 아이콘을 붙일 때 재사용. */
+.nextButtonIcon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  position: relative;
+  top: 1px; /* flex align-items:center만으로는 1px 위로 떠 보임(사용자 확인) - 수동 보정 */
+  display: block;
 }
 
 .nextButton:hover {
@@ -299,13 +389,12 @@
   color: var(--color-error-text);
 }
 
-/* ===== PSST 확정(11) 요약 카드 (Q1~Q6 리캡, 누르면 해당 Q 화면으로 이동) ===== */
+/* ===== PSST 확정(11) 요약 카드 (Q1~Q6 리캡, 헤드를 누르면 카드 안에서 바로 수정) ===== */
 .confirmCard {
   width: 100%;
   box-sizing: border-box;
   border: none;
   text-align: left;
-  cursor: pointer;
   background: var(--color-white);
   border-radius: var(--radius-card);
   padding: 16px;
@@ -319,6 +408,25 @@
   box-shadow: var(--shadow-inset-teal-strong);
 }
 
+/* [2026-09-14, 사용자 확인] 프로토타입("11 PSST 확정") 원본 대조 - 카드 상단에
+   라벨 + 수정하기(연필) 아이콘이 좌우로 나뉘어 있다. 이 헤드를 누르면 카드가 그
+   자리에서 펼쳐져 값을 바로 고칠 수 있다(DiagnosisAnswerSummary.tsx 참고) - 아이콘
+   눌러서 따로 화면 이동하는 방식은 "영역이 너무 좁다"는 피드백으로 폐기. */
+.confirmCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.confirmCardEditIcon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--color-stone-gray);
+}
+
 .confirmCardLabel {
   font-size: 11px;
   font-weight: 700;
@@ -329,6 +437,67 @@
   font-size: 13px;
   color: var(--color-ink-charcoal);
   line-height: 1.5;
+}
+
+/* [2026-09-14, 사용자 확인] 카드를 누르면 그 자리에서 값을 고칠 수 있게 펼쳐지는
+   영역 - "아이콘 눌러서 수정하면 영역이 너무 좁다"는 피드백으로, 별도 화면 대신
+   카드 안에서 바로 입력받는 방식으로 변경. Q1·Q3·Q4(자유서술)는 .textarea 재사용,
+   Q2·Q5·Q6(디자인은 셀렉트지만 실제로는 라디오 단일선택)은 SelectSheet 재사용
+   (DiagnosisStep5.tsx의 지역 3단 선택과 동일 컴포넌트). */
+.confirmCardEditArea {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* [2026-09-14, 사용자 확인] Q1·Q3·Q4 인라인 수정 - 처음엔 .textarea(최소 높이 120px)를
+   재사용했는데 "칸이 너무 크다, 한 줄로만 보이게"라는 피드백으로 한 줄짜리 인풋으로
+   교체. 넘치는 글자는 줄바꿈 없이 가로 스크롤(네이티브 input 기본 동작). */
+.confirmCardEditInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  padding: 10px 12px;
+  font-family: var(--font-family-base);
+  font-size: 14px;
+  color: var(--color-ink-charcoal);
+  outline: none;
+}
+
+.confirmCardEditActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.confirmCardSaveButton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.confirmCardSaveButton {
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius-cta);
+  background: var(--color-light-teal);
+  color: var(--color-white);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirmCardCancelButton {
+  height: 34px;
+  padding: 0 12px;
+  border: none;
+  background: none;
+  color: var(--color-stone-gray);
+  font-size: 13px;
+  cursor: pointer;
 }
 
 /* [2026-09-12] "리포트 분석 중" 로딩 오버레이 - DiagnosisReport.tsx가 참조하는데
@@ -418,6 +587,93 @@
   line-height: 1.5;
 }
 
+.selectInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-stone-mist);
+  padding: 10px 12px;
+  font-family: var(--font-family-base);
+  font-size: 14px;
+  color: var(--color-ink-charcoal);
+  outline: none;
+}
+
+/* [2026-09-13, 사용자 확인] 업종코드 후보 선택 - 프로토타입(260911_Mulkko Prototype,
+   reportCodeOptions/ddToggle.code 상태) 원본의 칩 트리거+드롭다운을 그대로 이식했다.
+   겉모습은 셀렉트박스, 기능은 후보 중 하나만 고르는 라디오(단일 선택)다. 색은
+   프로토타입 원본 hex(#F2FAF9/#0F6E62/#3FB6A8) 대신 가장 가까운 기존 스타일가이드
+   토큰(teal-mist/teal-green/shadow-inset-teal-strong)으로 매핑했다(사용자 확인 -
+   "스타일가이드가 최우선"). */
+.industrySelectWrap {
+  position: relative;
+}
+
+.industrySelectTrigger {
+  width: 100%;
+  height: 38px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-teal-mist);
+  box-shadow: var(--shadow-inset-teal-strong);
+  padding: 0 12px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-family: var(--font-family-base);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-teal-green);
+  cursor: pointer;
+}
+
+.industrySelectLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.industrySelectPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  box-shadow: 0 12px 28px -10px rgba(15, 110, 98, 0.3), var(--shadow-inset-card);
+  padding: 6px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.industrySelectOption {
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-ink-charcoal);
+  cursor: pointer;
+}
+
+.industrySelectOptionActive {
+  background: var(--color-teal-mist);
+  color: var(--color-teal-green);
+}
+
+.industrySelectEmpty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-stone-gray);
+}
+
 /* [2026-09-12] 도넛 차트 카드 - 유사 벤처기업/인증유형 분포 등에 재사용되는
    차트+범례 레이아웃(DiagnosisReport.tsx). 조각 색은 인라인 fill로 이미 지정되므로
    여기서는 카드/레이아웃/범례 텍스트만 담당. */
@@ -437,6 +693,26 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--color-ink-charcoal);
+}
+
+/* [2026-09-13, 사용자 확인] 도넛 카드 상단 - 타이틀 + 폴딩(자세히 보기) 버튼.
+   펼치면 같은 items로 만든 막대그래프가 카드 안쪽에 서브 콘텐츠로 나타난다. */
+.chartCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chartFoldButton {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-light-teal);
+  cursor: pointer;
 }
 
 .donutRow {

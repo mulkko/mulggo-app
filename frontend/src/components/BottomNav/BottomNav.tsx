@@ -8,8 +8,8 @@ import styles from "../../styles/bottomNav.module.css";
  * `active` prop으로 넘긴다.
  *
  * [2026-09-09] 홈/매칭/마이페이지는 App.tsx에 라우트가 이미 있어서 이동 연결함.
- * "아이디어" 탭(/idea)은 아직 라우트 자체가 없어서(사업구체화 챗봇 화면 미정)
- * 클릭해도 이동 안 시키고 TODO로 남겨둠 - 그 화면 라우트 확정되면 연결.
+ * [2026-09-13, 사용자 확인] "아이디어" 탭은 진단하기 메인(/diagnosis/choice, 진단 방식
+ * 선택 화면)으로 연결 - 더 이상 미연결 TODO 아님.
  *
  * 사용 예:
  *   <BottomNav active="matching" />
@@ -46,7 +46,7 @@ const TABS: TabDef[] = [
   {
     key: "idea",
     label: "아이디어",
-    path: "/idea",
+    path: "/diagnosis/choice",
     icon: (
       <>
         <path d="M9.5 18h5" />
@@ -82,15 +82,22 @@ const TABS: TabDef[] = [
 function BottomNav({ active }: BottomNavProps) {
   const navigate = useNavigate();
 
+  // [2026-09-14, 사용자 확인] 예전엔 이미 활성 탭이면 클릭을 무시했는데("탭 하위 화면
+  // 여러 개를 이동 중이면 다시 눌러도 반응이 없다"는 피드백) - 지금 보고 있는 화면이
+  // 탭 루트가 아니어도(예: 아이디어 탭 활성 상태로 /diagnosis/7에 있을 때) 다시
+  // 누르면 그 탭의 루트로 이동하게 항상 navigate한다.
   const handleTabClick = (tab: TabDef) => {
-    if (tab.key === "idea") return; // TODO: /idea 라우트 생기면 이동 연결
-    if (tab.key === active) return;
     navigate(tab.path);
   };
 
   return (
-    <nav className={styles.nav} aria-label="주요 메뉴">
-      {TABS.map((tab) => {
+    <>
+      {/* [2026-09-13, 사용자 확인] .nav가 position:fixed라 문서 흐름에서 빠진다 -
+          이 스페이서가 같은 높이(74px)만큼 자리를 대신 차지해서, 이 컴포넌트를 쓰는
+          화면의 실제 콘텐츠(버튼 등)가 고정된 nav에 가려지지 않게 한다. */}
+      <div className={styles.navSpacer} aria-hidden="true" />
+      <nav className={styles.nav} aria-label="주요 메뉴">
+        {TABS.map((tab) => {
         const isActive = tab.key === active;
         return (
           <button
@@ -116,8 +123,9 @@ function BottomNav({ active }: BottomNavProps) {
             </span>
           </button>
         );
-      })}
-    </nav>
+        })}
+      </nav>
+    </>
   );
 }
 

@@ -3,12 +3,16 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/profileEdit.module.css";
 import { getUserId } from "../../auth/session";
 import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
+import BottomNav from "../../components/BottomNav/BottomNav";
+import logo from "../../assets/logo.svg";
 
 /**
  * 프로필 수정 화면 (17-1).
  *
  * 마이페이지(`/mypage`)의 프로필 요약 카드를 누르면 `/mypage/edit`로 들어온다.
- * 공고 상세(16)와 동일하게 하단 네비게이션 없이 상단 뒤로가기 헤더만 있는 구조.
+ * [2026-09-13, 사용자 확인] 하단 네비게이션(BottomNav)을 모든 페이지에 넣기로
+ * 방침 변경 - "MULKKO PAGE" 브랜드 행 + BottomNav("my") 추가함(이전엔 공고 상세(16)와
+ * 동일하게 하단 네비게이션 없이 상단 뒤로가기 헤더만 있는 구조였음).
  *
  * 폼 상태: 편집 가능한 필드는 전부 하나의 객체 state(`form`)로 관리하고,
  * input/select 는 name 속성 기반 공통 핸들러(handleChange)로 갱신한다.
@@ -403,6 +407,13 @@ function ProfileEdit() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
+      {/* [2026-09-13, 사용자 확인] "MULKKO PAGE" 브랜드 행 - MyPage.tsx와 같은 그룹 */}
+      <div className={styles.brandRow}>
+        <span className={styles.logo}>
+          <span className={styles.logoText}>MULKKO PAGE</span>
+          <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
+        </span>
+      </div>
       {/* 헤더: 뒤로가기(→ 마이페이지) + 타이틀 */}
       <header className={styles.header}>
         <button
@@ -678,6 +689,8 @@ function ProfileEdit() {
           </div>
         </div>
       )}
+
+      <BottomNav active="my" />
     </div>
   );
 }

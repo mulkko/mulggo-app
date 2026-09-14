@@ -15,9 +15,12 @@
 # 이 파일이 새로 만드는 건 "각 단계를 잇는 배관"뿐이다. 판단 로직(지역/업종)은
 # 전부 기존 함수를 그대로 부른다 - 다시 구현하지 않는다:
 #   - extract_region()   <- backend/preprocessing/extract_region.py (안 고침)
-#   - decide_industry()  <- backend/ml/classifier/decide_industry.py (안 고침,
-#     2026-09-07 기준 final_project/ksic_core보다 오래된 버전이라는 걸 알고
-#     있음 - 이번 작업 범위에서 동기화는 의도적으로 제외함, 사용자 확인함)
+#   - decide_industry()  <- [2026-09-07] backend/ml/classifier/decide_industry.py를
+#     썼음(final_project/ksic_core보다 오래된 버전이라는 걸 알고도 이번 작업 범위에서는
+#     의도적으로 제외, 사용자 확인함). [2026-09-13] 이제 ksic_core(Pipeline V2.x,
+#     Frozen)로 교체 완료 - backend/ml/classifier/ksic_core_service.py::predict_from_notice_text()
+#     (사용자 확인). 반환 스키마가 영문 키로 바뀌어서 아래 map_ksic()에서 기존
+#     한글 컬럼명(ksic_stage 등)으로 다시 변환한다.
 #   - get_notice_full_text() <- backend/preprocessing/extract_all_texts.py
 #   - _needs_region_review()  <- build_announcement_csv.py에 있던 걸 그대로 가져옴
 #
@@ -55,7 +58,7 @@ import pandas as pd
 from backend.db.connection import get_connection
 from backend.preprocessing.extract_region import extract_region
 from backend.preprocessing.extract_all_texts import get_notice_full_text
-from backend.ml.classifier.decide_industry import decide_industry, needs_human_review
+from backend.ml.classifier.ksic_core_service import predict_from_notice_text
 
 # ==================================================================
 # 0. RAW 조회
@@ -343,8 +346,22 @@ def map_regions(common_df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ==================================================================
-# 7. KSIC 업종코드 매핑 (기존 decide_industry() 재사용 - 새로 안 만듦)
+# 7. KSIC 업종코드 매핑 (ksic_core_service.predict_from_notice_text() 재사용 - 새로 안 만듦,
+#    [2026-09-13] 구버전 decide_industry()에서 교체)
 # ==================================================================
+
+def _normalize_stage(out: dict) -> str:
+    """predict_from_notice_text()의 stage 필드를 신뢰하지 않고 ksic_codes/scope_decision만으로
+    "확정단계"(기존 한글 어휘)를 다시 계산한다. preprocessing/pipeline.py::normalize_stage()와
+    동일 로직(DA2가 자체 평가 스크립트에서 쓰는 canonical_stage()와 동일 - T1/독립110
+    전체 검증됨, 사용자 확인, 2026-09-13) - 그 이유는 그쪽 주석 참고."""
+    codes = out.get("ksic_codes") or []
+    if codes:
+        return "복수산업" if len(codes) > 1 else "세세분류"
+    if out.get("scope_decision") == "ALL_INDUSTRIES":
+        return "업종무관"
+    return "특정불가"
+
 
 def _get_notice_full_text_with_fallback(print_flpth_nm: str | None, flpth_nm: str | None):
     """대표 첨부(print_flpth_nm) 하나만 쓰면, 그게 하필 깨진 파일(서버가 0바이트로
@@ -428,8 +445,8 @@ def map_ksic(common_df: pd.DataFrame, use_llm_fallback: bool = False) -> pd.Data
             match_text = " | ".join(
                 p for p in [r.get("_pblanc_nm") or "", r.get("_hashtags") or "", full_text] if p
             )
-            result = decide_industry(match_text, use_llm_fallback=use_llm_fallback) if match_text.strip() else None
-            ksic_stage = result["확정단계"] if result else "특정불가"
+            result = predict_from_notice_text(match_text, use_llm_fallback=use_llm_fallback) if match_text.strip() else None
+            ksic_stage = _normalize_stage(result) if result else "특정불가"
 
             # 관리자 화면 실행 로그에는 파일별 처리 단계 진단(디폴트로 안 찍음,
             # EXTRACT_DEBUG=1이면 찍힘) 대신 건별 "번호 | 본문추출 | 업종분류"
@@ -447,9 +464,9 @@ def map_ksic(common_df: pd.DataFrame, use_llm_fallback: bool = False) -> pd.Data
                 f"업종분류 {'성공' if ksic_ok else '실패'}({ksic_stage})"
             )
 
-            codes_col.append(result["확정코드"] if result else [])
-            names_col.append(result["확정업종명"] if result else [])
-            excluded_col.append([x["코드"] for x in (result.get("제외업종") or [])] if result else [])
+            codes_col.append(result["ksic_codes"] if result else [])
+            names_col.append(result["ksic_names"] if result else [])
+            excluded_col.append([x["code"] for x in (result.get("excluded") or []) if x.get("code")] if result else [])
             status_col.append(ksic_stage)
             content_col.append(content)
     finally:

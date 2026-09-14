@@ -11,6 +11,13 @@
 #   - get_notice_full_text()  <- preprocessing/extract_all_texts.py
 #   - extract_region()        <- preprocessing/extract_region.py
 #   - decide_industry()       <- ml/classifier/decide_industry.py
+#     [2026-09-13] 업종매칭 엔진을 ml/classifier/ksic_core_service.py(Pipeline V2.x,
+#     Frozen - Rule -> Whitelist -> ML Gate -> LLM Resolver/Verifier)로 교체함
+#     (사용자 확인 - 예전 decide_industry()는 그대로 남겨두되 이 오케스트레이터는
+#     더 이상 쓰지 않음). 반환 dict의 키 이름은 영문(ksic_codes/ksic_names/stage/
+#     confidence/needs_review 등)으로 바뀌었지만, 아래 RESULT_KEYS(확정단계/확정코드/
+#     확정업종명/제외코드/ksic_confidence/업종_확인필요)는 다운스트림(build_announcement_csv.py
+#     등)과의 호환을 위해 그대로 유지 - 이 함수 안에서만 새 스키마 -> 기존 한글 키로 변환한다.
 #
 # 세 단계는 비용이 완전히 다르다 — 이 차이를 그대로 설계에 반영한다:
 #   - 원문추출: 네트워크 다운로드 + (필요시) OCR. 느리고 무겁다.
@@ -28,7 +35,7 @@
 # 이 오케스트레이터는 "처음부터 끝까지 한 번에" 돌릴 때만 쓴다.
 
 from backend.preprocessing.extract_region import extract_region, normalize_kstartup_region
-from backend.ml.classifier.decide_industry import decide_industry, needs_human_review
+from backend.ml.classifier.ksic_core_service import predict_from_notice_text
 from backend.preprocessing.extract_all_texts import get_notice_full_text
 from backend.preprocessing.region_apply_full import STATUS_DESC as REGION_STATUS_DESC
 
@@ -39,6 +46,25 @@ RESULT_KEYS = [
     "region_display", "region_list", "region_status", "region_method",
     "확정단계", "확정코드", "확정업종명", "제외코드", "ksic_confidence", "업종_확인필요",
 ]
+
+
+def normalize_stage(out: dict) -> str:
+    """predict_from_notice_text()의 stage 필드를 신뢰하지 않고 ksic_codes/scope_decision만으로
+    "확정단계"(기존 한글 어휘)를 다시 계산한다.
+
+    [2026-09-13] stage는 decide_industry()(규칙 엔진)의 원시 판정이라 orchestration
+    이후 재할당되지 않는다 - ML Gate/LLM Verifier가 규칙 후보를 기각해도, 혹은 규칙이
+    아예 실패해서 LLM Fallback Resolver(candidate_source=="LLM_RESOLVER")가 새로
+    코드를 찾아도 stage 자체는 안 바뀌거나("" 그대로) 최종 ksic_codes와 무관해질 수
+    있다(실측 확인). 그래서 stage 값 자체는 아예 안 쓰고 ksic_codes 개수 + scope_decision
+    으로만 다시 판정한다 - DA2(ksic_core 담당)가 자체 평가 스크립트(canonical_stage(),
+    T1/독립110 전체 검증됨)에서 쓰는 것과 동일 로직(사용자 확인, 2026-09-13)."""
+    codes = out.get("ksic_codes") or []
+    if codes:
+        return "복수산업" if len(codes) > 1 else "세세분류"
+    if out.get("scope_decision") == "ALL_INDUSTRIES":
+        return "업종무관"
+    return "특정불가"  # scope_decision == "UNRESOLVED_REVIEW" (또는 industry_result 자체가 None)
 
 
 def build_match_text(row, raw_text):
@@ -83,7 +109,7 @@ def process_bizinfo_notice(row, cached_text=None, cached_status=None, use_llm_fa
     region_status = region_result.get("status", "")
 
     match_text = build_match_text(row, text)
-    industry_result = decide_industry(match_text, use_llm_fallback=use_llm_fallback) if match_text.strip() else None
+    industry_result = predict_from_notice_text(match_text, use_llm_fallback=use_llm_fallback) if match_text.strip() else None
 
     return {
         "공고ID": notice_id,
@@ -94,16 +120,16 @@ def process_bizinfo_notice(row, cached_text=None, cached_status=None, use_llm_fa
         "region_list": "|".join(region_result.get("regions") or []),
         "region_status": region_status,
         "region_method": REGION_STATUS_DESC.get(region_status, ""),
-        "확정단계": industry_result["확정단계"] if industry_result else "특정불가",
-        "확정코드": "|".join(industry_result["확정코드"]) if industry_result else "",
-        "확정업종명": "|".join(industry_result["확정업종명"]) if industry_result else "",
+        "확정단계": normalize_stage(industry_result) if industry_result else "특정불가",
+        "확정코드": "|".join(industry_result["ksic_codes"]) if industry_result else "",
+        "확정업종명": "|".join(industry_result["ksic_names"]) if industry_result else "",
         # [2026-09-05 추가] explicit_match.match_ksic_by_name()은 "제외업종"
         # (제외 문맥에서 매칭된 업종)을 이미 계산해서 넘겨주고 있었는데, 이
         # 함수가 최종 반환값에서 빼먹고 있었음 — announcements 통합 스키마에
         # ksic_codes_excluded 컬럼이 필요해져서 여기서부터 포함시킴.
-        "제외코드": "|".join(x["코드"] for x in (industry_result.get("제외업종") or [])) if industry_result else "",
-        "ksic_confidence": industry_result.get("ksic_confidence", "") if industry_result else "",
-        "업종_확인필요": "Y" if (industry_result and needs_human_review(industry_result)) else "N",
+        "제외코드": "|".join(x["code"] for x in (industry_result.get("excluded") or []) if x.get("code")) if industry_result else "",
+        "ksic_confidence": industry_result.get("confidence", "") if industry_result else "",
+        "업종_확인필요": "Y" if (industry_result and industry_result.get("needs_review")) else "N",
     }
 
 

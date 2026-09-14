@@ -5,6 +5,7 @@ import industryStyles from "../../styles/diagnosisIndustryCode.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import { authHeaders } from "../../auth/session";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
+import BottomNav from "../../components/BottomNav/BottomNav";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const POLL_INTERVAL_MS = 2000;
@@ -21,15 +22,11 @@ interface DiagnosisReportResponse {
     marketAnalysis?: any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     techAnalysis?: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    analysisByCode?: Record<string, any>;
     targetAnchor?: string | null;
     differentiatorAnchor?: string | null;
   };
-  error?: { message: string };
-}
-
-interface DiagnosisSelectIndustryResponse {
-  success: boolean;
-  data?: { session_id: number; resolvedKsicCodes?: string[] };
   error?: { message: string };
 }
 
@@ -38,38 +35,21 @@ interface DiagnosisSelectIndustryResponse {
  * (사용자 확인, 2026-09-12) - Q6(지역) 제출 시 POST /api/diagnosis/start가 이미
  * 확정해둔 업종코드 매칭 후보(sessionStorage)를 보여준다.
  *
- * [2026-09-12] 후보가 2개 이상이면 사용자가 하나를 확정(라디오 선택)해야만 "분석
- * 리포트 보러가기"가 가능하게 바꿈(사용자 확인) - 이유: 상권/기술창업 분석(밀집도,
- * 유사기업 수)은 후보 여러 개를 한꺼번에 넘기면 콤마로 합친 문자열 전체를 코드
- * 하나로 취급해 실제로는 아무 업체와도 안 맞는 버그가 있었다(backend/api/
- * diagnosis.py 모듈 상단 주석 참고) - 애초에 사용자가 하나로 확정하게 만들어서
- * 여러 개를 같이 넘길 일 자체를 없앤다. 후보가 1개 이하면 고를 게 없으니 선택
- * UI 없이 그 코드(또는 빈 값)로 바로 진행한다.
- *
- * [2026-09-12] 이 화면이 "분석 리포트 보러가기" 클릭 시점에 POST /{sessionId}/
- * select-industry(확정된 코드로 상권/기술창업 분석 시작)를 먼저 부르고, 그 응답을
- * 받은 뒤에야 GET /{sessionId}/report를 폴링한다 - 예전엔 6번(지역) 제출 시점에
- * 바로 분석이 시작됐는데, 이제는 사용자가 업종을 확정한 뒤에야 시작된다
- * (DiagnosisAnswerSummary.tsx는 더 이상 분석을 트리거하지 않음).
+ * [2026-09-13] 후보가 여러 개여도 하나를 강제로 고르게 하지 않는다(사용자 확인,
+ * 이전엔 라디오 선택 강제 + POST /{id}/select-industry로 확정한 코드만 분석했음) -
+ * POST /start 시점에 후보 전부(최대 3개)를 백엔드가 각자 백그라운드로 분석하기
+ * 시작하므로, 이 화면은 후보를 읽기 전용으로 보여주기만 하고 "다음"을 누르면 바로
+ * GET /{id}/report를 폴링해서 전부 끝나길 기다렸다가 분석 리포트 화면으로 넘어간다
+ * (분석 리포트 화면 상단 셀렉박스가 후보별 결과를 보여줌 - DiagnosisReport.tsx 참고).
  */
 function DiagnosisIndustryResult() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [ksicCodes, setKsicCodes] = useState<string[]>([]);
   const [industryName, setIndustryName] = useState("");
-  const [industryState, setIndustryState] = useState("");
-  const [industryConfidence, setIndustryConfidence] = useState("");
+  const [industryCodeNames, setIndustryCodeNames] = useState<Record<string, string>>({});
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [track, setTrack] = useState<"cafe" | "tech" | undefined>(undefined);
-  const [sido, setSido] = useState("");
-  const [sigungu, setSigungu] = useState("");
-  const [dong, setDong] = useState("");
-  const [seedInterest, setSeedInterest] = useState("");
-  const [problemToSolve, setProblemToSolve] = useState("");
-  const [solutionApproach, setSolutionApproach] = useState("");
-  // [2026-09-12] 후보가 2개 이상일 때만 실제로 쓰이는 선택 상태 - 후보 1개 이하면
-  // null로 두고 handleNext에서 ksicCodes[0]을 그대로 쓴다(선택 UI 자체가 없음).
-  const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [checkError, setCheckError] = useState("");
   // [2026-09-12] handleNext는 useEffect가 아니라 버튼 클릭 핸들러라 return값으로
@@ -91,17 +71,10 @@ function DiagnosisIndustryResult() {
     }
     setSessionId(answers.sessionId);
     setTrack(answers.track);
-    setSido(answers.sido ?? "");
-    setSigungu(answers.sigungu ?? "");
-    setDong(answers.dong ?? "");
-    setSeedInterest(answers.seedInterest ?? "");
-    setProblemToSolve(answers.problemToSolve ?? "");
-    setSolutionApproach(answers.solutionApproach ?? "");
     const codes = answers.resolvedKsicCodes ?? [];
     setKsicCodes(codes);
     setIndustryName(answers.industryMatchName ?? "");
-    setIndustryState(answers.industryMatchState ?? "");
-    setIndustryConfidence(answers.industryMatchConfidence ?? "");
+    setIndustryCodeNames(answers.industryMatchCodeNames ?? {});
     setReady(true);
   }, [navigate]);
 
@@ -111,13 +84,10 @@ function DiagnosisIndustryResult() {
     };
   }, []);
 
-  const needsSelection = ksicCodes.length > 1;
   const handleBack = () => navigate("/diagnosis/summary");
 
   const handleNext = () => {
     if (checking || !sessionId) return;
-    const codeToUse = needsSelection ? selectedCode : ksicCodes[0] ?? "";
-    if (needsSelection && !codeToUse) return; // 버튼이 이미 disabled로 막지만 방어적으로 한 번 더
 
     setChecking(true);
     setCheckError("");
@@ -164,6 +134,7 @@ function DiagnosisIndustryResult() {
         saveDiagnosisAnswers({
           marketAnalysis: body.data.marketAnalysis,
           techAnalysis: body.data.techAnalysis,
+          analysisByCode: body.data.analysisByCode,
           targetAnchor: body.data.targetAnchor ?? undefined,
           differentiatorAnchor: body.data.differentiatorAnchor ?? undefined,
         });
@@ -179,58 +150,20 @@ function DiagnosisIndustryResult() {
         setTimeout(poll, POLL_INTERVAL_MS); // 네트워크 일시 오류 - 한도 내에서 계속 재시도
       }
     };
-
-    const startAnalysis = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/diagnosis/${sessionId}/select-industry`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeaders() },
-          body: JSON.stringify({
-            ksic_code: codeToUse ?? "",
-            has_store: track === "cafe",
-            sido,
-            sigungu,
-            dong,
-            seed_interest: seedInterest,
-            problem_to_solve: problemToSolve,
-            solution_approach: solutionApproach,
-          }),
-        });
-        if (unmountedRef.current) return;
-        if (res.status === 401) {
-          setCheckError("로그인이 필요해요. 로그인 후 다시 시도해주세요.");
-          setChecking(false);
-          return;
-        }
-        const body: DiagnosisSelectIndustryResponse = await res.json();
-        if (!body.success) {
-          setCheckError(body.error?.message || "업종 확정에 실패했어요.");
-          setChecking(false);
-          return;
-        }
-        saveDiagnosisAnswers({ resolvedKsicCodes: body.data?.resolvedKsicCodes ?? (codeToUse ? [codeToUse] : []) });
-        poll();
-      } catch {
-        if (!unmountedRef.current) {
-          setCheckError("서버에 연결할 수 없습니다.");
-          setChecking(false);
-        }
-      }
-    };
-    startAnalysis();
+    poll();
   };
 
   if (!ready) return null;
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      <DiagnosisHeader onBack={handleBack} pct="100%" stepLabel="AI 제안 · 업종코드 매칭" />
+      <DiagnosisHeader onBack={handleBack} pct="100%" stepLabel="업종코드 매칭" hideProgress />
       <div className={styles.scrollArea}>
         <h1 className={industryStyles.title}>업종코드를 찾았어요</h1>
         <div className={industryStyles.anchorBox}>
           <span className={industryStyles.anchorText}>
-            {needsSelection
-              ? "물꼬가 찾은 후보 업종이 여러 개예요. 가장 가까운 업종 하나를 선택해주세요."
+            {ksicCodes.length > 1
+              ? "물꼬가 찾은 후보 업종이 여러 개예요. 전부 분석해서 다음 화면 상단에서 골라볼 수 있어요."
               : "방금 답변하신 문제인식·해결방식 등 PSST 내용을 물꼬가 종합해서, 가장 가까운 업종코드를 아래처럼 찾아드렸어요."}
           </span>
         </div>
@@ -238,41 +171,16 @@ function DiagnosisIndustryResult() {
 
         {ksicCodes.length > 0 ? (
           <div className={styles.cardList}>
-            {ksicCodes.map((code, i) =>
-              needsSelection ? (
-                <button
-                  key={code}
-                  type="button"
-                  className={industryStyles.matchCard}
-                  onClick={() => setSelectedCode(code)}
-                >
-                  <span className={industryStyles.matchCardHead}>
-                    <span className={industryStyles.matchCardTitle}>
-                      {industryName || "업종 미확인"}
-                    </span>
-                    <span className={styles.radioDot}>
-                      {selectedCode === code && <span className={styles.radioDotOn} />}
-                    </span>
+            {ksicCodes.map((code) => (
+              <div key={code} className={industryStyles.matchCard}>
+                <span className={industryStyles.matchCardHead}>
+                  <span className={industryStyles.matchCardTitle}>
+                    {industryCodeNames[code] || industryName || "업종 미확인"}
                   </span>
-                  <span className={industryStyles.matchCodeText}>
-                    업종코드 {code}
-                    {i === 0 && industryConfidence ? ` · 신뢰도 ${industryConfidence}` : ""}
-                  </span>
-                </button>
-              ) : (
-                <div key={code} className={industryStyles.matchCard}>
-                  <span className={industryStyles.matchCardHead}>
-                    <span className={industryStyles.matchCardTitle}>
-                      {industryName || "업종 미확인"}
-                    </span>
-                  </span>
-                  <span className={industryStyles.matchCodeText}>
-                    업종코드 {code}
-                    {industryConfidence ? ` · 신뢰도 ${industryConfidence}` : ""}
-                  </span>
-                </div>
-              ),
-            )}
+                </span>
+                <span className={industryStyles.matchCodeText}>업종코드 {code}</span>
+              </div>
+            ))}
           </div>
         ) : (
           <div className={industryStyles.matchCard}>
@@ -280,12 +188,22 @@ function DiagnosisIndustryResult() {
           </div>
         )}
 
-        {needsSelection && !selectedCode && (
-          <p className={styles.errorText}>업종을 하나 선택해야 다음으로 진행할 수 있어요.</p>
-        )}
-
-        {industryState && industryState !== "추천" && (
-          <div className={industryStyles.stateBanner}>업종 판정 상태: {industryState}</div>
+        {/* [2026-09-14, 사용자 확인] 프로토타입("12 업종코드 매칭" 화면) 원본 대조 -
+            이 배너는 원래 백엔드 매칭 상태(industryState) 문구가 아니라, 어느
+            트랙(카페형/기술창업형)으로 분류됐는지 안내하는 용도였다. 색은 프로토타입
+            원본(#DFF3EF/#0F6E62) 그대로가 아니라 스타일가이드 토큰(--color-teal-mist/
+            --color-teal-green, 값 완전히 동일)으로 매핑했다. */}
+        {track && (
+          <div className={industryStyles.stateBanner}>
+            <span className={industryStyles.stateBannerTitle}>
+              {track === "cafe" ? "상권분석형으로 분류됐어요" : "기술창업형으로 분류됐어요"}
+            </span>
+            <span className={industryStyles.stateBannerDesc}>
+              {track === "cafe"
+                ? "오프라인 매장 기반 사업이라 상권 데이터 분석으로 이동합니다"
+                : "온라인·기술 기반 사업이라 특허·투자 동향 분석으로 이동합니다"}
+            </span>
+          </div>
         )}
         {checkError && <p className={styles.errorText}>{checkError}</p>}
       </div>
@@ -293,13 +211,26 @@ function DiagnosisIndustryResult() {
         <button type="button" className={styles.prevButton} onClick={handleBack}>
           이전
         </button>
-        <button
-          type="button"
-          className={styles.nextButton}
-          disabled={checking || (needsSelection && !selectedCode)}
-          onClick={handleNext}
-        >
-          {checking ? "분석 확인 중..." : "분석 리포트 보러가기 →"}
+        <button type="button" className={styles.nextButton} disabled={checking} onClick={handleNext}>
+          {checking ? (
+            "분석 확인 중..."
+          ) : (
+            <>
+              분석 리포트 보러가기
+              <svg
+                className={styles.nextButtonIcon}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M8 5l8 7-8 7" />
+              </svg>
+            </>
+          )}
         </button>
       </div>
       {checking && (
@@ -313,6 +244,8 @@ function DiagnosisIndustryResult() {
           </div>
         </div>
       )}
+
+      <BottomNav active="idea" />
     </div>
   );
 }

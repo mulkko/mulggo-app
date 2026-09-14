@@ -1,0 +1,33 @@
+# 물꼬(Mulkko) — 지역매핑 + 업종매칭(KSIC) 파이프라인 실행에 필요한 패키지만.
+# (Chroma 벡터검색 등 폐기된 구버전 파이프라인의 의존성은 제외 — chromadb는
+#  이 기능에 필요 없음. sentence-transformers/torch는 아래 "KSIC predict()
+#  파이프라인(Pipeline V2.x, Frozen)" 절에서 ML Gate Champion이 실제로 사용함
+#  — 2026-09-13 정정: 이전 "필요 없음" 메모는 stale.)
+
+requests==2.32.5          # 첨부파일(printFlpthNm) 다운로드
+pdfplumber==0.11.10       # 텍스트 기반 PDF 추출
+pymupdf==1.28.2           # 스캔 PDF -> 이미지 렌더링(OCR 전 단계)
+pillow==12.3.0            # 이미지 처리(OCR 입력)
+numpy==2.3.5              # 이미지 배열 처리 / KSIC ML Gate 특징 벡터
+olefile==0.47             # HWP(OLE) 파일 저수준 파싱
+pyhwp==0.1b15             # HWP 본문 텍스트 추출
+paddleocr==3.1.1          # 스캔본/이미지 첨부파일 OCR (3.2.0+는 modelscope/torch 끌고옴 — 2026-09-11 다운그레이드)
+paddlex==3.1.1            # paddleocr 3.1.1과 짝(고정 안 하면 최신 paddlex 끌려와서 modelscope 재유입됨)
+openai==3.7.0             # 업종매칭 LLM(Resolver/Verifier) — OPENAI_API_KEY 환경변수 필요, LLM_PROVIDER 기본값
+scikit-learn==1.7.2       # 텍스트마이닝(TF-IDF) + KSIC ML Gate Champion 아티팩트(embed_rule) 로드/추론에 필요
+kiwipiepy==0.23.2         # 텍스트마이닝 — 한국어 형태소분석(명사 추출)
+
+# --- KSIC predict() 파이프라인 (Pipeline V2.x, Frozen — ksic_core.predict.predict) ---
+python-dotenv==1.1.0      # .env에서 OPENAI_API_KEY 등 자동 로드 (llm_resolver.py, llm_verifier.py)
+pandas==2.3.3             # ML Gate 특징 테이블 구성, predict.py CLI 배치 모드
+scipy==1.16.3             # ML Gate embed_rule 특징(OneHotEncoder 결과 sparse 결합)
+sentence-transformers==6.0.1  # ML Gate Champion(embed_rule)의 SBERT 임베딩 — models/ml_gate_v2_champion.joblib 로드 시 필수
+torch==2.6.0              # sentence-transformers 런타임 백엔드 (GPU 환경이면 CUDA 빌드로 자동 대체됨)
+joblib==1.5.2             # ML Gate 아티팩트(.joblib) 로드
+
+# 선택: LLM_PROVIDER=gemini로 전환할 경우에만 필요(기본값은 openai, 미설치 시 gemini 경로만 비활성)
+# google-generativeai
+
+# paddleocr는 paddlepaddle(또는 paddlepaddle-gpu)이 별도로 필요합니다.
+# GPU 없이 CPU만 쓸 경우: pip install paddlepaddle
+# GPU(CUDA) 환경: pip install paddlepaddle-gpu (이 환경은 paddlepaddle-gpu==3.3.0 사용 중)

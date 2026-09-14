@@ -60,8 +60,10 @@ SORT_OPTIONS = {
     # 다르게 줄 수 있어서, "더보기" 페이지네이션(LIMIT/OFFSET)이 같은 행을 다시
     # 보여주거나 건너뛰는 문제가 있었음. 유니크한 announcement_id를 마지막
     # 기준으로 추가해서 동점을 완전히 없애 순서를 고정한다.
-    "deadline": "(apply_end_date < CURRENT_DATE) ASC, apply_end_date ASC, announcement_id DESC",
-    "recent": "collected_at DESC, announcement_id DESC",
+    # [2026-09-14] 해시태그 JOIN(announcements_raw_bizinfo) 추가하면서 collected_at이
+    # 양쪽 테이블에 다 있어 모호해짐(ambiguous column) - a. 접두사로 고정.
+    "deadline": "(a.apply_end_date < CURRENT_DATE) ASC, a.apply_end_date ASC, a.announcement_id DESC",
+    "recent": "a.collected_at DESC, a.announcement_id DESC",
 }
 
 
@@ -74,13 +76,14 @@ def _fetch_announcement_page(conn, where_sql: str, params: list, order_sql: str,
     cur.execute(
         f"""
         SELECT a.announcement_id, a.host_org_name, a.title, a.apply_end_date,
-               a.ksic_codes_matched,
+               a.ksic_codes_matched, b.hashtags,
                EXISTS (
                    SELECT 1 FROM announcement_attachments att
                    WHERE att.announcement_id = a.announcement_id
                      AND att.fillable_field_count > 0
                ) AS fillable
         FROM announcements a
+        LEFT JOIN announcements_raw_bizinfo b ON b.raw_bizinfo_id = a.raw_bizinfo_id
         {where_sql}
         ORDER BY {order_sql}
         LIMIT %s OFFSET %s
@@ -96,13 +99,17 @@ def _fetch_announcement_page(conn, where_sql: str, params: list, order_sql: str,
             "agency": host_org_name or "기관명 미기재",
             "dday": _format_dday(apply_end_date),
             "title": title,
-            # [2026-09-09] 해시태그 로직은 사용자가 직접 확인 중 - 우선 빈 배열로 둔다.
-            "tags": [],
+            # [2026-09-14] 상세 화면(get_announcement_detail)과 같은 출처(기업마당
+            # 원본에만 있음, K-Startup엔 없음) - 카드 칩(.tag)은 여러 개를 따로
+            # 렌더링하니 "#"+공백조인 문자열 하나가 아니라 배열로, 앞 3개만 자른다
+            # (사용자 확인 - "해시태그 순서대로 3개만").
+            "tags": [f"#{t.strip()}" for t in (raw_hashtags or "").split(",") if t.strip()][:3],
             "fillable": bool(fillable),
-            # [임시, 2026-09-11] 매칭된 업종코드 확인용 - 화면에 agency 옆 노출.
+            # [임시, 2026-09-11] 매칭된 업종코드 확인용 - 화면엔 안 보이고 hover(title
+            # 속성)로만 노출한다(2026-09-14, 테스트용 - 사용자 확인).
             "ksicCodesMatched": ksic_codes_matched or [],
         }
-        for announcement_id, host_org_name, title, apply_end_date, ksic_codes_matched, fillable in rows
+        for announcement_id, host_org_name, title, apply_end_date, ksic_codes_matched, raw_hashtags, fillable in rows
     ]
     return data, has_more, total
 
@@ -497,12 +504,22 @@ def get_announcement_detail(
         docs = _fetch_docs(announcement_id, conn)
 
         bookmarked = False
+        applied = False
         if user_id is not None:
             cur.execute(
                 "SELECT 1 FROM bookmarks WHERE user_id = %s AND announcement_id = %s",
                 (user_id, announcement_id),
             )
             bookmarked = cur.fetchone() is not None
+
+            profile_id = _get_profile_id_for_user(cur, user_id)
+            if profile_id is not None:
+                cur.execute(
+                    "SELECT is_applied FROM apply_status WHERE profile_id = %s AND announcement_id = %s",
+                    (profile_id, announcement_id),
+                )
+                row2 = cur.fetchone()
+                applied = bool(row2 and row2[0])
     finally:
         conn.close()
 
@@ -517,6 +534,7 @@ def get_announcement_detail(
             "title": title,
             "hashtags": hashtags,
             "bookmarked": bookmarked,
+            "applied": applied,
             # [2026-09-09] 사용자 프로필(지역/업종) 연결 전까지는 진짜 개인화된 코멘트를
             # 만들 수 없다 - 근거 없는 맞춤 문구를 지어내지 않고 안내 문구로 대신한다.
             "aiComment": "맞춤 코멘트는 준비 중입니다.",
@@ -568,3 +586,62 @@ def remove_bookmark(announcement_id: int, user_id: int = Depends(get_current_use
     finally:
         conn.close()
     return {"success": True, "data": {"bookmarked": False}}
+
+
+def _get_profile_id_for_user(cur, user_id: int) -> int | None:
+    cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    return row[0] if row else None
+
+
+# [2026-09-14, 사용자 확인] "지원하기" 표시 - 마이페이지 "나의 지원내역"(GET /api/mypage/
+# apply-status)이 읽는 apply_status 테이블에 쓴다. 이 테이블은 실 DB에 이미 있었는데
+# schema.sql에 문서화가 안 돼있었음(2026-09-14 확인, bookmarks처럼 뒤늦게 채워넣음).
+# bookmarks처럼 user_id가 아니라 profile_id 기준(business_profiles FK)이고, 유니크
+# 제약이 없어서 bookmarks와 동일하게 INSERT 전에 존재 여부를 직접 확인한다. 찜하기와
+# 달리 지원 취소 시 행을 안 지우고 is_applied만 false로 바꾼다 - checked_at(마지막
+# 지원/취소 시각) 이력을 남기는 게 이 컬럼 구성의 목적이라 삭제하면 의미가 없어짐.
+@router.post("/{announcement_id}/apply")
+def set_applied(announcement_id: int, user_id: int = Depends(get_current_user_id)) -> dict:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        profile_id = _get_profile_id_for_user(cur, user_id)
+        if profile_id is None:
+            return {"success": False, "error": {"message": "사업자 프로필이 없습니다.", "code": "PROFILE_NOT_FOUND"}}
+        cur.execute(
+            "SELECT 1 FROM apply_status WHERE profile_id = %s AND announcement_id = %s",
+            (profile_id, announcement_id),
+        )
+        if cur.fetchone() is None:
+            cur.execute(
+                "INSERT INTO apply_status (profile_id, announcement_id, is_applied, checked_at) VALUES (%s, %s, true, now())",
+                (profile_id, announcement_id),
+            )
+        else:
+            cur.execute(
+                "UPDATE apply_status SET is_applied = true, checked_at = now() WHERE profile_id = %s AND announcement_id = %s",
+                (profile_id, announcement_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"success": True, "data": {"applied": True}}
+
+
+@router.delete("/{announcement_id}/apply")
+def unset_applied(announcement_id: int, user_id: int = Depends(get_current_user_id)) -> dict:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        profile_id = _get_profile_id_for_user(cur, user_id)
+        if profile_id is None:
+            return {"success": False, "error": {"message": "사업자 프로필이 없습니다.", "code": "PROFILE_NOT_FOUND"}}
+        cur.execute(
+            "UPDATE apply_status SET is_applied = false, checked_at = now() WHERE profile_id = %s AND announcement_id = %s",
+            (profile_id, announcement_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"success": True, "data": {"applied": False}}
