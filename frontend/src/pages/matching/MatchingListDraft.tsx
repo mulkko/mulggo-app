@@ -6,6 +6,7 @@ import logo from "../../assets/logo.svg";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
+import { Chevron as SharedChevron } from "../../components/FormField/FormField";
 
 /**
  * [DRAFT] 지원사업 매칭 리스트(공고 리스트) 화면 - "업종맞춤/업종무관" 2그룹 분리 검토용 사본.
@@ -126,22 +127,9 @@ const REGION_SHEET_OPTIONS: SheetOption[] = REGION_OPTIONS.map((r) => ({
 const KSIC_SHEET_OPTIONS: SheetOption[] = KSIC_OPTIONS.map((o) => ({ label: o.label, value: o.code }));
 const SORT_SHEET_OPTIONS: SheetOption[] = SORT_OPTIONS;
 
-/** 칩 버튼 옆 아래방향 화살표 — "누르면 목록이 뜬다"는 select 관례 표시(ProfileEdit.tsx의 Chevron과 동일 모양). */
+/** 칩 버튼 옆 아래방향 화살표 — "누르면 목록이 뜬다"는 select 관례 표시. */
 function Chevron() {
-  return (
-    <svg
-      className={styles.chevron}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  );
+  return <SharedChevron className={styles.chevron} />;
 }
 
 function MatchingListDraft() {

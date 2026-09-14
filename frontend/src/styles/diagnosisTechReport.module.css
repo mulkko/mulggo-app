@@ -280,8 +280,9 @@
 }
 
 .densityCell {
-  position: relative; /* [2026-09-13] 카페형 "내 위치" 점 마커(marketStyles.densityCellMarker)가
-    이 칸 위에 겹쳐 그려질 때 기준점이 필요 - 기술창업형은 마커를 안 쓰지만 공용 클래스라 그대로 둠. */
+  position: relative; /* "내 위치" 점 마커(.densityCellMarker, 아래)가 이 칸 위에
+    겹쳐 그려질 때 기준점 - 카페형(marketStyles.densityCellMarker)과 기술창업형
+    (아래 .densityCellMarker) 둘 다 이 클래스 위에 마커를 얹는다. */
   border-radius: 3px;
   display: flex;
   flex-direction: column;
@@ -350,6 +351,39 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+}
+
+/* [2026-09-14, 사용자 확인] "내 위치" 마커 - 카페형(marketStyles.densityCellMarker,
+   남색+흰 테두리)과 같은 원칙, 배경(네이비 계열 그라데이션)에 없는 색조(앰버)로
+   채워서 밝기와 무관하게 항상 도드라지게 한다. */
+.densityCellMarker {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-tab-active-icon);
+  box-shadow: 0 0 0 1px var(--color-white);
+}
+
+.densityCellMarkerLegend {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-tab-active-icon);
+  box-shadow: 0 0 0 1px var(--color-white), 0 0 0 2px var(--color-border-nav);
+  box-sizing: border-box;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.densityCaptionRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-stone-gray);
 }
 
 /* ===== 로딩/에러 ===== */

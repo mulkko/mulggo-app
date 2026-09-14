@@ -13,6 +13,38 @@
   color: var(--color-ink-charcoal);
 }
 
+/* [2026-09-14] ProfileEdit.tsx(/mypage/edit)에 이 디자인을 이식하면서 추가 - V2
+   정적 목업엔 없던 실제 기능(브랜드 행/사업자등록증 실제 업로드·재등록/지역 칩)에
+   필요한 클래스들. profileEdit.module.css의 동일 클래스를 이 파일의 톤(--color-mist-alt
+   등)에 맞춰 옮겨왔다. */
+.brandRow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 12px 20px 0;
+  box-sizing: border-box;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.logoText {
+  font-family: var(--font-family-logo);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  color: var(--color-deep-navy);
+}
+
+.logoMark {
+  width: 28px;
+  flex-shrink: 0;
+  display: block;
+}
+
 /* ===== 헤더 (높이 50px) ===== */
 .header {
   flex-shrink: 0;
@@ -109,6 +141,19 @@
   color: var(--color-ink-charcoal);
 }
 
+/* 소제목 + 서브텍스트 묶음 (profileEdit.module.css와 동일 패턴) */
+.groupHead {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.groupSub {
+  font-size: 11.5px;
+  color: var(--color-stone-gray);
+  line-height: 1.5;
+}
+
 /* ===== 필드 (라벨 + 인풋) ===== */
 .field {
   display: flex;
@@ -187,6 +232,87 @@
   color: var(--color-stone-gray);
 }
 
+/* ===== 사업자등록증 등록 내역 행 (등록 완료 후 - 누르면 재등록 팝업) ===== */
+.bizUpload {
+  width: 100%;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-mist-alt);
+  border-radius: var(--radius-input);
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+
+.bizThumb {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-stone-gray);
+}
+
+.bizThumb svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.bizUploadText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bizUploadTitle {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.bizUploadSub {
+  font-size: 11px;
+  color: var(--color-stone-gray);
+}
+
+/* ===== 지역 칩 (사업장 지역, 여러 개 추가/삭제) ===== */
+.regionChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.regionChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-teal-mist);
+  color: var(--color-teal-green);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 8px 5px 11px;
+  border-radius: var(--radius-pill);
+}
+
+.regionChipRemove {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+}
+
 /* ===== Select ===== */
 .selectWrap {
   position: relative;
@@ -254,4 +380,57 @@
 
 .saveButton:hover {
   background: var(--color-light-teal-hover-strong);
+}
+
+/* ===== 사업자등록증 재등록 팝업 (profileEdit.module.css와 동일 패턴) ===== */
+.bizPopupOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--color-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.bizPopupCard {
+  width: 100%;
+  max-width: 360px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-modal);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bizPopupTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-ink-charcoal);
+}
+
+.bizPopupSub {
+  margin-top: -10px;
+  font-size: 13px;
+  color: var(--color-stone-gray);
+  line-height: 1.5;
+}
+
+.bizPopupCancelBtn {
+  height: 46px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-inset-gray-soft);
+  color: var(--color-ink-charcoal);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
 }

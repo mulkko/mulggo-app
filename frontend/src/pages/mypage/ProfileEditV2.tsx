@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/profileEditV2.module.css";
+import { TextField, SelectField } from "../../components/FormField/FormField";
 import logo from "../../assets/logo.svg";
 
 /**
@@ -71,95 +72,6 @@ const INITIAL_FORM: ProfileFormV2 = {
 
 const DEFAULT_READONLY_EMAIL = "startup@email.com";
 
-function Chevron() {
-  return (
-    <svg
-      className={styles.selectChevron}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  );
-}
-
-function TextField({
-  label,
-  name,
-  value,
-  onChange,
-  inter = false,
-  readOnly = false,
-}: {
-  label: string;
-  name: string;
-  value: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  inter?: boolean;
-  readOnly?: boolean;
-}) {
-  const className = [
-    styles.input,
-    inter ? styles.inputInter : "",
-    readOnly ? styles.inputReadonly : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  return (
-    <div className={styles.field}>
-      <label className={styles.label} htmlFor={name}>
-        {label}
-      </label>
-      <input
-        id={name}
-        name={name}
-        className={className}
-        value={value}
-        onChange={onChange}
-        readOnly={readOnly}
-      />
-    </div>
-  );
-}
-
-function SelectField({
-  label,
-  name,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  name: string;
-  value: string;
-  options: string[];
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-}) {
-  return (
-    <div className={styles.field}>
-      <label className={styles.label} htmlFor={name}>
-        {label}
-      </label>
-      <div className={styles.selectWrap}>
-        <select id={name} name={name} className={styles.select} value={value} onChange={onChange}>
-          {options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-        <Chevron />
-      </div>
-    </div>
-  );
-}
-
 function ProfileEditV2() {
   const navigate = useNavigate();
   const [form, setForm] = useState<ProfileFormV2>(INITIAL_FORM);
@@ -219,8 +131,8 @@ function ProfileEditV2() {
         {/* 기본 정보 */}
         <div className={styles.group}>
           <span className={styles.groupTitle}>기본 정보</span>
-          <TextField label="이름" name="name" value={form.name} onChange={handleChange} />
-          <TextField label="이메일" name="email" value={email} inter readOnly />
+          <TextField styles={styles} label="이름" name="name" value={form.name} onChange={handleChange} />
+          <TextField styles={styles} label="이메일" name="email" value={email} inter readOnly />
         </div>
 
         <div className={styles.divider} />
@@ -237,20 +149,20 @@ function ProfileEditV2() {
             </button>
           </div>
 
-          <TextField label="사업자번호" name="bizNo" value={form.bizNo} onChange={handleChange} inter />
-          <TextField label="법인등록번호" name="corpNo" value={form.corpNo} onChange={handleChange} inter />
-          <TextField
+          <TextField styles={styles} label="사업자번호" name="bizNo" value={form.bizNo} onChange={handleChange} inter />
+          <TextField styles={styles} label="법인등록번호" name="corpNo" value={form.corpNo} onChange={handleChange} inter />
+          <TextField styles={styles}
             label="상호명/법인명"
             name="bizDocCompanyName"
             value={form.bizDocCompanyName}
             onChange={handleChange}
           />
-          <TextField label="대표자명" name="repName" value={form.repName} onChange={handleChange} />
-          <TextField label="개업연월일" name="openDate" value={form.openDate} onChange={handleChange} inter />
-          <TextField label="생년월일" name="birthDate" value={form.birthDate} onChange={handleChange} inter />
-          <TextField label="사업장소재지" name="bizAddress" value={form.bizAddress} onChange={handleChange} />
-          <TextField label="본점소재지" name="hqAddress" value={form.hqAddress} onChange={handleChange} />
-          <TextField label="업태/종목" name="bizType" value={form.bizType} onChange={handleChange} />
+          <TextField styles={styles} label="대표자명" name="repName" value={form.repName} onChange={handleChange} />
+          <TextField styles={styles} label="개업연월일" name="openDate" value={form.openDate} onChange={handleChange} inter />
+          <TextField styles={styles} label="생년월일" name="birthDate" value={form.birthDate} onChange={handleChange} inter />
+          <TextField styles={styles} label="사업장소재지" name="bizAddress" value={form.bizAddress} onChange={handleChange} />
+          <TextField styles={styles} label="본점소재지" name="hqAddress" value={form.hqAddress} onChange={handleChange} />
+          <TextField styles={styles} label="업태/종목" name="bizType" value={form.bizType} onChange={handleChange} />
         </div>
 
         <div className={styles.divider} />
@@ -260,8 +172,8 @@ function ProfileEditV2() {
           <span className={styles.groupTitle}>기타 정보</span>
 
           <div className={styles.row}>
-            <TextField label="사용자 유형" name="userType" value={form.userType} onChange={handleChange} />
-            <SelectField
+            <TextField styles={styles} label="사용자 유형" name="userType" value={form.userType} onChange={handleChange} />
+            <SelectField styles={styles}
               label="사업자구분"
               name="ownerType"
               value={form.ownerType}
@@ -270,19 +182,19 @@ function ProfileEditV2() {
             />
           </div>
 
-          <TextField
+          <TextField styles={styles}
             label="상호명"
             name="profileCompanyName"
             value={form.profileCompanyName}
             onChange={handleChange}
           />
-          <TextField
+          <TextField styles={styles}
             label="업종 설명(원문)"
             name="industryDesc"
             value={form.industryDesc}
             onChange={handleChange}
           />
-          <SelectField
+          <SelectField styles={styles}
             label="사업장 지역"
             name="region"
             value={form.region}
@@ -291,17 +203,17 @@ function ProfileEditV2() {
           />
 
           <div className={styles.row}>
-            <TextField
+            <TextField styles={styles}
               label="업력(개월)"
               name="monthsInBusiness"
               value={form.monthsInBusiness}
               onChange={handleChange}
               inter
             />
-            <TextField label="직원수" name="employees" value={form.employees} onChange={handleChange} inter />
+            <TextField styles={styles} label="직원수" name="employees" value={form.employees} onChange={handleChange} inter />
           </div>
 
-          <TextField
+          <TextField styles={styles}
             label="연매출"
             name="annualRevenue"
             value={form.annualRevenue}
@@ -310,14 +222,14 @@ function ProfileEditV2() {
           />
 
           <div className={styles.row}>
-            <SelectField
+            <SelectField styles={styles}
               label="대표자 연령대"
               name="ownerAgeGroup"
               value={form.ownerAgeGroup}
               options={AGE_GROUP_OPTIONS}
               onChange={handleChange}
             />
-            <TextField
+            <TextField styles={styles}
               label="자격/우대"
               name="qualifications"
               value={form.qualifications}

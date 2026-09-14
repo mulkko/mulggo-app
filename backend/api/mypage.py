@@ -72,14 +72,16 @@ def get_profile(user_id: int) -> JSONResponse:
         # 별개 테이블(profile_business_types)이라 따로 조회. 여러 번 재등록했으면 가장 최근
         # 것(business_type_id 최댓값)을 쓴다 - is_primary는 재등록 시 갱신 안 되는 문제가
         # 있어(2026-09-11 확인) 믿을 수 없음.
-        ksic_code = ksic_name = None
+        # [2026-09-14] 같은 김에 업태/종목(business_category/business_item)도 같이 조회 -
+        # ProfileEditV2 디자인 포팅(마이페이지 "사업자 정보" 섹션)에 필요해짐.
+        ksic_code = ksic_name = business_category = business_item = None
         if profile_id is not None:
             cur.execute(
                 """
-                SELECT pbt.ksic_code, kc.name
+                SELECT pbt.ksic_code, kc.name, pbt.business_category, pbt.business_item
                 FROM profile_business_types pbt
                 LEFT JOIN ksic_codes kc ON kc.code = pbt.ksic_code
-                WHERE pbt.profile_id = %s AND pbt.ksic_code IS NOT NULL
+                WHERE pbt.profile_id = %s
                 ORDER BY pbt.business_type_id DESC
                 LIMIT 1
                 """,
@@ -87,7 +89,30 @@ def get_profile(user_id: int) -> JSONResponse:
             )
             ksic_row = cur.fetchone()
             if ksic_row:
-                ksic_code, ksic_name = ksic_row
+                ksic_code, ksic_name, business_category, business_item = ksic_row
+
+        # [2026-09-14] 사업자등록증 원본 필드(biz_registration_docs) - ProfileEditV2
+        # 디자인의 "사업자 정보" 섹션(사업자번호/법인등록번호/대표자명/개업연월일/생년월일/
+        # 사업장·본점 소재지)에 필요. 전부 OCR로 확정된 값이라 읽기전용으로만 보여준다
+        # (기업유형처럼 재등록 팝업으로만 바뀜, 이 화면에서 직접 수정 불가).
+        biz_no = corp_no = biz_doc_company_name = ceo_name = None
+        open_date = birth_date = business_address = head_address = None
+        if profile_id is not None:
+            cur.execute(
+                """
+                SELECT biz_no, corp_no, company_name, ceo_name, open_date, birth_date,
+                       business_address, head_address
+                FROM biz_registration_docs
+                WHERE profile_id = %s
+                ORDER BY document_id DESC
+                LIMIT 1
+                """,
+                (profile_id,),
+            )
+            doc_row = cur.fetchone()
+            if doc_row:
+                (biz_no, corp_no, biz_doc_company_name, ceo_name,
+                 open_date, birth_date, business_address, head_address) = doc_row
     finally:
         conn.close()
 
@@ -109,7 +134,17 @@ def get_profile(user_id: int) -> JSONResponse:
             "company_size": company_size,
             "ksic_code": ksic_code,
             "ksic_name": ksic_name,
+            "business_category": business_category,
+            "business_item": business_item,
             "has_biz_cert": bool(has_biz_cert),
+            "biz_no": biz_no,
+            "corp_no": corp_no,
+            "biz_doc_company_name": biz_doc_company_name,
+            "ceo_name": ceo_name,
+            "open_date": open_date.isoformat() if open_date else None,
+            "birth_date": birth_date.isoformat() if birth_date else None,
+            "business_address": business_address,
+            "head_address": head_address,
         },
     })
 
