@@ -1,4 +1,5 @@
 import styles from "./webStyleGuide.module.css";
+import bizDoneCharacter from "../../assets/2_hello.png";
 
 const COLORS = [
   { name: "Navy Sphere", hex: "#104A8F", usage: "주요 액션 버튼(CTA), 핵심 활성화 링크", varName: "--color-navy-sphere" },
@@ -91,6 +92,16 @@ const KAKAO_COLORS = [
 // 온보딩 화면에서 추가된 색상 토큰
 const ONBOARDING_COLORS = [
   { name: "Dot Inactive", hex: "rgba(139,141,147,0.3)", usage: "페이지 인디케이터 비활성 점 배경 (--color-border-dashed와 값이 같아 그걸 참조하는 별칭, 2026-09-13 통합)", varName: "--color-dot-inactive" },
+];
+
+// 사업자등록증 인식완료 팝업(BizCertDonePopup, 온보딩 step5)에서 추가된 색상 토큰 -
+// 이 팝업 전용 프로토타입(시나리오 16)은 메인 프로토타입과 팔레트가 달라(틸 계열)
+// 기존 토큰과 억지로 매칭하지 않고 분리했다(사용자 확인). 카드 radius/버튼 radius/본문
+// 텍스트 색은 기존 마이페이지 삭제 확인 팝업 토큰(--radius-confirm-card 등)을 재사용.
+const BIZCERT_DONE_COLORS = [
+  { name: "Teal Vivid", hex: "#12998C", usage: '"지원사업 보러가기" 버튼 배경', varName: "--color-teal-vivid" },
+  { name: "Ink Strong", hex: "#111318", usage: "팝업 제목 텍스트", varName: "--color-ink-strong" },
+  { name: "Scrim Strong", hex: "rgba(20,22,30,0.55)", usage: "팝업 오버레이 딤 (--color-scrim보다 진함)", varName: "--color-scrim-strong" },
 ];
 
 // 진단 방식 선택 화면(05-1)에서 추가된 색상 토큰
@@ -718,6 +729,40 @@ function WebStyleGuide() {
             <div className={styles.componentItem}>
               <button type="button" className={styles.onboardingCta}>다음</button>
               <span className={styles.codeLabel}>CTA · 높이 46px · --radius-input · --shadow-onboarding-cta</span>
+            </div>
+          </div>
+        </div>
+
+        <p className={styles.subheading}>
+          사업자등록증 인식완료 팝업 (BizCertDonePopup, step5 "바로 지원사업 매칭을 받아보고
+          싶어요" → 사업자등록증 인식 완료 시점에 표시. 시나리오 보드 16번)
+        </p>
+        <div className={styles.colorGrid}>
+          {BIZCERT_DONE_COLORS.map((color) => (
+            <div className={styles.colorCard} key={color.varName}>
+              <div className={styles.swatch} style={{ backgroundColor: `var(${color.varName})` }} />
+              <p className={styles.colorName}>{color.name}</p>
+              <p className={styles.colorHex}>{color.hex}</p>
+              <p className={styles.colorUsage}>{color.usage}</p>
+              <span className={styles.codeLabel}>{color.varName}</span>
+            </div>
+          ))}
+        </div>
+        <div className={styles.componentCard}>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.bizDonePreviewCard}>
+                <img src={bizDoneCharacter} alt="" className={styles.bizDoneIllustration} />
+                <p className={styles.bizDoneTitle}>김창업님, 물꼬가 트였어요!</p>
+                <p className={styles.bizDoneDesc}>
+                  사업자 정보까지 준비됐어요. 이제 딱 맞는 지원사업을 찾아볼까요?
+                </p>
+                <span className={styles.bizDoneBtn}>지원사업 보러가기</span>
+              </div>
+              <span className={styles.codeLabel}>
+                --radius-confirm-card · --radius-confirm-btn · --color-teal-vivid · --color-ink-strong ·
+                --color-cancel-text(본문) · 오버레이는 --color-scrim-strong
+              </span>
             </div>
           </div>
         </div>

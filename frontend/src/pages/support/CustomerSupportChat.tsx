@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/customerSupportChat.module.css";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import chatAvatarIcon from "../../assets/9_mint.svg";
 
 /**
  * 고객센터 챗봇 화면 (19-1번, /support/chat). 19번 "1:1 문의"(CustomerSupport.tsx)의 하위 화면.
@@ -150,7 +151,7 @@ function CustomerSupportChat() {
           </svg>
         </button>
         <span className={styles.headerAvatar}>
-          <BotAvatarIcon />
+          <img className={styles.headerAvatarImg} src={chatAvatarIcon} alt="" />
         </span>
         <span className={styles.headerTitle}>챗봇 상담</span>
       </header>
@@ -162,7 +163,7 @@ function CustomerSupportChat() {
               <p className={styles.userBubble}>{message.text}</p>
             ) : (
               <span className={styles.botAvatar}>
-                <BotAvatarIcon />
+                <img className={styles.botAvatarImg} src={chatAvatarIcon} alt="" />
               </span>
             )}
             {message.role === "bot" && (
@@ -178,7 +179,7 @@ function CustomerSupportChat() {
         {sending && (
           <div className={styles.botBubbleRow}>
             <span className={styles.botAvatar}>
-              <BotAvatarIcon />
+              <img className={styles.botAvatarImg} src={chatAvatarIcon} alt="" />
             </span>
             <p className={styles.loadingBubble}>답변 작성 중...</p>
           </div>

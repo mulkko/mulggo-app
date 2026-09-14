@@ -1,0 +1,79 @@
+/* 사업자등록증 인식 완료 팝업 (BizCertDonePopup) — 온보딩 전용, 별도 프로토타입
+   ("회원가입 검증 상태.dc.html" 시나리오 16 "가입완료") 실측값. webTokens.css 메인
+   팔레트와 다른 틸 계열이라 이 팝업 전용 토큰(--color-teal-vivid 등)을 쓴다.
+   카드 radius/버튼 radius/본문 텍스트 색은 기존 삭제 확인 팝업 토큰을 재사용. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 26px;
+  box-sizing: border-box;
+  background: var(--color-scrim-strong);
+}
+
+.card {
+  width: 100%;
+  max-width: 310px;
+  box-sizing: border-box;
+  padding: 32px 24px;
+  border-radius: var(--radius-confirm-card);
+  background: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.illustration {
+  width: 132px;
+  height: 132px;
+  border-radius: 20px;
+  /* 원본(2_hello.png)이 전신이라 object-position:top으로 위쪽 기준 크롭해서
+     하체 없이 상체(대략 2/3 지점)까지만 보이게 한다. */
+  object-fit: cover;
+  object-position: top;
+}
+
+.title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-ink-strong);
+}
+
+.desc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-cancel-text);
+}
+
+.error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-error-text);
+}
+
+.proceedBtn {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-confirm-btn);
+  background: var(--color-teal-vivid);
+  color: var(--color-white);
+  font-family: var(--font-family-base);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.proceedBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
