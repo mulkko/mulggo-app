@@ -4,6 +4,7 @@ import styles from "../../styles/onboarding.module.css";
 import BizCertUpload, {
   type BizCertUploadHandle,
 } from "../../components/BizCertUpload/BizCertUpload";
+import BizCertDonePopup from "../../components/BizCertUpload/BizCertDonePopup";
 import onboardHello from "../../assets/onboard_hello.png";
 import onboardIdea from "../../assets/onboard_idea.png";
 import onboardSearching from "../../assets/onboard_searching.png";
@@ -35,8 +36,8 @@ import onboardRunning from "../../assets/onboard_running.png";
  * 직접 URL로 들어와 state가 없는 경우엔 FALLBACK_USER_ID(27, MyPage.tsx/
  * ProfileEdit.tsx와 동일)로 대신 채워서 팝업 자체는 항상 테스트 가능하게 한다.
  * 팝업 흐름: 드롭존(취소만 노출) → OCR 확인(BizCertUpload 자체 오버레이) → 확인
- * 완료 요약 상태로 전환되면 그때 "진행하기"가 나타남 → POST /api/mypage/biz-cert
- * 저장 후 /matching 이동.
+ * 완료(fields 확정)되면 이 팝업은 닫히고 BizCertDonePopup으로 교체됨 →
+ * "지원사업 보러가기" 클릭 시 POST /api/mypage/biz-cert 저장 후 /matching 이동.
  */
 
 type Step = 0 | 1 | 2 | 3 | 4 | 5;
@@ -116,6 +117,8 @@ function Onboarding() {
   const [bizCertFile, setBizCertFile] = useState<File | null>(null);
   const [bizCertSaving, setBizCertSaving] = useState(false);
   const [bizCertError, setBizCertError] = useState("");
+  // OCR 대기 중 "나중에 등록"(확인 팝업까지 거쳐 실제로 skip) 확정 시 뜨는 완료 안내 팝업 (시나리오 15).
+  const [showLaterRegisterPopup, setShowLaterRegisterPopup] = useState(false);
 
   const handleBack = () => {
     // step 0에서만 노출 — 회원가입 화면으로 복귀 (이미 있는 라우트)
@@ -150,6 +153,12 @@ function Onboarding() {
 
   const handleBizCertFileSelected = (file: File) => {
     setBizCertFileName(file.name);
+  };
+
+  // OCR 대기 중 확인 팝업(OcrStagePopup 자체 state)에서 "나중에 등록"을 최종 확정했을 때.
+  const handleBizCertLaterSkip = () => {
+    closeBizCertPopup(); // 사업자등록증 첨부 팝업 닫기 + 상태 초기화
+    setShowLaterRegisterPopup(true); // 완료 안내 팝업 열기
   };
 
   // 오른쪽 버튼의 "실행하기" 역할 — 파일 선택 후, 그제서야 OCR을 시작한다
@@ -293,73 +302,108 @@ function Onboarding() {
       )}
 
       {/* 사업자등록증 첨부 팝업 (step5 "바로 지원사업 매칭을 받아보고 싶어요") */}
-      {bizCertOpen && (() => {
-        // OCR이 실제로 도는 동안(uploading/review)은 BizCertUpload 자기 화면(전체 오버레이)이
-        // 대신 보여야 하므로, 이 팝업 자체의 제목/설명/버튼은 잠깐 숨긴다 - 안 그러면
-        // 두 오버레이가 겹쳐 보이는 "다중 팝업"처럼 보임.
-        const ocrRunning = bizCertRunning && !bizCertFields;
-        return (
-          <div
-            className={ocrRunning ? styles.bizPopupBare : styles.bizPopupOverlay}
-            onClick={closeBizCertPopup}
-          >
+      {bizCertOpen && (
+        bizCertFields ? (
+          // OCR 확인(review)까지 끝나서 fields가 확정된 순간 - 위 첨부 팝업은 닫고
+          // 이 팝업으로 교체한다(같은 팝업 안 텍스트만 바꾸지 않음, 사용자 확인).
+          <BizCertDonePopup onProceed={handleBizCertProceed} saving={bizCertSaving} error={bizCertError} />
+        ) : (() => {
+          // OCR이 실제로 도는 동안(uploading/review)은 BizCertUpload 자기 화면(전체 오버레이)이
+          // 대신 보여야 하므로, 이 팝업 자체의 제목/설명/버튼은 잠깐 숨긴다 - 안 그러면
+          // 두 오버레이가 겹쳐 보이는 "다중 팝업"처럼 보임.
+          const ocrRunning = bizCertRunning;
+          return (
             <div
-              className={ocrRunning ? styles.bizPopupBare : styles.bizPopupCard}
-              role="dialog"
-              aria-modal="true"
-              aria-label="사업자등록증 첨부"
-              onClick={(e) => e.stopPropagation()}
+              className={ocrRunning ? styles.bizPopupBare : styles.bizPopupOverlay}
+              onClick={closeBizCertPopup}
             >
-              {!ocrRunning && (
-                <>
-                  <h2 className={styles.bizPopupTitle}>사업자등록증을 첨부해주세요</h2>
-                  <p className={styles.bizPopupSub}>
-                    등록하면 회원님의 사업 정보로 바로 지원사업 매칭을 시작할 수 있어요.
-                  </p>
-                </>
-              )}
+              <div
+                className={ocrRunning ? styles.bizPopupBare : styles.bizPopupCard}
+                role="dialog"
+                aria-modal="true"
+                aria-label="사업자등록증 첨부"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {!ocrRunning && (
+                  <>
+                    <h2 className={styles.bizPopupTitle}>사업자등록증을 첨부해주세요</h2>
+                    <p className={styles.bizPopupSub}>
+                      등록하면 회원님의 사업 정보로 바로 지원사업 매칭을 시작할 수 있어요.
+                    </p>
+                  </>
+                )}
 
-              {bizCertFields ? (
-                <p className={styles.bizPopupDone}>사업자등록증 확인 완료 ✓</p>
-              ) : (
                 <BizCertUpload
                   ref={bizCertRef}
                   deferStart
                   onFileSelected={handleBizCertFileSelected}
                   onConfirm={handleBizCertConfirm}
-                  onSkip={closeBizCertPopup}
+                  onSkip={handleBizCertLaterSkip}
                   onReset={handleBizCertReset}
                   onError={handleBizCertError}
                 />
-              )}
 
-              {bizCertError && <p className={styles.bizPopupError}>{bizCertError}</p>}
+                {!ocrRunning && (
+                  <div className={styles.bizPopupButtons}>
+                    <button type="button" className={styles.bizPopupCancelBtn} onClick={closeBizCertPopup}>
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.bizPopupProceedBtn}
+                      onClick={handleBizCertRun}
+                      disabled={!bizCertFileName || bizCertRunning}
+                    >
+                      {bizCertRunning ? "처리 중..." : "실행하기"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()
+      )}
 
-              {!ocrRunning && (
-                <div className={styles.bizPopupButtons}>
-                  <button type="button" className={styles.bizPopupCancelBtn} onClick={closeBizCertPopup}>
-                    취소
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.bizPopupProceedBtn}
-                    onClick={bizCertFields ? handleBizCertProceed : handleBizCertRun}
-                    disabled={bizCertFields ? bizCertSaving : !bizCertFileName || bizCertRunning}
-                  >
-                    {bizCertFields
-                      ? bizCertSaving
-                        ? "저장 중..."
-                        : "진행하기"
-                      : bizCertRunning
-                        ? "처리 중..."
-                        : "실행하기"}
-                  </button>
-                </div>
-              )}
+      {/* 사업자등록증 나중에 등록 완료 안내 팝업 (시나리오 15) */}
+      {showLaterRegisterPopup && (
+        <div className={styles.bizPopupOverlay}>
+          <div
+            className={styles.bizPopupCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="사업자등록증 나중에 등록 완료"
+          >
+            <h2 className={styles.laterPopupTitle}>김창업님, 물꼬가 트였어요!</h2>
+            <p className={styles.laterPopupDesc}>
+              사업자등록증을 등록하면 딱 맞는 지원사업을 바로 찾아드릴게요.
+            </p>
+            <div className={styles.laterPopupButtons}>
+              <button
+                type="button"
+                className={styles.laterPopupRegisterBtn}
+                onClick={() => {
+                  setShowLaterRegisterPopup(false);
+                  handleMatchingCard();
+                }}
+              >
+                사업자등록증
+                <br />
+                등록하기
+              </button>
+              <button
+                type="button"
+                className={styles.laterPopupLookBtn}
+                onClick={() => {
+                  setShowLaterRegisterPopup(false);
+                  navigate("/home");
+                }}
+              >
+                먼저 둘러보기
+              </button>
             </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 }

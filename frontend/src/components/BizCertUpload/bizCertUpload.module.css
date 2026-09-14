@@ -545,3 +545,68 @@
   color: var(--color-ink-charcoal);
   cursor: pointer;
 }
+
+/* [2026-09-14] 인식 중 "나중에 등록" 확인 팝업(OcrStagePopup) — 삭제 확인 팝업(myPage.module.css
+   .confirmOverlay 등)과 같은 톤: 카드 radius/버튼 radius/오버레이 딤 토큰을 그대로 재사용.
+   .entityPopupOverlay/.ksicSheetOverlay와 마찬가지로 .overlay(z-index 200) 위에 떠야 하므로 250. */
+.skipConfirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: var(--color-scrim-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 28px;
+  box-sizing: border-box;
+}
+
+.skipConfirmCard {
+  width: 100%;
+  max-width: 300px;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-confirm-card);
+  padding: 26px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: var(--shadow-confirm-card);
+}
+
+.skipConfirmText {
+  margin: 0;
+  text-align: center;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--color-ink-charcoal);
+}
+
+.skipConfirmButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.skipConfirmCancelBtn,
+.skipConfirmProceedBtn {
+  flex: 1;
+  box-sizing: border-box;
+  padding: 13px;
+  border: none;
+  border-radius: var(--radius-confirm-btn);
+  font-family: var(--font-family-base);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.skipConfirmCancelBtn {
+  background: var(--color-cancel-bg);
+  color: var(--color-cancel-text);
+}
+
+.skipConfirmProceedBtn {
+  background: var(--color-light-teal);
+  color: var(--color-white);
+}

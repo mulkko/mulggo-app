@@ -265,4 +265,14 @@
      없이 은은한 그림자만)엔 안 맞아 새로 등록. */
   --color-industry-anchor-bg: #e7ecf8; /* Navy Mist(--color-navy-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 #f3f8ff — 프로토타입 원본값) */
   --shadow-industry-card: 0 10px 26px -20px rgba(21, 50, 140, 0.6); /* 업종코드 카드 그림자(프로토타입 원본값, 테두리 링 없음) */
+
+  /* ===== 사업자등록증 인식완료 팝업 전용 (BizCertDonePopup, 온보딩) =====
+     시나리오 보드 "회원가입 검증 상태.dc.html" 16번 "가입완료(사업자등록증 인식 완료)"
+     실측값. 이 팝업 전용 프로토타입은 메인 프로토타입과 팔레트가 달라(틸 계열)
+     기존 토큰과 억지로 매칭하지 않고 전용 토큰으로 분리했다(사용자 확인).
+     카드 radius는 --radius-confirm-card(20px), 버튼 radius는 --radius-confirm-btn(10px),
+     본문 텍스트는 --color-cancel-text(#4b5160, 기존 값과 동일)를 그대로 재사용. */
+  --color-teal-vivid: #12998c; /* "지원사업 보러가기" 버튼 배경 */
+  --color-ink-strong: #111318; /* 팝업 제목 텍스트 */
+  --color-scrim-strong: rgba(20, 22, 30, 0.55); /* 팝업 오버레이 딤 (기존 --color-scrim보다 진함) */
 }
