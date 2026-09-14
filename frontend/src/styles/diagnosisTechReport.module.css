@@ -261,7 +261,7 @@
 .patentNote {
   margin: 0;
   font-size: 11px;
-  color: var(--color-error-text);
+  color: var(--color-stone-gray);
   line-height: 1.5;
 }
 

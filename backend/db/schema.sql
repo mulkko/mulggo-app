@@ -396,6 +396,24 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     CONSTRAINT uq_bookmarks_user_announcement UNIQUE (user_id, announcement_id)
 );
 
+-- 공고 "지원하기" 표시. 실 DB엔 원래 application_submissions로 만들어졌다가 apply_status로
+-- 이름이 바뀜(PK 시퀀스·제약조건 이름에 옛 이름이 남아있음) - 이 파일엔 문서화가 안
+-- 돼있었음(2026-09-14 확인, bookmarks와 같은 사유로 뒤늦게 채워넣음). bookmarks와 달리
+-- user_id가 아니라 profile_id(business_profiles FK) 기준이고, 찜하기와 달리 취소해도
+-- 행을 지우지 않고 is_applied만 false로 바꾼다(checked_at 이력 보존 목적) - 그래서
+-- (profile_id, announcement_id) UNIQUE 제약이 없다(있으면 이력이 아니라 최신 상태 1건만
+-- 남는 구조가 되어야 하는데, 현재 앱 코드는 존재하는 행을 찾아 갱신하는 방식이라 사실상
+-- 1건만 유지됨 - 다만 DB 차원 제약은 아직 없음). [2026-09-14] API(backend/api/matching.py
+-- POST·DELETE .../apply, backend/api/mypage.py GET /apply-status) + 프론트
+-- (MatchingDetail.tsx, MyPage.tsx) 연동 완료.
+CREATE TABLE IF NOT EXISTS apply_status (
+    submission_id   BIGSERIAL PRIMARY KEY,
+    profile_id      BIGINT NOT NULL REFERENCES business_profiles(profile_id),
+    announcement_id BIGINT NOT NULL REFERENCES announcements(announcement_id),
+    is_applied      BOOLEAN NOT NULL,
+    checked_at      TIMESTAMPTZ
+);
+
 -- 행정구역 계층(시/도 → 시/군/구 → 행정동), 3,924행. 실 DB엔 있었는데 이 파일에 문서화가
 -- 안 돼있었음(2026-09-10 확인) - backend/api/analysis.py::_load_administrative_dong()이
 -- 상권분석(GET /analysis/market)에서 지역 중심좌표 계산용으로 이미 쓰고 있었고,

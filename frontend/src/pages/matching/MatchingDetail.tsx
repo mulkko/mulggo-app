@@ -69,6 +69,7 @@ function MatchingDetail() {
       .then((body: { success: boolean; data?: AnnouncementDetail }) => {
         setDetail(body.success ? body.data : undefined);
         setSaved(body.success ? Boolean(body.data?.bookmarked) : false);
+        setApplied(body.success ? Boolean(body.data?.applied) : false);
       })
       .catch(() => setDetail(undefined))
       .finally(() => setLoading(false));
@@ -102,7 +103,20 @@ function MatchingDetail() {
   };
 
   const handleToggleApplied = () => {
-    setApplied((prev) => !prev);
+    // 낙관적으로 먼저 바꾸고, 실패하면(비로그인 401 등) 원래 상태로 되돌린다 (handleToggleSave와 동일 패턴).
+    const next = !applied;
+    setApplied(next);
+    fetch(`${API_BASE_URL}/api/matching/${id}/apply`, {
+      method: next ? "POST" : "DELETE",
+      headers: authHeaders(),
+    }).then((res) => {
+      if (!res.ok) {
+        setApplied(!next);
+        return;
+      }
+      setToastMessage(next ? "지원한 공고로 표시되었습니다" : "지원 표시가 취소되었습니다");
+      setTimeout(() => setToastMessage(null), 1500);
+    }).catch(() => setApplied(!next));
   };
 
   const handleFill = (doc: { fileName: string; attachmentId: number }) => {

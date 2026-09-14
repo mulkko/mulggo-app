@@ -47,6 +47,7 @@ function DiagnosisIndustryResult() {
   const [ready, setReady] = useState(false);
   const [ksicCodes, setKsicCodes] = useState<string[]>([]);
   const [industryName, setIndustryName] = useState("");
+  const [industryCodeNames, setIndustryCodeNames] = useState<Record<string, string>>({});
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [track, setTrack] = useState<"cafe" | "tech" | undefined>(undefined);
   const [checking, setChecking] = useState(false);
@@ -73,6 +74,7 @@ function DiagnosisIndustryResult() {
     const codes = answers.resolvedKsicCodes ?? [];
     setKsicCodes(codes);
     setIndustryName(answers.industryMatchName ?? "");
+    setIndustryCodeNames(answers.industryMatchCodeNames ?? {});
     setReady(true);
   }, [navigate]);
 
@@ -172,7 +174,9 @@ function DiagnosisIndustryResult() {
             {ksicCodes.map((code) => (
               <div key={code} className={industryStyles.matchCard}>
                 <span className={industryStyles.matchCardHead}>
-                  <span className={industryStyles.matchCardTitle}>{industryName || "업종 미확인"}</span>
+                  <span className={industryStyles.matchCardTitle}>
+                    {industryCodeNames[code] || industryName || "업종 미확인"}
+                  </span>
                 </span>
                 <span className={industryStyles.matchCodeText}>업종코드 {code}</span>
               </div>

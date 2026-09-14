@@ -5,8 +5,10 @@
 # user_id를 쿼리 파라미터로 직접 받는다. 로그인 세션이 붙으면 이 파라미터를
 # 그 세션에서 채우도록 프론트만 바꾸면 되고, 이 API 자체는 안 바뀐다.
 #
-# business_profiles만 연동한다 - apply_status는 실제 DB에 0건이라(연동해도 항상 빈
-# 목록) 지금 범위에서 제외함(사용자 확인, 2026-09-09).
+# business_profiles만 연동한다.
+# [2026-09-14] apply_status(지원내역)도 GET /apply-status로 연동함 - 이전엔 0건이라
+# 범위에서 뺐었는데(2026-09-09), backend/api/matching.py에 POST·DELETE .../apply가
+# 생기면서 채워지기 시작함.
 # [2026-09-10] bookmarks(찜하기), fill-history(채우기 이용내역)는 연동함 - 다른 프로필
 # API와 달리 user_id를 쿼리 파라미터가 아니라 로그인 세션(Depends(get_current_user_id))
 # 으로 받는다. 찜하기 토글/채우기(POST .../bookmark, GET .../fill)가 backend/api/
@@ -281,13 +283,11 @@ def list_fill_history(user_id: int = Depends(get_current_user_id)) -> JSONRespon
     return JSONResponse(content={"success": True, "data": data})
 
 
-@router.get("/reports")
-def list_reports(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
-    """마이페이지 "나의 분석 리포트" 목록. idea_refinement_sessions 중 상권/기술창업
-    분석이 끝난 세션(market_analysis 또는 tech_analysis가 채워짐 - backend/api/
-    diagnosis.py::_run_report_in_background가 채운다)만 보여준다. 업종명은 저장 시점에
-    같이 안 남겨서(테이블엔 KSIC/국세청코드만 있음) resolved_nts_codes[0]을
-    nts_industry_codes에서 다시 찾아 붙인다."""
+@router.get("/apply-status")
+def list_apply_status(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
+    """마이페이지 "나의 지원내역". [2026-09-14] apply_status는 지원 취소해도 행을
+    안 지우고 is_applied만 false로 바꾸는 구조라(이력 보존), is_applied=true인 것만
+    걸러서 보여준다. backend/api/matching.py::set_applied()/unset_applied() 참고."""
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -299,7 +299,54 @@ def list_reports(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
 
         cur.execute(
             """
-            SELECT session_id, resolved_nts_codes, psst_problem, created_at
+            SELECT a.announcement_id, a.title, aps.checked_at
+            FROM apply_status aps
+            JOIN announcements a ON a.announcement_id = aps.announcement_id
+            WHERE aps.profile_id = %s AND aps.is_applied = true
+            ORDER BY aps.checked_at DESC NULLS LAST
+            """,
+            (profile_id,),
+        )
+        rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    data = [
+        {
+            "id": str(announcement_id),
+            "title": title,
+            "status": "지원함",
+            "date": checked_at.strftime("%Y.%m.%d") if checked_at else "-",
+        }
+        for announcement_id, title, checked_at in rows
+    ]
+    return JSONResponse(content={"success": True, "data": data})
+
+
+@router.get("/reports")
+def list_reports(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
+    """마이페이지 "나의 분석 리포트" 목록. idea_refinement_sessions 중 상권/기술창업
+    분석이 끝난 세션(market_analysis 또는 tech_analysis가 채워짐 - backend/api/
+    diagnosis.py::_run_report_in_background가 채운다)만 보여준다. 업종명은 저장 시점에
+    같이 안 남겨서(테이블엔 KSIC/국세청코드만 있음) resolved_nts_codes[0]을
+    nts_industry_codes에서 다시 찾아 붙인다.
+
+    [2026-09-14, 사용자 확인] summary는 psst_problem(사용자가 적은 아이디어 원문)이
+    아니라 프로토타입(마이페이지, 17번 페이지) 원본 카드 문구 그대로: "업종코드 {코드}
+    · {동} 주변 상권 동향"(카페형=오프라인) / "업종코드 {코드} · 업종 및 특허 분석
+    지표"(기술창업형=온라인)."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        if row is None:
+            return JSONResponse(content={"success": True, "data": []})
+        profile_id = row[0]
+
+        cur.execute(
+            """
+            SELECT session_id, resolved_nts_codes, business_operation_type, region, created_at
             FROM idea_refinement_sessions
             WHERE profile_id = %s AND (market_analysis IS NOT NULL OR tech_analysis IS NOT NULL)
             ORDER BY created_at DESC
@@ -309,17 +356,26 @@ def list_reports(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
         rows = cur.fetchall()
 
         data = []
-        for session_id, nts_codes, seed_interest, created_at in rows:
+        for session_id, nts_codes, business_operation_type, region, created_at in rows:
             industry_name = None
-            if nts_codes:
-                cur.execute("SELECT name FROM nts_industry_codes WHERE code = %s", (nts_codes[0],))
+            nts_code = nts_codes[0] if nts_codes else None
+            if nts_code:
+                cur.execute("SELECT name FROM nts_industry_codes WHERE code = %s", (nts_code,))
                 found = cur.fetchone()
                 industry_name = found[0] if found else None
+
+            code_label = f"업종코드 {nts_code}" if nts_code else "업종코드 미확인"
+            if business_operation_type == "오프라인":
+                dong = (region or "").split(" ")[-1] if region else ""
+                summary = f"{code_label} · {dong} 주변 상권 동향" if dong else f"{code_label} · 주변 상권 동향"
+            else:
+                summary = f"{code_label} · 업종 및 특허 분석 지표"
+
             data.append(
                 {
                     "id": str(session_id),
                     "industry": industry_name or "업종 미확인",
-                    "summary": seed_interest or "-",
+                    "summary": summary,
                     "createdAt": created_at.strftime("%Y.%m.%d"),
                 }
             )

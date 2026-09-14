@@ -39,6 +39,10 @@ export interface DiagnosisAnswers {
   industryMatchName?: string;
   industryMatchState?: string;
   industryMatchConfidence?: string;
+  // [2026-09-14] 후보(최대 3개) 코드별 업종명 - code -> name. industryMatchName은
+  // 1순위 이름만 담아서, 업종코드 결과/분석 리포트 셀렉박스가 후보 3개 전부에 같은
+  // 이름을 보여주던 버그가 있었음(사용자 확인) - 이제 코드마다 자기 이름을 찾아 쓴다.
+  industryMatchCodeNames?: Record<string, string>;
   // /start 응답으로 같이 받는 앵커 문구(있으면 7·8번 화면 하드코딩 문구 대신 사용) -
   // 매장형태로 카페형/기술창업형이 갈려 내용 출처가 다르지만 프론트는 그냥 문자열로 받아 쓴다.
   targetAnchor?: string;

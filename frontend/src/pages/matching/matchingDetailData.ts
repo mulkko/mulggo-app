@@ -38,6 +38,8 @@ export interface AnnouncementDetail {
   hashtags: string;
   /** 지금 로그인한 사용자가 이 공고를 찜했는지 (비로그인이면 항상 false) */
   bookmarked: boolean;
+  /** 지금 로그인한 사용자가 이 공고에 "지원함"으로 표시했는지 (비로그인이면 항상 false) */
+  applied: boolean;
   /** AI 코멘트 박스 본문 */
   aiComment: string;
   /**

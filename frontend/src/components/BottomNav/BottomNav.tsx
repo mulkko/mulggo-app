@@ -82,8 +82,11 @@ const TABS: TabDef[] = [
 function BottomNav({ active }: BottomNavProps) {
   const navigate = useNavigate();
 
+  // [2026-09-14, 사용자 확인] 예전엔 이미 활성 탭이면 클릭을 무시했는데("탭 하위 화면
+  // 여러 개를 이동 중이면 다시 눌러도 반응이 없다"는 피드백) - 지금 보고 있는 화면이
+  // 탭 루트가 아니어도(예: 아이디어 탭 활성 상태로 /diagnosis/7에 있을 때) 다시
+  // 누르면 그 탭의 루트로 이동하게 항상 navigate한다.
   const handleTabClick = (tab: TabDef) => {
-    if (tab.key === active) return;
     navigate(tab.path);
   };
 

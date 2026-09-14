@@ -286,7 +286,20 @@ function DensityGrid({
   centerCell?: [number, number] | null;
   track: "cafe" | "tech";
 }) {
-  if (cells.length === 0) return null;
+  // [2026-09-14, 사용자 확인] 예전엔 cells가 비어있으면(반경 내 동일업종 0곳) 이
+  // 섹션 자체가 통째로 사라졌다 - 카드도 제목도 없이 조용히 안 보여서 "왜 밀집도가
+  // 안 나오냐"는 문의로 이어짐(실측, 셀렉박스 기본값인 1순위 후보가 0곳인 경우가
+  // 실제로 있었음). 특허차트 실패 케이스와 같은 원칙 - 데이터가 없어도 카드는
+  // 남기고 안내 문구로 보여준다.
+  if (cells.length === 0) {
+    return (
+      <section className={marketStyles.sectionCard}>
+        <h2 className={marketStyles.sectionTitle}>{title}</h2>
+        {subtitle && <span className={marketStyles.densitySubtitle}>{subtitle}</span>}
+        <p className={marketStyles.densityNote}>반경 500m 안에 동일업종이 없어요.</p>
+      </section>
+    );
+  }
   const max = Math.max(...cells.map((c) => c.count), 1);
   const byPos = new Map(cells.map((c) => [`${c.x},${c.y}`, c.count]));
   const grid = Array.from({ length: gridSize * gridSize }, (_, i) => {
@@ -439,8 +452,14 @@ interface PatentTrendData {
   keyword: string;
 }
 
-/** 연도별 특허출원 건수 추이 - emkim99님 DiagnosisTechReport.tsx의 PatentChart를 그대로
- * 포팅(신뢰구간 실선/예측 잠정치 점선 구분, 예측연도 별도 표시). */
+/** 연도별 특허출원 건수 추이 - [2026-09-14, 사용자 확인] 프로토타입("관련분야
+ * 특허출원 추이 (KIPRIS)" 화면) 원본 마크업을 기반으로, 예측연도 표현 방식만 다시
+ * 조정함: 예측연도(신뢰구간 마지막 해+1)의 실측치는 공개지연으로 과소집계된
+ * 값이라 선·점 높이는 실측이 아니라 보정된 예측치를 기준으로 그린다(추세선이
+ * 실제로 없는 급락처럼 보이지 않게) - 이 구간만 점선+빈 원으로 "확정 아님"을
+ * 표시하고, "예측:N"을 메인 라벨로, "현재:n"(실측)은 점 아래에 작게 보조로 둔다.
+ * 예측연도 이후(공개지연으로 예측 자체가 불가능한 연도)는 선·점 없이 x축 라벨과
+ * "예측불가" 텍스트만 남긴다. */
 function PatentChart({ title, data }: { title: string; data: PatentTrendData }) {
   const years = Object.keys(data.actual)
     .map(Number)
@@ -463,7 +482,20 @@ function PatentChart({ title, data }: { title: string; data: PatentTrendData }) 
     );
   }
 
-  const allValues = actualPoints.map((p) => p.value).concat(forecastValue !== null ? [forecastValue] : []);
+  // [2026-09-14, 사용자 확인] 예측연도(forecastYear) 그 이후 연도는 예측 자체가
+  // 불가능하다고 판별된 거라 선/점을 아예 안 그리고(unplottableYears), x축 라벨+
+  // "예측불가" 텍스트만 남긴다.
+  const unplottableYears = forecastYear !== null ? years.filter((y) => y > forecastYear) : [];
+  const reliablePlottable = actualPoints.filter((p) => reliableSet.has(p.year));
+  // [2026-09-14, 사용자 확인] 예측연도의 실측치(현재)는 공개지연으로 과소집계된
+  // 값이라, 선·점의 높이는 실측치가 아니라 보정된 예측치를 기준으로 그린다(그래야
+  // 추세선이 "실제로는 없는 급락"처럼 안 보임) - 점선으로 구분해서 이 구간이
+  // 확정치가 아니라 추정이라는 걸 표시한다. 실측치(현재)는 점 옆에 작게 보조로만.
+  const forecastActual = forecastYear !== null ? actualPoints.find((p) => p.year === forecastYear) : undefined;
+
+  const allValues = reliablePlottable
+    .map((p) => p.value)
+    .concat(forecastValue !== null ? [forecastValue] : []);
   const maxValue = Math.max(...allValues, 1);
   const minValue = Math.min(...allValues, 0);
 
@@ -492,21 +524,15 @@ function PatentChart({ title, data }: { title: string; data: PatentTrendData }) 
     return plotHeight - bottomPad - ratio * (plotHeight - topPad - bottomPad);
   };
 
-  const lastActual = actualPoints[actualPoints.length - 1];
-  const reliablePoints = actualPoints.filter((p) => reliableSet.has(p.year));
-  const unreliablePoints = actualPoints.filter((p) => !reliableSet.has(p.year));
-
-  const reliablePolyline = reliablePoints.map((p) => `${xForYear(p.year)},${yForValue(p.value)}`).join(" ");
-  const unreliableChain = reliablePoints.length > 0 ? [reliablePoints[reliablePoints.length - 1], ...unreliablePoints] : unreliablePoints;
-  const unreliablePolyline = unreliableChain.map((p) => `${xForYear(p.year)},${yForValue(p.value)}`).join(" ");
-
-  // [2026-09-13, 사용자 확인] 예측(점선) 지점은 마지막 실측 연도보다 한 스텝 더
-  // 오른쪽(x = paddingX + years.length*step)에 찍히는데, chartWidth 계산이 실측
-  // 연도까지만(years.length - 1) 포함해서 예측 원·"예측:N" 라벨이 SVG 폭 밖으로
-  // 튀어나가 잘려 보이는 문제가 있었다(모바일에서 더 눈에 띄었을 뿐, 화면 크기와
-  // 무관한 계산 버그) - 예측이 있으면 그만큼 오른쪽 폭에 포함시킨다.
-  const rightmostStep = forecastYear !== null ? years.length : Math.max(years.length - 1, 0);
-  const chartWidth = paddingX * 2 + rightmostStep * step;
+  const solidPolyline = reliablePlottable.map((p) => `${xForYear(p.year)},${yForValue(p.value)}`).join(" ");
+  const lastReliable = reliablePlottable[reliablePlottable.length - 1];
+  const forecastX = forecastYear !== null ? xForYear(forecastYear) : null;
+  const dashedPolyline =
+    lastReliable && forecastX !== null && forecastValue !== null
+      ? `${xForYear(lastReliable.year)},${yForValue(lastReliable.value)} ${forecastX},${yForValue(forecastValue)}`
+      : "";
+  const unpredictableX = unplottableYears.length > 0 ? xForYear(unplottableYears[0]) : null;
+  const chartWidth = paddingX * 2 + Math.max(years.length - 1, 0) * step;
   const hasUnreliableYears = years.some((y) => !reliableSet.has(y));
 
   return (
@@ -520,41 +546,43 @@ function PatentChart({ title, data }: { title: string; data: PatentTrendData }) 
             className={techStyles.patentSvg}
             style={{ width: `${Math.max(chartWidth, 280)}px`, height: `${chartHeight}px` }}
           >
-            {reliablePolyline && (
-              <polyline points={reliablePolyline} fill="none" stroke="var(--color-light-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            {solidPolyline && (
+              <polyline points={solidPolyline} fill="none" stroke="var(--color-light-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             )}
-            {unreliablePolyline && unreliableChain.length > 1 && (
-              <polyline points={unreliablePolyline} fill="none" stroke="var(--color-light-teal)" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
-            )}
-            {forecastYear !== null && forecastValue !== null && (
-              <polyline
-                points={`${xForYear(lastActual.year)},${yForValue(lastActual.value)} ${paddingX + years.length * step},${yForValue(forecastValue)}`}
-                fill="none"
-                stroke="var(--color-deep-navy)"
-                strokeWidth="2"
-                strokeDasharray="2 3"
-                strokeLinecap="round"
-              />
+            {/* [2026-09-14, 사용자 확인] 예측연도 구간은 점선 - 실측이 아니라 추정이라는 표시. */}
+            {dashedPolyline && (
+              <polyline points={dashedPolyline} fill="none" stroke="var(--color-light-teal)" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" />
             )}
 
-            {reliablePoints.map((p) => (
+            {reliablePlottable.map((p) => (
               <circle key={p.year} cx={xForYear(p.year)} cy={yForValue(p.value)} r="4" fill="var(--color-light-teal)" />
             ))}
-            {unreliablePoints.map((p) => (
-              <circle key={p.year} cx={xForYear(p.year)} cy={yForValue(p.value)} r="4" fill="var(--color-white)" stroke="var(--color-light-teal)" strokeWidth="2" />
-            ))}
-            {forecastYear !== null && forecastValue !== null && (
-              <circle cx={paddingX + years.length * step} cy={yForValue(forecastValue)} r="4" fill="var(--color-white)" stroke="var(--color-deep-navy)" strokeWidth="2" />
+            {/* [2026-09-14, 사용자 확인] 예측연도 점은 실측치가 아니라 예측치 높이에 -
+                속이 빈 원으로 "확정 아님"을 표시. "예측:N"이 메인(다른 연도 값과 같은
+                크기·색), "현재:n"(실측, 과소집계)은 점 아래에 작게 보조로만. */}
+            {forecastX !== null && forecastValue !== null && (
+              <circle cx={forecastX} cy={yForValue(forecastValue)} r="4" fill="var(--color-white)" stroke="var(--color-light-teal)" strokeWidth="2" />
             )}
 
-            {actualPoints.map((p) => (
+            {reliablePlottable.map((p) => (
               <text key={`v-${p.year}`} x={xForYear(p.year)} y={yForValue(p.value) - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--color-ink-charcoal)">
                 {p.value}
               </text>
             ))}
-            {forecastYear !== null && forecastValue !== null && (
-              <text x={paddingX + years.length * step} y={yForValue(forecastValue) - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--color-deep-navy)">
+            {forecastX !== null && forecastValue !== null && (
+              <text x={forecastX} y={yForValue(forecastValue) - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--color-ink-charcoal)">
                 예측:{forecastValue}
+              </text>
+            )}
+            {forecastX !== null && forecastActual && (
+              <text x={forecastX} y={yForValue(forecastValue ?? forecastActual.value) + 15} textAnchor="middle" fontSize="7.5" fill="var(--color-stone-gray)">
+                현재:{forecastActual.value}
+              </text>
+            )}
+
+            {unpredictableX !== null && (
+              <text x={unpredictableX} y={plotHeight / 2} textAnchor="middle" fontSize="8.5" fontWeight="700" fill="var(--color-stone-gray)">
+                예측불가
               </text>
             )}
 
@@ -569,25 +597,16 @@ function PatentChart({ title, data }: { title: string; data: PatentTrendData }) 
                 transform={`rotate(-40 ${xForYear(year)} ${labelY})`}
               >
                 {year}
-                {!reliableSet.has(year) ? "*" : ""}
+                {!reliableSet.has(year) && year <= (forecastYear ?? year) ? "*" : ""}
               </text>
             ))}
-            {forecastYear !== null && (
-              <text
-                x={paddingX + years.length * step}
-                y={labelY}
-                textAnchor="end"
-                fontSize="9"
-                fill="var(--color-deep-navy)"
-                transform={`rotate(-40 ${paddingX + years.length * step} ${labelY})`}
-              >
-                {forecastYear}
-              </text>
-            )}
           </svg>
         </div>
         {hasUnreliableYears && (
-          <p className={techStyles.patentNote}>* 잠정치·공개지연으로 예측 학습에서 제외된 연도예요</p>
+          <>
+            <p className={techStyles.patentNote}>* 잠정치(특허 공개 지연 반영) · 2025년은 현재 집계와 연간 예측치를 함께 표기</p>
+            <p className={techStyles.patentNote}>* 2026년은 특허 공개 지연으로 현재 집계 수치만 제공, 예측 불가</p>
+          </>
         )}
         <p className={techStyles.emptyText}>검색 키워드(AI 자동생성): {data.keyword}</p>
       </div>
@@ -619,6 +638,7 @@ interface DiagnosisReportResponse {
     industryMatchName?: string | null;
     industryMatchState?: string | null;
     industryMatchConfidence?: string | null;
+    industryMatchCodeNames?: Record<string, string>;
   };
   error?: { message: string };
 }
@@ -633,12 +653,16 @@ interface DiagnosisReportResponse {
 function IndustryCodeSelect({
   codes,
   industryName,
+  codeNames,
   selectedCode,
   onSelect,
   analysisByCode,
 }: {
   codes: string[];
   industryName: string;
+  // [2026-09-14] 후보 3개가 전부 같은 industryName(1순위 이름)을 찍던 버그 수정 -
+  // 코드별 이름이 있으면 그걸 쓰고, 없으면(구버전 세션 등) industryName으로 폴백.
+  codeNames: Record<string, string>;
   selectedCode: string;
   onSelect: (code: string) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -651,7 +675,7 @@ function IndustryCodeSelect({
   }
 
   const activeCode = selectedCode || codes[0];
-  const name = industryName || "업종 미확인";
+  const name = codeNames[activeCode] || industryName || "업종 미확인";
 
   return (
     <div className={styles.industrySelectWrap}>
@@ -694,7 +718,7 @@ function IndustryCodeSelect({
                   setOpen(false);
                 }}
               >
-                {name} 업종코드 {code}
+                {codeNames[code] || industryName || "업종 미확인"} 업종코드 {code}
                 {analysisByCode[code]?.failed ? " (분석 실패)" : ""}
               </div>
             );
@@ -748,6 +772,7 @@ function DiagnosisReport() {
   const [ksicQuery, setKsicQuery] = useState("");
   const [sido, setSido] = useState("");
   const [industryName, setIndustryName] = useState("");
+  const [industryCodeNames, setIndustryCodeNames] = useState<Record<string, string>>({});
   // [2026-09-13] 프로토타입(13번 상권분석 화면)의 밀집도 소제목("{동} 반경 500m
   // {업종명}({코드}) 밀집도")에 필요해서 추가 - 이전엔 이 화면이 sido만 들고 있었다.
   const [dong, setDong] = useState("");
@@ -847,6 +872,7 @@ function DiagnosisReport() {
       setSido(answers.sido ?? "");
       setDong(answers.dong ?? "");
       setIndustryName(answers.industryMatchName ?? "");
+      setIndustryCodeNames(answers.industryMatchCodeNames ?? {});
     }
     setReady(true);
 
@@ -900,6 +926,7 @@ function DiagnosisReport() {
           setSido(body.data.sido ?? "");
           setDong(body.data.dong ?? "");
           setIndustryName(body.data.industryMatchName ?? "");
+          setIndustryCodeNames(body.data.industryMatchCodeNames ?? {});
         } else {
           setSelectedCode((prev) => prev || (answers.resolvedKsicCodes ?? [])[0] || "");
         }
@@ -1030,6 +1057,7 @@ function DiagnosisReport() {
         <IndustryCodeSelect
           codes={resolvedCodes}
           industryName={industryName}
+          codeNames={industryCodeNames}
           selectedCode={selectedCode}
           onSelect={setSelectedCode}
           analysisByCode={analysisByCode}
@@ -1140,12 +1168,18 @@ function DiagnosisReport() {
                 <p className={techStyles.emptyText}>특허 데이터를 불러오지 못했어요. 잠시 후 다시 진단해보시면 나올 수 있어요.</p>
               </section>
             )}
-            {techDensityGrid && (
-              <section className={techStyles.sectionCard}>
-                <h2 className={techStyles.sectionTitle}>동종산업 밀집도</h2>
+            {/* [2026-09-14, 사용자 확인] 예전엔 techDensityGrid가 없으면(데이터 계산 실패
+                등) 카드 제목까지 통째로 사라졌다 - 카페형 밀집도와 같은 이유로 "왜 안
+                나오냐"는 혼동을 만들 수 있어서, 데이터가 없어도 카드는 남기고 안내
+                문구로 보여준다(특허차트 실패 케이스와 동일 원칙). */}
+            <section className={techStyles.sectionCard}>
+              <h2 className={techStyles.sectionTitle}>동종산업 밀집도</h2>
+              {techDensityGrid ? (
                 <TechDensityGrid grid={techDensityGrid} />
-              </section>
-            )}
+              ) : (
+                <p className={techStyles.emptyText}>표시할 밀집도 데이터가 없어요.</p>
+              )}
+            </section>
             <p className={techStyles.sourceText}>출처: 중기부 벤처기업명단·특허청 KIPRIS 기준 · 개별 성공 확률 아님</p>
           </>
         )}

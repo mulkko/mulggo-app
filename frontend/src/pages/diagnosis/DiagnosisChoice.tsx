@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.svg";
 import styles from "../../styles/diagnosisChoice.module.css";
-import { saveDiagnosisAnswers } from "./diagnosisAnswers";
+import { clearDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
 
@@ -22,12 +22,17 @@ import ChatFab from "../../components/ChatFab/ChatFab";
 function DiagnosisChoice() {
   const navigate = useNavigate();
 
+  // [2026-09-14, 사용자 확인] clearDiagnosisAnswers()는 원래 완주 시(DiagnosisStep9)에만
+  // 불렸는데, 중간에 실패/이탈한 이전 시도의 답변이 sessionStorage에 남아있어서 여기서
+  // 새로 시작할 때 이전 입력이 그대로 보이는 문제가 있었다 - 시작 시점에도 초기화한다.
   const startFast = () => {
+    clearDiagnosisAnswers();
     saveDiagnosisAnswers({ mode: "fast" });
     navigate("/diagnosis/1");
   };
 
   const startPrecise = () => {
+    clearDiagnosisAnswers();
     saveDiagnosisAnswers({ mode: "precise" });
     navigate("/diagnosis/1");
   };
