@@ -23,7 +23,7 @@ interface ColorToken {
 // [2026-09-14, 사용자 확인] webTokens.css에서 근접한 톤끼리 대표색 하나로 통일한 것을
 // 여기도 반영 - 흡수된 항목은 배열에서 빼고, 대표색의 usage에 흡수한 용도를 같이 적었다.
 //   Light Teal ← Light Teal Hover, Light Teal Hover Strong
-//   Teal Mist ← Report BG, Teal Mist Hover, Card Target BG
+//   Teal Mist ← Report BG, Teal Mist Hover
 //   Navy Mist ← AI Comment BG, Industry Anchor BG, Badge Revenue BG
 //   D-day BG ← Badge Skill BG / D-day Text ← Badge Skill Text
 //   Badge Download BG ← Fill History BG
@@ -52,7 +52,8 @@ const ALL_COLORS: ColorToken[] = [
   { name: "Section Subtitle", hex: "#B5B6BB", usage: "[draft] 업종맞춤/업종무관 그룹 제목 아래 안내문구 + AI 참고 캡션 텍스트 통합", varName: "--color-section-subtitle", role: "text" },
   { name: "AI Comment Text", hex: "#2E3A6B", usage: 'AI 코멘트 박스 라벨/본문 + "수익모델 관점" 뱃지 텍스트 통합', varName: "--color-ai-comment-text", role: "text" },
   { name: "Overview Icon", hex: "#C4841E", usage: "사업개요 카드 항목 아이콘 stroke", varName: "--color-overview-icon", role: "other" },
-  { name: "Teal Mist", hex: "#DFF3EF", usage: '아바타·배지 등 배경 (팔레트 등록값) + "나의 분석 리포트" 카드, "채우기" 버튼 hover, "타깃 관점" 카드 배경 통합', varName: "--color-teal-mist", role: "bg" },
+  { name: "Teal Mist", hex: "#DFF3EF", usage: '아바타·배지 등 배경 (팔레트 등록값) + "나의 분석 리포트" 카드, "채우기" 버튼 hover 통합', varName: "--color-teal-mist", role: "bg" },
+  { name: "Card Target BG", hex: "rgba(63,182,168,.06)", usage: '"타깃 관점" 아이디어 카드 배경 - [2026-09-15] Teal Mist 통합 시도했다가 카드가 진해져서 원래 반투명값으로 환원', varName: "--color-card-target-bg", role: "bg" },
   { name: "Badge Download BG", hex: "#FFF3D6", usage: '"다운로드 가능" 뱃지 배경 + "채우기 이용내역" 카드 배경 통합', varName: "--color-badge-download-bg", role: "bg" },
   { name: "Border Dashed", hex: "rgba(139,141,147,0.3)", usage: '"+ 새 분석 시작하기" 점선 버튼 테두리 · 진단 진행바 인디케이터 배경(--color-dot-inactive는 이 값을 참조하는 별칭, 2026-09-13 통합)', varName: "--color-border-dashed", role: "border" },
   { name: "Navy Mist", hex: "#E7ECF8", usage: '"정밀 구체화" 카드 pill 배경 + AI 코멘트 박스, "업종코드를 찾았어요" 안내박스, "수익모델 관점" 뱃지 배경 통합', varName: "--color-navy-mist", role: "bg" },
@@ -285,9 +286,9 @@ function WebStyleGuideByFeature() {
           <div className={styles.componentRow}>
             <div className={styles.componentItem}>
               <div className={styles.detailCtaRow}>
-                <span className={styles.detailApplyOff}>지원 시 체크</span>
+                <span className={styles.detailApplyOff}>지원했어요</span>
                 <span className={styles.detailApplyOn}>✓ 지원함</span>
-                <span className={styles.detailHomeButton}>원 공고 홈페이지로 이동</span>
+                <span className={styles.detailHomeButton}>공고 이동하기</span>
               </div>
               <span className={styles.codeLabel}>공고 상세 하단 CTA · 토글 off/on + 홈 이동 · --radius-cta</span>
             </div>

@@ -10,10 +10,7 @@ from backend.db.connection import get_connection
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
-SPECIAL_CHARS = "!@#$%^&*()_+-=[]{};:'\",.<>/?"
-PASSWORD_PATTERN = re.compile(
-    r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[" + re.escape(SPECIAL_CHARS) + r"]).{8,}$"
-)
+PASSWORD_PATTERN = re.compile(r"^(?=.*[A-Za-z])(?=.*\d).{8,}$")
 
 
 def validate_email(email: str) -> tuple[bool, str]:
@@ -28,7 +25,7 @@ def validate_password(password: str) -> tuple[bool, str]:
     if not password:
         return False, "비밀번호를 입력해주세요."
     if not PASSWORD_PATTERN.match(password):
-        return False, "비밀번호는 영문, 숫자, 특수문자를 포함해 8자 이상이어야 합니다."
+        return False, "비밀번호는 영문, 숫자를 포함해 8자 이상이어야 합니다."
     return True, ""
 
 

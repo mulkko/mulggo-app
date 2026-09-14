@@ -166,10 +166,11 @@ function Signup() {
             id="password"
             type="password"
             className={styles.input}
-            placeholder="영문·숫자·특수문자 조합 8자 이상"
+            placeholder="영문·숫자 조합 8자 이상"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <p className={styles.bizHint}>영문, 숫자를 포함해 8자 이상 입력해주세요.</p>
         </div>
         <div className={styles.field}>
           <label htmlFor="password-confirm">비밀번호 확인</label>

@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, Header, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Header, Response, UploadFile
 from pydantic import BaseModel
 
 from backend.assistant.biz_cert_ocr import (
@@ -15,7 +15,7 @@ from backend.assistant.biz_cert_ocr import (
     get_cached_vision_model,
 )
 from backend.auth.login import login
-from backend.auth.session import create_session, delete_session
+from backend.auth.session import create_session, delete_session, get_current_user_id
 from backend.auth.signup import process_biz_cert_ocr, save_biz_cert_data, signup
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -195,6 +195,15 @@ def login_endpoint(payload: LoginRequest, response: Response) -> AuthResponse:
         success=True,
         data=AuthUserData(user_id=user["user_id"], email=user["email"], name=user["name"], token=token),
     )
+
+
+@router.get("/me")
+def get_me_endpoint(user_id: int = Depends(get_current_user_id)) -> dict:
+    """[2026-09-15, 사용자 확인] 토큰이 localStorage에 남아있어도 서버 auth_sessions에서
+    지워졌으면(전체 로그아웃 등) 무효 - Home.tsx처럼 getAuthToken() 존재 여부만으로
+    "로그인됨"을 판단하던 화면이 죽은 토큰을 로그인 상태로 착각하는 문제가 있었다.
+    get_current_user_id가 유효성 검증까지 하므로(무효 토큰이면 401) 여기 도달하면 유효한 것."""
+    return {"success": True, "data": {"user_id": user_id}}
 
 
 @router.post("/logout", response_model=AuthResponse)

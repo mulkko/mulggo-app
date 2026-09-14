@@ -128,6 +128,7 @@
   font-size: 19px;
   font-weight: 900;
   line-height: 1.4;
+  letter-spacing: 0;
   color: var(--color-ink-charcoal);
 }
 
@@ -137,30 +138,6 @@
   font-size: 12px;
   color: var(--color-stone-gray);
   line-height: 1.6;
-}
-
-/* ===== AI 코멘트 박스 ===== */
-.aiBox {
-  border-radius: var(--radius-card);
-  padding: 16px;
-  background: var(--color-ai-comment-bg);
-  box-shadow: var(--shadow-inset-ai-comment);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.aiTitle {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--color-deep-navy);
-}
-
-.aiBody {
-  margin: 0;
-  font-size: 13px;
-  color: var(--color-ai-comment-text);
-  line-height: 1.7;
 }
 
 /* ===== 카드 공통 (사업개요 / 공고내용) ===== */
@@ -363,7 +340,7 @@
   flex-shrink: 0;
   box-sizing: border-box;
   height: 50px;
-  padding: 0 14px;
+  padding: 0 39px;
   border: none;
   border-radius: var(--radius-cta);
   display: flex;
@@ -398,9 +375,11 @@
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
+  min-width: 70px;
+  text-align: center;
 }
 
-/* 원 공고 홈페이지로 이동 버튼 (나머지 폭 다 채움) */
+/* 공고 이동하기 버튼 (나머지 폭 다 채움) */
 .homeButton {
   flex: 1;
   box-sizing: border-box;

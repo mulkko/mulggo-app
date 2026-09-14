@@ -42,17 +42,9 @@ function DiagnosisStep9() {
   const [submitted, setSubmitted] = useState(false);
   const [cards, setCards] = useState<IdeaCard[]>([]);
   const [summary, setSummary] = useState({ target: "", differentiator: "", revenueModel: "", coreSkill: "" });
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [variant, setVariant] = useState<"market" | "tech">("market");
   const [ksicQuery, setKsicQuery] = useState("");
   const [sido, setSido] = useState("");
-
-  useEffect(() => {
-    if (!submitting) return;
-    setElapsedSeconds(0);
-    const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
-    return () => clearInterval(timer);
-  }, [submitting]);
 
   useEffect(() => {
     const answers = getDiagnosisAnswers();
@@ -148,8 +140,12 @@ function DiagnosisStep9() {
         <div className={styles.loadingOverlay}>
           <div className={styles.loadingBox} role="status" aria-live="polite">
             <div className={styles.spinner} />
-            <p className={styles.loadingText}>사업 구체화 결과를 정리하고 있어요... ({elapsedSeconds}초 경과)</p>
-            <p className={styles.loadingHint}>아이디어 카드를 만드는 중이라 시간이 걸릴 수 있어요</p>
+            <p className={styles.loadingText}>
+              사업구체화 결과를 정리하고 있어요.
+              <br />
+              아이디어 카드를 만들고 있어요.
+            </p>
+            <p className={styles.loadingHint}>조금만 기다려 주세요! (최대 100초 정도 걸려요)</p>
           </div>
         </div>
       )}

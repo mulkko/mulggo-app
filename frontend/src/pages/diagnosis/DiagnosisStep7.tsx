@@ -47,7 +47,7 @@ function DiagnosisStep7() {
       <DiagnosisTextQuestion
         topicBadge="Q8 · 차별점"
         anchor={anchor}
-        title="기존 대안과 비교해 이 사업만의 차별점은 뭐인가요?"
+        title="기존 대안과 비교해 이 사업만의 차별점은 무엇인가요?"
         sub="경쟁 서비스·매장과 비교해 다른 점을 적어주세요"
         placeholder="예: 프랜차이즈 대비 좌석 여유, 조용함"
         initialValue={initialValue}

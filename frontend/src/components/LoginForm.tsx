@@ -155,18 +155,21 @@ function LoginForm({ variant }: LoginFormProps) {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {/* [2026-09-12, 사용자 확인] 시간 부족으로 기능 없이 버튼만 - "비밀번호를
-              잊으셨나요?"와 동일하게 눌러도 아무 동작 없는 자리표시자. */}
-          <a href="#" className={styles.forgot}>아이디를 잊으셨나요?</a>
-          <a href="#" className={styles.forgot}>비밀번호를 잊으셨나요?</a>
+          {/* [2026-09-12, 사용자 확인] 아이디/비밀번호 찾기는 시간 부족으로 기능 없이
+              자리표시자만 - 눌러도 아무 동작 없음. */}
+          <div className={styles.forgotRow}>
+            {variant === "user" && !isLoggedIn && (
+              <>
+                <Link to="/signup" className={styles.forgot}>회원가입</Link>
+                <span className={styles.forgotDivider}>|</span>
+              </>
+            )}
+            <a href="#" className={styles.forgot}>아이디 찾기</a>
+            <span className={styles.forgotDivider}>|</span>
+            <a href="#" className={styles.forgot}>비밀번호찾기</a>
+          </div>
           <button type="submit" className={styles.submitBtn}>로그인</button>
         </form>
-
-        {variant === "user" && !isLoggedIn && (
-          <p className={styles.signupPrompt}>
-            아직 계정이 없으신가요? <Link to="/signup">회원가입</Link>
-          </p>
-        )}
 
         <button type="button" className={styles.devAutoLoginBtn} onClick={handleDevAutoLogin}>
           [DEV] 테스트 계정으로 바로 로그인

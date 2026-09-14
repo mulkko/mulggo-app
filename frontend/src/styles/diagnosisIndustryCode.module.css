@@ -67,6 +67,7 @@
   margin: 0;
   font-weight: 900;
   font-size: 21px;
+  letter-spacing: 0;
   color: var(--color-ink-charcoal);
 }
 

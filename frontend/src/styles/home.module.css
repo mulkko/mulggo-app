@@ -42,67 +42,6 @@
   color: var(--color-stone-gray); /* #8b8d93 */
 }
 
-.menuBtn {
-  display: inline-flex;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-
-.menuBtn svg {
-  width: 24px;
-  height: 24px;
-  stroke: var(--color-ink-charcoal); /* #2e312e */
-  stroke-width: 1.8;
-  stroke-linecap: round;
-}
-
-/* ===== 햄버거 메뉴 드로어 [검토용 임시 스타일] ===== */
-.menuOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.menuDrawer {
-  position: relative;
-  width: 78%;
-  max-width: 280px;
-  height: 100%;
-  background: var(--color-white);
-  padding: 20px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.menuCloseBtn {
-  align-self: flex-end;
-  border: none;
-  background: none;
-  font-size: 18px;
-  padding: 6px;
-  margin-bottom: 12px;
-  cursor: pointer;
-  color: var(--color-ink-charcoal);
-}
-
-.menuItem {
-  text-align: left;
-  border: none;
-  background: none;
-  padding: 14px 4px;
-  font-family: var(--font-family-base);
-  font-size: 15px;
-  color: var(--color-ink-charcoal);
-  border-bottom: 1px solid var(--color-border-dashed);
-  cursor: pointer;
-}
-
 /* ===== 본문 (실측: padding 10px 22px 32px, 세로 gap 22) ===== */
 .body {
   flex: 1;
@@ -128,6 +67,7 @@
   font-size: 25px;
   font-weight: 900;
   line-height: 1.4;
+  letter-spacing: 0;
   color: var(--color-ink-charcoal);
 }
 

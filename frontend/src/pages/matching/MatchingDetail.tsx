@@ -16,7 +16,7 @@ import ChatFab from "../../components/ChatFab/ChatFab";
  * (이전엔 상단에 뒤로가기 헤더만 있는 구조였음).
  *
  * 실제 동작으로 만든 것: 뒤로가기, 북마크(저장) 토글, 지원 여부 토글.
- * TODO로만 남긴 것: "채우기"(16-1 서류 미리보기 화면 예정), "원 공고 홈페이지로 이동"(외부 URL 미정).
+ * TODO로만 남긴 것: "채우기"(16-1 서류 미리보기 화면 예정). "공고 이동하기"는 구현 완료(detail.homepageUrl).
  * hashtags는 기업마당(bizinfo) 공고만 값이 있음(announcements_raw_bizinfo.hashtags,
  * K-Startup 원본엔 해당 필드 자체가 없음) - 2026-09-10 연동. aiComment는 백엔드가
  * 아직 자리만 채운 값(안내 문구)을 준다 - 사용자 프로필 연결(개인화)은 별도 작업.
@@ -85,6 +85,15 @@ function MatchingDetail() {
     navigate(fromSearch ? `/matching?${fromSearch}` : "/matching");
   };
 
+  // [2026-09-15, 사용자 확인] 실패 시(비로그인 401 등) 조용히 원상복구만 하고 아무
+  // 안내가 없어서, 로그인 세션이 없는 상태로 누르면 하트/체크가 잠깐 켜졌다가
+  // 설명 없이 도로 꺼지는 것처럼 보이는 문제가 있었다(팀원 확인) - 실패 사유를
+  // 토스트로 보여주도록 handleToggleSave/handleToggleApplied 둘 다 고친다.
+  const showFailureToast = (res: Response) => {
+    setToastMessage(res.status === 401 ? "로그인이 필요합니다" : "처리에 실패했습니다. 다시 시도해주세요.");
+    setTimeout(() => setToastMessage(null), 1500);
+  };
+
   const handleToggleSave = () => {
     // 낙관적으로 먼저 바꾸고, 실패하면(비로그인 401 등) 원래 상태로 되돌린다.
     const next = !saved;
@@ -95,11 +104,16 @@ function MatchingDetail() {
     }).then((res) => {
       if (!res.ok) {
         setSaved(!next);
+        showFailureToast(res);
         return;
       }
       setToastMessage(next ? "선택하신 공고가 찜하기 되었습니다" : "찜하기가 취소되었습니다");
       setTimeout(() => setToastMessage(null), 1500);
-    }).catch(() => setSaved(!next));
+    }).catch(() => {
+      setSaved(!next);
+      setToastMessage("서버에 연결할 수 없습니다.");
+      setTimeout(() => setToastMessage(null), 1500);
+    });
   };
 
   const handleToggleApplied = () => {
@@ -112,11 +126,16 @@ function MatchingDetail() {
     }).then((res) => {
       if (!res.ok) {
         setApplied(!next);
+        showFailureToast(res);
         return;
       }
       setToastMessage(next ? "지원한 공고로 표시되었습니다" : "지원 표시가 취소되었습니다");
       setTimeout(() => setToastMessage(null), 1500);
-    }).catch(() => setApplied(!next));
+    }).catch(() => {
+      setApplied(!next);
+      setToastMessage("서버에 연결할 수 없습니다.");
+      setTimeout(() => setToastMessage(null), 1500);
+    });
   };
 
   const handleFill = (doc: { fileName: string; attachmentId: number }) => {
@@ -214,12 +233,6 @@ function MatchingDetail() {
 
         {/* 해시태그 한 줄 */}
         <p className={styles.hashtags}>{detail.hashtags}</p>
-
-        {/* AI 코멘트 박스 */}
-        <div className={styles.aiBox}>
-          <span className={styles.aiTitle}>AI 코멘트</span>
-          <p className={styles.aiBody}>{detail.aiComment}</p>
-        </div>
 
         {/* 사업개요 카드 */}
         <section className={styles.card}>
@@ -325,7 +338,7 @@ function MatchingDetail() {
                 <rect x="4" y="4" width="16" height="16" rx="4" />
               </svg>
             )}
-            <span className={styles.applyToggleText}>{applied ? "지원함" : "지원 시 체크"}</span>
+            <span className={styles.applyToggleText}>{applied ? "지원함" : "지원했어요"}</span>
           </button>
           <button
             type="button"
@@ -333,7 +346,7 @@ function MatchingDetail() {
             onClick={handleGoHomepage}
             disabled={!detail.homepageUrl}
           >
-            <span className={styles.homeButtonText}>원 공고 홈페이지로 이동</span>
+            <span className={styles.homeButtonText}>공고 이동하기</span>
           </button>
         </div>
       </div>

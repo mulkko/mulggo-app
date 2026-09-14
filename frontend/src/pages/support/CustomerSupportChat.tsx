@@ -28,7 +28,7 @@ type ChatMessage = {
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: "bot",
-  text: "안녕하세요! 물꼬 챗봇 상담이에요. 아래 주제를 눌러보거나 궁금한 점을 자유롭게 물어보세요.",
+  text: "안녕하세요! 물꼬 서비스 도우미 물꼬미에요. 아래 주제를 눌러보거나 궁금한 점을 자유롭게 물어보세요.",
 };
 
 const FAQ_CHIPS = [
@@ -181,7 +181,7 @@ function CustomerSupportChat() {
             <span className={styles.botAvatar}>
               <img className={styles.botAvatarImg} src={chatAvatarIcon} alt="" />
             </span>
-            <p className={styles.loadingBubble}>답변 작성 중...</p>
+            <p className={styles.loadingBubble}>답변을 준비하고 있어요...</p>
           </div>
         )}
         {error && <p className={styles.errorText}>{error}</p>}

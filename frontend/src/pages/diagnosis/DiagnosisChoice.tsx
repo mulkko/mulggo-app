@@ -94,7 +94,7 @@ function DiagnosisChoice() {
       </main>
 
       <BottomNav active="idea" />
-      <ChatFab variant="withBottomNav" />
+      <ChatFab variant="top" />
     </div>
   );
 }

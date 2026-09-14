@@ -12,6 +12,7 @@
 .pageTitle {
   font-weight: 900;
   font-size: var(--font-size-h1);
+  letter-spacing: 0;
   color: var(--color-brand-navy);
   margin: 0;
 }

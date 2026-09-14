@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/profileEditV2.module.css";
 import { getUserId } from "../../auth/session";
@@ -188,10 +188,18 @@ function ProfileEdit() {
   const userId = getUserId() ?? FALLBACK_USER_ID;
   const isProspective = profileType === "예비창업자";
 
+  // [2026-09-15] 사업자등록증 등록 직후 "재등록 영역"이 안 보이는 버그 수정 - 마운트 시
+  // 보낸 프로필 조회가 네트워크 지연(Supabase 클라우드 DB)으로 늦게 응답하면, 그 사이
+  // handleBizCertConfirm이 낙관적으로 갱신한 최신 state를 옛날 값으로 덮어써버렸다.
+  // 요청마다 증가하는 시퀀스 번호로 "가장 최근에 시작한 요청"의 응답만 반영한다.
+  const latestProfileFetchId = useRef(0);
+
   useEffect(() => {
+    const fetchId = ++latestProfileFetchId.current;
     fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${userId}`)
       .then((res) => res.json())
       .then((res: { success: boolean; data?: ProfileApiData }) => {
+        if (fetchId !== latestProfileFetchId.current) return; // 그 사이 더 최신 값이 반영됨 - 무시
         if (!res.success || !res.data) return;
         const d = res.data;
         setEmail(d.email);
@@ -231,6 +239,9 @@ function ProfileEdit() {
 
   // BizCertUpload가 OCR 확인/수정까지 끝낸 값을 넘겨주면, 재OCR 없이 그대로 저장만 한다.
   const handleBizCertConfirm = async (fields: Record<string, string>, file: File) => {
+    // 아직 응답 안 온 예전 프로필 조회가 있다면 무효화 - 뒤늦게 응답 와도 아래 낙관적
+    // 업데이트를 덮어쓰지 못하게 막는다.
+    latestProfileFetchId.current++;
     const formData = new FormData();
     formData.append("file", file);
     formData.append("biz_cert_data", JSON.stringify(fields));
@@ -387,11 +398,18 @@ function ProfileEdit() {
 
         {/* 사업자 정보 — biz_registration_docs 원본(전부 읽기전용, OCR 확정값) */}
         <div className={styles.group}>
-          <div className={styles.groupHead}>
-            <span className={styles.groupTitle}>사업자 정보</span>
-            <span className={styles.groupSub}>
-              사업자등록증에 등록된 원본 정보예요. 바꾸려면 사업자등록증을 다시 올려주세요.
-            </span>
+          <div className={styles.groupHeadRow}>
+            <div className={styles.groupHead}>
+              <span className={styles.groupTitle}>사업자 정보</span>
+              <span className={styles.groupSub}>
+                사업자등록증에 등록된 원본 정보예요. 바꾸려면 사업자등록증을 다시 올려주세요.
+              </span>
+            </div>
+            {hasBizCert === true && (
+              <button type="button" className={styles.avatarChange} onClick={handleBizCertClick}>
+                변경하기
+              </button>
+            )}
           </div>
 
           {hasBizCert === false ? (
