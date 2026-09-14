@@ -836,3 +836,53 @@
   background: var(--color-danger-bg);
   color: var(--color-white);
 }
+
+/* ===== 사업자등록증 인식완료 팝업(BizCertDonePopup) 미리보기 ===== */
+.bizDonePreviewCard {
+  width: 100%;
+  max-width: 310px;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-confirm-card);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+
+.bizDoneIllustration {
+  width: 132px;
+  height: 132px;
+  border-radius: 20px;
+  object-fit: cover;
+  object-position: top;
+}
+
+.bizDoneTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-ink-strong);
+}
+
+.bizDoneDesc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-cancel-text);
+}
+
+.bizDoneBtn {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  border-radius: var(--radius-confirm-btn);
+  background: var(--color-teal-vivid);
+  color: var(--color-white);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+}

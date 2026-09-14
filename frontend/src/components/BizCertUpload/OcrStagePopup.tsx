@@ -1,3 +1,4 @@
+import { useState } from "react";
 import styles from "./bizCertUpload.module.css";
 import ocrSearching from "../../assets/ocr_searching.png";
 import ocrWriting from "../../assets/ocr_writing.png";
@@ -51,6 +52,10 @@ interface OcrStagePopupProps {
 /** OCR 대기 중(phase==="uploading") 보여주는 4단계 진행 팝업. */
 function OcrStagePopup({ elapsedSeconds, onSkip }: OcrStagePopupProps) {
   const stage = getOcrStage(elapsedSeconds);
+  // "나중에 등록" 클릭 시 바로 onSkip을 부르지 않고 확인 팝업부터 띄운다(시나리오 14).
+  // 확인 팝업 안의 "나중에 등록"만 실제로 onSkip()을 호출 - "계속 기다리기"는 이 state만
+  // 닫고 OCR 대기 화면(진행 중이던 폴링)은 그대로 이어진다.
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   return (
     <div className={styles.overlay}>
@@ -61,10 +66,36 @@ function OcrStagePopup({ elapsedSeconds, onSkip }: OcrStagePopupProps) {
         </div>
         <p className={styles.ocrStageTitle}>{stage.title}</p>
         {stage.subtitle && <p className={styles.ocrStageSubtitle}>{stage.subtitle}</p>}
-        <button type="button" className={styles.ocrSkipBtn} onClick={onSkip}>
+        <button type="button" className={styles.ocrSkipBtn} onClick={() => setConfirmSkip(true)}>
           나중에 등록
         </button>
       </div>
+
+      {confirmSkip && (
+        <div className={styles.skipConfirmOverlay} onClick={() => setConfirmSkip(false)}>
+          <div
+            className={styles.skipConfirmCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="사업자등록증 나중에 등록"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className={styles.skipConfirmText}>
+              사업자등록증은 나중에 등록할까요?
+              <br />
+              지금 가입만 먼저 끝내고, 사업자등록증은 마이페이지에서 언제든 등록할 수 있어요.
+            </p>
+            <div className={styles.skipConfirmButtons}>
+              <button type="button" className={styles.skipConfirmCancelBtn} onClick={() => setConfirmSkip(false)}>
+                계속 기다리기
+              </button>
+              <button type="button" className={styles.skipConfirmProceedBtn} onClick={onSkip}>
+                나중에 등록
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
