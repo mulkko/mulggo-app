@@ -159,7 +159,7 @@ function DonutChart({
   const otherValue = Math.max(totalCount - top4Sum, 0);
 
   const slices: DonutSlice[] = [
-    ...top4.map((item, i) => ({ label: item.label, value: item.value, color: getRankBarColor(i), exploded: true })),
+    ...top4.map((item, i) => ({ label: item.label, value: item.value, color: getRankBarColor(i) ?? "var(--color-stone-gray)", exploded: true })),
     ...(otherValue > 0 ? [{ label: "기타", value: otherValue, color: DONUT_OTHER_COLOR, exploded: false }] : []),
   ];
 
