@@ -18,7 +18,7 @@ function getOcrStage(elapsedSeconds: number): OcrStage {
     return {
       image: ocrSearching,
       title: "가입하고 사업자등록증을 확인하고 있어요...",
-      subtitle: "수달이 꼼꼼히 읽는 중이에요",
+      subtitle: "물꼬미가 꼼꼼히 읽는 중이에요",
       progressPercent: 25,
     };
   }

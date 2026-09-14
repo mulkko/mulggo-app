@@ -77,13 +77,15 @@ function DiagnosisReportSummary({
             <path d="M16 5l-8 7 8 7" />
           </svg>
         </button>
-        <span className={styles.brandName}>MULKKO REPORT</span>
-        <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
+        <span className={styles.logo}>
+          <span className={styles.brandName}>MULKKO REPORT</span>
+          <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
+        </span>
       </header>
 
-      <ChatFab variant="withBottomNav" />
+      <ChatFab variant="top" />
 
-      <div className={styles.subHeader}>이렇게 정리했어요</div>
+      <div className={styles.subHeader}>사업구체화 리포트</div>
 
       <div className={styles.scrollArea}>
         <div className={styles.summaryCard}>

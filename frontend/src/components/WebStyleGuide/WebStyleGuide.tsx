@@ -40,7 +40,7 @@ const DETAIL_COLORS = [
   { name: "Overview Icon", hex: "#C4841E", usage: "사업개요 카드 항목 아이콘 stroke", varName: "--color-overview-icon" },
   { name: "Autofill Banner BG", hex: "#FAFAF9", usage: "서류 자동채움 안내 배너 배경", varName: "--color-autofill-banner-bg" },
   { name: "Teal Mist Hover", hex: "#CDEDE6", usage: '"채우기" 필 버튼 hover 배경', varName: "--color-teal-mist-hover" },
-  { name: "Light Teal Hover", hex: "#2E9C8F", usage: '"원 공고 홈페이지로 이동" 버튼 hover 배경', varName: "--color-light-teal-hover" },
+  { name: "Light Teal Hover", hex: "#2E9C8F", usage: '"공고 이동하기" 버튼 hover 배경', varName: "--color-light-teal-hover" },
 ];
 
 // 마이페이지 화면에서 추가된 색상 토큰
@@ -423,7 +423,7 @@ function WebStyleGuide() {
           <div className={styles.specRow}><span>--shadow-inset-ai-comment</span><span>inset 0 0 0 1.2px rgba(21,50,140,.25)</span></div>
           <div className={styles.specRow}><span>--shadow-inset-card</span><span>inset 0 0 0 1.2px rgba(139,141,147,.25)</span></div>
           <div className={styles.specRow}><span>--shadow-inset-teal</span><span>inset 0 0 0 1px #3FB6A8 (신청서류 카드)</span></div>
-          <div className={styles.specRow}><span>--shadow-inset-gray-strong</span><span>inset 0 0 0 1.5px rgba(139,141,147,.3) ("지원 시 체크")</span></div>
+          <div className={styles.specRow}><span>--shadow-inset-gray-strong</span><span>inset 0 0 0 1.5px rgba(139,141,147,.3) ("지원했어요")</span></div>
           <div className={styles.specRow}><span>--shadow-industry-card</span><span>0 10px 26px -20px rgba(21,50,140,.6) ("업종코드를 찾았어요" 카드, 프로토타입 원본값)</span></div>
         </div>
 
@@ -458,9 +458,9 @@ function WebStyleGuide() {
           <div className={styles.componentRow}>
             <div className={styles.componentItem}>
               <div className={styles.detailCtaRow}>
-                <span className={styles.detailApplyOff}>지원 시 체크</span>
+                <span className={styles.detailApplyOff}>지원했어요</span>
                 <span className={styles.detailApplyOn}>✓ 지원함</span>
-                <span className={styles.detailHomeButton}>원 공고 홈페이지로 이동</span>
+                <span className={styles.detailHomeButton}>공고 이동하기</span>
               </div>
               <span className={styles.codeLabel}>하단 CTA · 높이 50px · --radius-cta · 토글 off/on + 홈 이동</span>
             </div>

@@ -237,15 +237,15 @@ function DiagnosisIndustryResult() {
           <div className={styles.loadingBox} role="status" aria-live="polite">
             <div className={styles.spinner} />
             <p className={styles.loadingText}>
-              {track === "cafe" ? "상권 리포트를 분석하고 있어요..." : "기술창업 리포트를 분석하고 있어요..."}
+              {track === "cafe" ? "상권리포트를 분석하고 있어요" : "기술창업 리포트를 분석하고 있어요"}
             </p>
-            <p className={styles.loadingHint}>다 되면 자동으로 다음 화면으로 넘어가요</p>
+            <p className={styles.loadingHint}>잠시만 기다려주세요. (최대 30초 정도 걸려요)</p>
           </div>
         </div>
       )}
 
       <BottomNav active="idea" />
-      <ChatFab variant="withBottomNav" style={{ bottom: 120 }} />
+      <ChatFab variant="top" />
     </div>
   );
 }

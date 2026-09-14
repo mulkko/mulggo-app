@@ -50,7 +50,7 @@
   font-family: var(--font-family-base);
   font-size: var(--font-size-h1);
   font-weight: var(--font-weight-h1);
-  letter-spacing: normal;
+  letter-spacing: 0;
   color: var(--color-white);
 }
 

@@ -4,7 +4,7 @@
   --color-navy-sphere-hover: #0b3868; /* 홈 "회원가입하기" CTA hover 배경 (--color-navy-sphere의 hover 상태) */
   --color-teal-green: #0f6e62; /* 안내 링크 텍스트, 보조 상호작용 요소 */
   --color-light-teal: #3fb6a8; /* 컬러 팔레트 등록값 — 인풋 스펙 등에서는 미사용, 용도 팀 확인 필요 */
-  --color-teal-mist: #dff3ef; /* 컬러 팔레트 등록값 — 인풋 스펙 등에서는 미사용, 용도 팀 확인 필요. Report BG/Teal Mist Hover/Card Target BG의 대표색 (2026-09-14 색상 통합 확정) */
+  --color-teal-mist: #dff3ef; /* 컬러 팔레트 등록값 — 인풋 스펙 등에서는 미사용, 용도 팀 확인 필요. Report BG/Teal Mist Hover의 대표색 (2026-09-14 색상 통합 확정) */
 
   /* ===== 색상 — Neutral & Form ===== */
   --color-ink-charcoal: #2e312e; /* 주요 텍스트, 입력란 타이틀 라벨 */
@@ -118,7 +118,7 @@
   --shadow-inset-ai-comment: inset 0 0 0 1.2px rgba(21, 50, 140, 0.25); /* AI 코멘트 박스 테두리 */
   --shadow-inset-card: inset 0 0 0 1.2px rgba(139, 141, 147, 0.25); /* 사업개요 / 공고내용 카드 테두리 */
   --shadow-inset-teal: inset 0 0 0 1px #3fb6a8; /* 신청서류 카드 강조 테두리 */
-  --shadow-inset-gray-strong: inset 0 0 0 1.5px rgba(139, 141, 147, 0.3); /* "지원 시 체크"(미지원) 상태 버튼 테두리 */
+  --shadow-inset-gray-strong: inset 0 0 0 1.5px rgba(139, 141, 147, 0.3); /* "지원했어요"(미지원) 상태 버튼 테두리 */
 
   /* ===== 마이페이지 화면 전용 ===== */
   /* 색상 */
@@ -241,7 +241,7 @@
   --color-purple-accent: #7c5cbf; /* 4축요약카드 "차별점" 아이콘 배경 */
   --color-cta-hover-navy: #0b2170; /* "지원사업 매칭 보기 →" CTA 버튼 hover 배경 (--color-light-teal의 hover 상태) */
   --color-caption-faint: #b5b6bb; /* Section Subtitle(--color-section-subtitle)과 동일 값으로 통합 (2026-09-14 확정, 원래 #a9abb2) */
-  --color-card-target-bg: #dff3ef; /* Teal Mist(--color-teal-mist)와 동일 값으로 통합 (2026-09-14 확정, 원래 rgba(63,182,168,.06) — 반투명→불투명이라 카드가 조금 더 진해 보일 수 있음) */
+  --color-card-target-bg: rgba(63, 182, 168, 0.06); /* [2026-09-15 사용자 확인] 한때 Teal Mist(--color-teal-mist)와 동일 값(#dff3ef)으로 통합했었으나, 반투명→불투명 전환으로 카드가 눈에 띄게 진해져서 원래의 반투명값으로 되돌림 - 등록된 민트 계열 토큰 중 이보다 옅은 값이 없음 */
   --color-card-revenue-bg: rgba(21, 50, 140, 0.05); /* "수익모델 관점" 아이디어 카드 배경 */
   --color-card-skill-bg: rgba(232, 169, 60, 0.08); /* "보유역량 활용" 아이디어 카드 배경 */
   --color-badge-target-bg: #bfeae1; /* "타깃 관점" 뱃지 배경 */

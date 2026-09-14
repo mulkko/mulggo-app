@@ -132,10 +132,13 @@ function DeleteButton({ onClick }: { onClick: () => void }) {
  * 나의 지원내역 3개 섹션이 공용으로 쓴다. `label`이 문구의 "나의 {리스트명}"에 들어간다. */
 function ConfirmDeleteModal({
   label,
+  noun = "공고를",
   onCancel,
   onConfirm,
 }: {
   label: string;
+  /** "이 {noun} 삭제할까요?"에 그대로 들어감 - 조사까지 포함(예: "리포트를") */
+  noun?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -143,7 +146,7 @@ function ConfirmDeleteModal({
     <div className={styles.confirmOverlay}>
       <div className={styles.confirmCard}>
         <p className={styles.confirmText}>
-          이 공고를 삭제할까요?
+          이 {noun} 삭제할까요?
           <br />
           나의 {label}에서 사라지고, 다시 불러올 수 없어요.
         </p>
@@ -175,7 +178,7 @@ function MyPage() {
   // 삭제 확인 팝업 대상 - 3개 섹션(interest/fill/apply) 공용. label은 팝업/토스트 문구의
   // "나의 {리스트명}"에 그대로 들어간다(섹션 제목과 동일 문구).
   const [confirmTarget, setConfirmTarget] = useState<{
-    section: "interest" | "fill" | "apply";
+    section: "interest" | "fill" | "apply" | "report";
     id: string;
     label: string;
   } | null>(null);
@@ -242,16 +245,12 @@ function MyPage() {
     (id: string) =>
       setter((prev) => prev.filter((item) => item.id !== id));
 
-  const handleContactClick = () => {
-    navigate("/support");
-  };
-
   const handleProfileClick = () => {
     navigate("/mypage/edit");
   };
 
   const handleNewAnalysisClick = () => {
-    // TODO: 새 분석(사업 구체화 챗봇) 시작 화면으로 이동
+    navigate("/diagnosis/choice");
   };
 
   const handleReportClick = (id: string) => {
@@ -268,7 +267,7 @@ function MyPage() {
 
   // 3개 섹션(interest/fill/apply) 공용 - X 버튼은 바로 지우지 않고 확인 팝업부터 띄운다.
   const handleRequestDelete = (
-    section: "interest" | "fill" | "apply",
+    section: "interest" | "fill" | "apply" | "report",
     id: string,
     label: string
   ) => {
@@ -281,7 +280,15 @@ function MyPage() {
     if (!confirmTarget) return;
     const { section, id, label } = confirmTarget;
 
-    if (section === "interest") {
+    if (section === "report") {
+      removeById(setReports)(id);
+      fetch(`${API_BASE_URL}/api/mypage/reports/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      }).catch(() => {
+        /* 실패해도 화면에선 이미 지운 채로 둔다 */
+      });
+    } else if (section === "interest") {
       removeById(setInterests)(id);
       fetch(`${API_BASE_URL}/api/matching/${id}/bookmark`, {
         method: "DELETE",
@@ -329,32 +336,12 @@ function MyPage() {
 
   return (
     <div className={`pageContainer ${styles.page}`}>
-      {/* 1. 헤더: "MULKKO PAGE" 로고 + 우측 고객센터 아이콘 */}
+      {/* 1. 헤더: "MULKKO PAGE" 로고 */}
       <header className={styles.header}>
         <span className={styles.logo}>
           <span className={styles.logoText}>MULKKO PAGE</span>
           <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
         </span>
-        <button
-          type="button"
-          className={styles.contactBtn}
-          aria-label="1:1 문의"
-          onClick={handleContactClick}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M4 13a8 8 0 0 1 16 0v3.5a2 2 0 0 1-2 2h-1v-6h3" />
-            <path d="M4 13v3.5a2 2 0 0 0 2 2h1v-6H4" />
-            <path d="M9 18.5h2a1.3 1.3 0 0 1 0 2.6H9" />
-          </svg>
-        </button>
       </header>
 
       <div className={styles.scrollArea}>
@@ -388,7 +375,9 @@ function MyPage() {
                 <span className={styles.reportSummary}>{report.summary}</span>
                 <span className={styles.reportDate}>{report.createdAt} 생성</span>
               </button>
-              <DeleteButton onClick={() => removeById(setReports)(report.id)} />
+              <DeleteButton
+                onClick={() => handleRequestDelete("report", report.id, "분석 리포트")}
+              />
             </div>
           ))}
           <button
@@ -488,6 +477,7 @@ function MyPage() {
       {confirmTarget && (
         <ConfirmDeleteModal
           label={confirmTarget.label}
+          noun={confirmTarget.section === "report" ? "리포트를" : undefined}
           onCancel={() => setConfirmTarget(null)}
           onConfirm={handleConfirmDelete}
         />

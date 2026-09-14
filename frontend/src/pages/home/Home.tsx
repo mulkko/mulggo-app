@@ -1,12 +1,11 @@
-// ===== [START: 보류] 햄버거 메뉴 드로어 - 사용 여부 미정, 검토 후 주석 처리함 =====
-// import { useState } from "react";
-// ===== [END: 보류] 햄버거 메뉴 드로어 import(useState) =====
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/home.module.css";
-// import { clearSession } from "../../auth/session"; // [보류] 햄버거 메뉴 드로어용 - 위 블록과 세트
-import { getAuthToken } from "../../auth/session";
+import { authHeaders, clearSession, getAuthToken } from "../../auth/session";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 /**
  * 홈 화면(/home).
@@ -40,16 +39,25 @@ const HOW_IT_WORKS = [
 
 function Home() {
   const navigate = useNavigate();
-  const isLoggedIn = Boolean(getAuthToken());
+  // [2026-09-15, 사용자 확인] getAuthToken() 존재 여부만 보면 - 서버 auth_sessions에서
+  // 토큰이 지워져도(전체 로그아웃 등) localStorage엔 그대로 남아있어서 "로그인된 것처럼"
+  // 잘못 보였다(다른 화면은 API 호출이 401을 받아서 스스로 걸러졌는데 Home은 로그인
+  // 여부로 API를 아예 안 불러서 못 걸렀음). GET /api/auth/me로 서버에 직접 확인한다.
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(getAuthToken()));
 
-  // ===== [START: 보류] 햄버거 메뉴 드로어 - state/핸들러 =====
-  // const [menuOpen, setMenuOpen] = useState(false);
-  // const handleLogout = () => {
-  //   clearSession();
-  //   setMenuOpen(false);
-  //   navigate("/login");
-  // };
-  // ===== [END: 보류] 햄버거 메뉴 드로어 - state/핸들러 =====
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    fetch(`${API_BASE_URL}/api/auth/me`, { headers: authHeaders() })
+      .then((res) => {
+        if (!res.ok) {
+          clearSession();
+          setIsLoggedIn(false);
+        }
+      })
+      .catch(() => {
+        /* 네트워크 오류 - 판단 보류, 기존 상태 유지 */
+      });
+  }, []);
 
   return (
     <div className={`pageContainer ${styles.page}`}>
@@ -59,56 +67,7 @@ function Home() {
           <span className={styles.brandName}>LET'S MULKKO</span>
           <span className={styles.brandTagline}>창업의 물꼬를 트다.</span>
         </div>
-        <button
-          type="button"
-          className={styles.menuBtn}
-          aria-label="메뉴 열기"
-          // TODO: [보류] 햄버거 메뉴 드로어 쓰기로 결정되면 onClick={() => setMenuOpen(true)} 연결
-          // (state는 위 "state/핸들러" 블록, 드로어 내용은 아래 JSX 블록 주석 참고)
-        >
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M4 7h16M4 12h16M4 17h16" />
-          </svg>
-        </button>
       </header>
-
-      {/* ===== [START: 보류] 햄버거 메뉴 드로어 - JSX (검토 완료, 사용 여부만 미정) =====
-      {menuOpen && (
-        <div className={styles.menuOverlay} onClick={() => setMenuOpen(false)}>
-          <nav
-            className={styles.menuDrawer}
-            aria-label="전체 메뉴"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className={styles.menuCloseBtn}
-              aria-label="메뉴 닫기"
-              onClick={() => setMenuOpen(false)}
-            >
-              ✕
-            </button>
-            <button type="button" className={styles.menuItem} onClick={() => { setMenuOpen(false); navigate("/home"); }}>
-              홈
-            </button>
-            <button type="button" className={styles.menuItem} onClick={() => setMenuOpen(false)}>
-              아이디어 구체화하기
-            </button>
-            <button type="button" className={styles.menuItem} onClick={() => { setMenuOpen(false); navigate("/matching"); }}>
-              맞춤 지원사업 찾아보기
-            </button>
-            <button type="button" className={styles.menuItem} onClick={() => { setMenuOpen(false); navigate("/mypage"); }}>
-              마이페이지
-            </button>
-            {isLoggedIn && (
-              <button type="button" className={styles.menuItem} onClick={handleLogout}>
-                로그아웃
-              </button>
-            )}
-          </nav>
-        </div>
-      )}
-      ===== [END: 보류] 햄버거 메뉴 드로어 - JSX ===== */}
 
       {/* ===== 본문 (실측: padding 10px 22px 32px, 세로 gap 22) ===== */}
       <div className={styles.body}>

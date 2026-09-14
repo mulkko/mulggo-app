@@ -441,6 +441,27 @@ def list_reports(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
     return JSONResponse(content={"success": True, "data": data})
 
 
+@router.delete("/reports/{session_id}")
+def delete_report(session_id: int, user_id: int = Depends(get_current_user_id)) -> JSONResponse:
+    """마이페이지 "나의 분석 리포트" 항목 삭제 - 본인 소유(profile_id)인 것만 지운다."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        if row is None:
+            return JSONResponse(content={"success": False}, status_code=404)
+        profile_id = row[0]
+        cur.execute(
+            "DELETE FROM idea_refinement_sessions WHERE session_id = %s AND profile_id = %s",
+            (session_id, profile_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return JSONResponse(content={"success": True})
+
+
 @router.delete("/apply-history/{submission_id}")
 def delete_apply_history(submission_id: int, user_id: int = Depends(get_current_user_id)) -> JSONResponse:
     """마이페이지 "나의 지원내역" 항목 삭제 - 본인 소유(profile_id)인 것만 지운다.

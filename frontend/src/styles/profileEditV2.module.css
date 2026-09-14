@@ -148,6 +148,19 @@
   gap: 3px;
 }
 
+/* groupHead 옆에 "변경하기" 등 액션 버튼을 나란히 둘 때 */
+.groupHeadRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.groupHeadRow .avatarChange {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .groupSub {
   font-size: 11.5px;
   color: var(--color-stone-gray);
