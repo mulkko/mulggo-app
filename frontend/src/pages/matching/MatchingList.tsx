@@ -3,8 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "../../styles/matchingList.module.css";
 import logo from "../../assets/logo.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
-import logo from "../../assets/logo.svg";
 import ChatFab from "../../components/ChatFab/ChatFab";
+import { Chevron as SharedChevron } from "../../components/FormField/FormField";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
@@ -131,22 +131,9 @@ interface KsicOption {
 // 최소한 "업종 전체"는 눌러볼 수 있게 - DEFAULT_KSIC_FALLBACK 하나만 둔다.
 const DEFAULT_KSIC_FALLBACK: SheetOption[] = [{ label: "업종 전체", value: "" }];
 
-/** 칩 버튼 옆 아래방향 화살표 — "누르면 목록이 뜬다"는 select 관례 표시(ProfileEdit.tsx의 Chevron과 동일 모양). */
+/** 칩 버튼 옆 아래방향 화살표 — "누르면 목록이 뜬다"는 select 관례 표시. */
 function Chevron() {
-  return (
-    <svg
-      className={styles.chevron}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  );
+  return <SharedChevron className={styles.chevron} />;
 }
 
 function MatchingList() {

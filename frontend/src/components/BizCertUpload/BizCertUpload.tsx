@@ -1,24 +1,12 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import type { ChangeEvent } from "react";
 import styles from "./bizCertUpload.module.css";
+import { Chevron as SharedChevron } from "../FormField/FormField";
 import OcrStagePopup from "./OcrStagePopup";
 
 /** 법인/개인 필드 - 값 자체를 누르면 선택 팝업이 뜬다는 걸 알려주는 화살표. */
 function Chevron() {
-  return (
-    <svg
-      className={styles.chevron}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  );
+  return <SharedChevron className={styles.chevron} />;
 }
 
 // OCR 하이브리드 구조: 팀원 각자 자기 PC에서 localhost로 프론트를 띄우지만,
@@ -648,8 +636,6 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
                   <span className={styles.entityValueText}>{fields.ksic_name || "업종을 선택해주세요"}</span>
                   <Chevron />
                 </button>
-                {/* [임시, 2026-09-11] 매칭 테스트용 - 코드값 눈으로 확인하려고 노출. 확인 끝나면 제거. */}
-                {fields.ksic_code && <p className={styles.ksicCodeDebug}>KSIC {fields.ksic_code}</p>}
               </div>
             )}
           </div>

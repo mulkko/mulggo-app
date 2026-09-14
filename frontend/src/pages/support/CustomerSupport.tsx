@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/customerSupport.module.css";
 import chatCardAvatarIcon from "../../assets/9_mint.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
-import ChatFab from "../../components/ChatFab/ChatFab";
 
 /**
  * 1:1 문의 화면 (19번, /support). 하위 화면: 19-1번 고객센터 챗봇(/support/chat, CustomerSupportChat.tsx).
@@ -177,8 +176,6 @@ function CustomerSupport() {
           <p className={styles.emptyText}>아직 접수한 문의가 없어요</p>
         </section>
       </main>
-
-      <ChatFab variant="withBottomNav" />
 
       <BottomNav active="my" />
     </div>

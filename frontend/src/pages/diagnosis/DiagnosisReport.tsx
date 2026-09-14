@@ -388,10 +388,13 @@ interface TechDensityGridData {
 
 /** [2026-09-13, 사용자 확인] 프로토타입(13번 상권분석 화면 문구 대조 - 기술창업형도
  * 같은 구조) 원본 대비 범례(네이비 그라데이션+눈금)·캡션·안내문구를 추가했다.
- * "내 위치" 마커는 카페형(DensityGrid)엔 있지만 여긴 없다 - 기술창업형 백엔드
- * (venture.py)가 애초에 "상위 N개 지역 랭킹"이라 "내 위치" 개념 자체가 없다
- * (사용자 확인 - "각자 맞는거를 추가해줘"). */
-function TechDensityGrid({ grid }: { grid: TechDensityGridData }) {
+ * [2026-09-14, 사용자 확인] "내 위치" 마커도 카페형처럼 추가함 - 기술창업형은
+ * "상위 N개 지역 랭킹"이라 중심좌표(center_cell) 개념은 없지만, 진단 시 입력한
+ * 지역(myLocation, "시도 시군구")이 랭킹 안에 있으면(cell.sigungu와 문자열 일치)
+ * 그 칸에 표시한다. 카페형(항상 격자 중심에 있음)과 달리 상위 N 밖이면 표시 자체가
+ * 안 뜰 수 있다(정상 - 순위 밖이라는 뜻). sigungu 원본 표기가 소스마다 다를 수
+ * 있어(예: "서울" vs "서울특별시") 드물게 실제로는 있는데 못 찾을 수도 있음. */
+function TechDensityGrid({ grid, myLocation }: { grid: TechDensityGridData; myLocation?: string }) {
   const cellMap = new Map<string, TechDensityCell>();
   grid.cells.forEach((cell) => cellMap.set(`${cell.x},${cell.y}`, cell));
   const maxCount = Math.max(0, ...grid.cells.map((c) => c.count));
@@ -403,6 +406,7 @@ function TechDensityGrid({ grid }: { grid: TechDensityGridData }) {
       items.push(cellMap.get(`${x},${y}`) ?? null);
     }
   }
+  const hasMyLocationCell = !!myLocation && items.some((cell) => cell?.sigungu === myLocation);
 
   return (
     <div className={techStyles.densityWrap}>
@@ -414,6 +418,7 @@ function TechDensityGrid({ grid }: { grid: TechDensityGridData }) {
           {items.map((cell, index) => {
             const color = getDensityColor(cell?.count ?? 0, maxCount, "tech");
             const ratio = cell && maxCount > 0 ? cell.count / maxCount : 0;
+            const isMyLocation = !!myLocation && cell?.sigungu === myLocation;
             return (
               <div key={index} className={techStyles.densityCell} style={{ background: color, color: ratio > 0.5 ? "var(--color-white)" : "var(--color-ink-charcoal)" }}>
                 {cell && (
@@ -422,6 +427,7 @@ function TechDensityGrid({ grid }: { grid: TechDensityGridData }) {
                     <span className={techStyles.densitySigungu}>{cell.sigungu}</span>
                   </>
                 )}
+                {isMyLocation && <span className={techStyles.densityCellMarker} />}
               </div>
             );
           })}
@@ -436,7 +442,15 @@ function TechDensityGrid({ grid }: { grid: TechDensityGridData }) {
           <span className={techStyles.densityLegendCaption}>기업 수</span>
         </div>
       </div>
-      <p className={techStyles.emptyText}>* 진한 색일수록 동종업종 벤처기업 밀집</p>
+      <div className={techStyles.densityCaptionRow}>
+        <span>* 진한 색일수록 동종업종 벤처기업 밀집</span>
+        {hasMyLocationCell && (
+          <>
+            <span className={techStyles.densityCellMarkerLegend} />
+            <span>= 내 위치</span>
+          </>
+        )}
+      </div>
       <p className={techStyles.emptyText}>
         * 실제 지도가 아닌 상대적 밀집도를 표현한 도식입니다.
         <br />* 상위 {grid.shown_sigungu_count}개 지역 기준 (전체 {grid.total_sigungu_count}개 중)
@@ -787,6 +801,10 @@ function DiagnosisReport() {
   // 진짜 매칭 건수(COUNT(*) 기반 total, limit과 무관하게 정확함)를 내려주고 있어서
   // limit=1로 최소한만 받아온다 - 목록 자체는 필요 없고 숫자만 쓴다.
   const [matchedCount, setMatchedCount] = useState<number | null>(null);
+  // [2026-09-14, 사용자 확인] matchedCount==null만으로는 "아직 로딩 중"과 "조회 실패"를
+  // 구분 못 해서 로딩 중에도 계속 안내 문구만 보였다 - 로딩 중엔 문구 대신 작은
+  // 스피너만 돌게 별도 상태로 분리.
+  const [matchedCountLoading, setMatchedCountLoading] = useState(false);
 
   // 카페형(상권분석)
   const [sameIndustryCount, setSameIndustryCount] = useState<number | null>(null);
@@ -988,6 +1006,8 @@ function DiagnosisReport() {
   useEffect(() => {
     if (!reportReady || !selectedCode || !sido) return;
     let cancelled = false;
+    setMatchedCount(null);
+    setMatchedCountLoading(true);
     fetch(
       `${API_BASE_URL}/api/matching?ksic=${encodeURIComponent(selectedCode)}&region=${encodeURIComponent(sido)}&limit=1&unclassified_limit=1`,
       { headers: authHeaders() },
@@ -1003,6 +1023,9 @@ function DiagnosisReport() {
       })
       .catch(() => {
         if (!cancelled) setMatchedCount(null);
+      })
+      .finally(() => {
+        if (!cancelled) setMatchedCountLoading(false);
       });
     return () => {
       cancelled = true;
@@ -1107,7 +1130,9 @@ function DiagnosisReport() {
               </div>
               <div className={`${marketStyles.statCard} ${marketStyles.statCardHighlight}`}>
                 <span className={marketStyles.statLabel}>매칭 지원사업 수</span>
-                {matchedCount !== null ? (
+                {matchedCountLoading ? (
+                  <span className={styles.statSpinner} role="status" aria-label="불러오는 중" />
+                ) : matchedCount !== null ? (
                   <span className={marketStyles.statValue}>{matchedCount}건</span>
                 ) : (
                   <span className={marketStyles.statValueEmpty}>다음 화면에서 확인해요</span>
@@ -1147,7 +1172,9 @@ function DiagnosisReport() {
               </div>
               <div className={`${techStyles.statCard} ${techStyles.statCardHighlight}`}>
                 <span className={techStyles.statLabel}>매칭 지원사업 수</span>
-                {matchedCount !== null ? (
+                {matchedCountLoading ? (
+                  <span className={styles.statSpinner} role="status" aria-label="불러오는 중" />
+                ) : matchedCount !== null ? (
                   <span className={techStyles.statValue}>{matchedCount}건</span>
                 ) : (
                   <span className={techStyles.statValueEmpty}>다음 화면에서 확인해요</span>
@@ -1175,7 +1202,7 @@ function DiagnosisReport() {
             <section className={techStyles.sectionCard}>
               <h2 className={techStyles.sectionTitle}>동종산업 밀집도</h2>
               {techDensityGrid ? (
-                <TechDensityGrid grid={techDensityGrid} />
+                <TechDensityGrid grid={techDensityGrid} myLocation={sido && dong ? `${sido} ${dong}` : undefined} />
               ) : (
                 <p className={techStyles.emptyText}>표시할 밀집도 데이터가 없어요.</p>
               )}
