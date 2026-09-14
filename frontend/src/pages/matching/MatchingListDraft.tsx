@@ -6,7 +6,7 @@ import logo from "../../assets/logo.svg";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
-import { Chevron as SharedChevron } from "../../components/FormField/FormField";
+import SelectSheet from "../../components/SelectSheet/SelectSheet";
 
 /**
  * [DRAFT] 지원사업 매칭 리스트(공고 리스트) 화면 - "업종맞춤/업종무관" 2그룹 분리 검토용 사본.
@@ -116,7 +116,6 @@ const SORT_OPTIONS = [
   { label: "마감임박순", value: "deadline" },
 ];
 
-type SheetKey = "region" | "ksic" | "sort";
 type SheetOption = { label: string; value: string };
 
 // select 3개를 시트 팝업으로 통일하기 위한 {label, value} 정규화.
@@ -126,11 +125,6 @@ const REGION_SHEET_OPTIONS: SheetOption[] = REGION_OPTIONS.map((r) => ({
 }));
 const KSIC_SHEET_OPTIONS: SheetOption[] = KSIC_OPTIONS.map((o) => ({ label: o.label, value: o.code }));
 const SORT_SHEET_OPTIONS: SheetOption[] = SORT_OPTIONS;
-
-/** 칩 버튼 옆 아래방향 화살표 — "누르면 목록이 뜬다"는 select 관례 표시. */
-function Chevron() {
-  return <SharedChevron className={styles.chevron} />;
-}
 
 function MatchingListDraft() {
   const navigate = useNavigate();
@@ -168,25 +162,6 @@ function MatchingListDraft() {
     });
   };
 
-  // 지금 열려있는 시트 팝업(없으면 null) - 지역/업종/정렬 칩 중 하나를 누르면 열림.
-  const [openSheet, setOpenSheet] = useState<SheetKey | null>(null);
-
-  const SHEETS: Record<SheetKey, { title: string; options: SheetOption[]; value: string; paramKey: string }> = {
-    region: { title: "지역", options: REGION_SHEET_OPTIONS, value: region, paramKey: "region" },
-    ksic: { title: "업종", options: KSIC_SHEET_OPTIONS, value: ksic, paramKey: "ksic" },
-    sort: { title: "정렬", options: SORT_SHEET_OPTIONS, value: sort, paramKey: "sort" },
-  };
-
-  const sheetChipLabel = (key: SheetKey) => {
-    const cfg = SHEETS[key];
-    return cfg.options.find((o) => o.value === cfg.value)?.label ?? cfg.options[0].label;
-  };
-
-  const handleSheetSelect = (option: SheetOption) => {
-    if (!openSheet) return;
-    updateParam(SHEETS[openSheet].paramKey, option.value);
-    setOpenSheet(null);
-  };
 
   const fetchPage = (offset: number, limit: number, onDone: (body: MatchingListResponse) => void) =>
     fetch(
@@ -285,22 +260,33 @@ function MatchingListDraft() {
 
       {/* 필터바: 지역/업종/정렬 칩(누르면 시트 팝업) + 상세 필터 버튼, 전부 실동작 */}
       <div className={styles.filterBar}>
-        <button type="button" className={styles.dropdownChip} onClick={() => setOpenSheet("region")}>
-          {sheetChipLabel("region")}
-          <Chevron />
-        </button>
-        <button
-          type="button"
+        <SelectSheet
+          variant="chip"
+          className={styles.dropdownChip}
+          label="지역"
+          name="region"
+          value={region}
+          options={REGION_SHEET_OPTIONS}
+          onChange={(v) => updateParam("region", v)}
+        />
+        <SelectSheet
+          variant="chip"
           className={`${styles.dropdownChip} ${styles.ksicChip}`}
-          onClick={() => setOpenSheet("ksic")}
-        >
-          <span className={styles.chipLabel}>{sheetChipLabel("ksic")}</span>
-          <Chevron />
-        </button>
-        <button type="button" className={styles.dropdownChip} onClick={() => setOpenSheet("sort")}>
-          {sheetChipLabel("sort")}
-          <Chevron />
-        </button>
+          label="업종"
+          name="ksic"
+          value={ksic}
+          options={KSIC_SHEET_OPTIONS}
+          onChange={(v) => updateParam("ksic", v)}
+        />
+        <SelectSheet
+          variant="chip"
+          className={styles.dropdownChip}
+          label="정렬"
+          name="sort"
+          value={sort}
+          options={SORT_SHEET_OPTIONS}
+          onChange={(v) => updateParam("sort", v)}
+        />
         <button
           type="button"
           className={styles.filterButton}
@@ -324,49 +310,6 @@ function MatchingListDraft() {
           </svg>
         </button>
       </div>
-
-      {/* 지역/업종/정렬 시트 팝업 - 라디오 버튼 목록, DocPreview.tsx 다운로드 모달과 같은
-          오버레이 패턴(하단 시트만 다름). 고르면 바로 적용 + 닫힘. */}
-      {openSheet && (
-        <div className={styles.sheetOverlay} onClick={() => setOpenSheet(null)}>
-          <div
-            className={styles.sheetPanel}
-            role="dialog"
-            aria-modal="true"
-            aria-label={SHEETS[openSheet].title}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.sheetHead}>
-              <span className={styles.sheetTitle}>{SHEETS[openSheet].title}</span>
-              <button
-                type="button"
-                className={styles.sheetCloseBtn}
-                aria-label="닫기"
-                onClick={() => setOpenSheet(null)}
-              >
-                ✕
-              </button>
-            </div>
-            <ul className={styles.sheetList}>
-              {SHEETS[openSheet].options.map((opt) => {
-                const active = opt.value === SHEETS[openSheet]!.value;
-                return (
-                  <li key={opt.value || opt.label}>
-                    <button
-                      type="button"
-                      className={styles.sheetOption}
-                      onClick={() => handleSheetSelect(opt)}
-                    >
-                      <span className={`${styles.radio} ${active ? styles.radioOn : ""}`} aria-hidden="true" />
-                      <span>{opt.label}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </div>
-      )}
 
       {/* 스크롤 영역: 안내 문구 + 카운트 박스 + 카드 리스트 */}
       <div className={styles.scrollArea}>
