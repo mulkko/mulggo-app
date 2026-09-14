@@ -29,6 +29,7 @@ interface IndustryMatch {
   name: string;
   confidence: string;
   question: string;
+  codeNames?: Record<string, string>;
 }
 
 interface DiagnosisStartResponse {
@@ -248,6 +249,7 @@ function DiagnosisAnswerSummary() {
         industryMatchName: match?.name,
         industryMatchState: match?.state,
         industryMatchConfidence: match?.confidence,
+        industryMatchCodeNames: match?.codeNames ?? {},
         track: data.data.track,
       });
       navigate("/diagnosis/industry-result");

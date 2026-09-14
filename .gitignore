@@ -61,3 +61,4 @@ dryrun_sync_*.xlsx
 backend/ml/industry_code_matching/chroma_db/
 backend/ml/industry_code_matching/__pycache__/
 backend/ml/industry_code_matching/business_matching/__pycache__/
+backend/ml/industry_code_matching/chroma_db.zip

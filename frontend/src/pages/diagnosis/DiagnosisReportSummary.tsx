@@ -81,7 +81,7 @@ function DiagnosisReportSummary({
         <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
       </header>
 
-      <ChatFab variant="top" />
+      <ChatFab variant="withBottomNav" />
 
       <div className={styles.subHeader}>이렇게 정리했어요</div>
 

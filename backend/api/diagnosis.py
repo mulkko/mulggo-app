@@ -119,11 +119,21 @@ def _resolve_industry_codes(
     candidates = [data["primary"], *data["additional"]]
     nts_codes = [c["code"] for c in candidates]
     ksic_codes = list(dict.fromkeys(code for c in candidates for code in c["ksicCodes"]))
+    # [2026-09-14] 이전엔 primary(1순위) 이름 하나만 남겨서, 화면(업종코드 결과/분석
+    # 리포트 셀렉박스)이 후보 3개 전부에 같은 이름을 찍어주는 버그가 있었음(사용자 확인).
+    # 각 후보(candidates)는 자기 name을 갖고 있으니, 후보 순서대로 자기 ksicCodes에
+    # 이름을 매핑해서 code_names로 같이 내려준다(이미 채워진 코드는 먼저 온 후보
+    # 이름을 유지 - candidates가 primary 먼저라 primary 소유 코드가 우선됨).
+    code_names: dict[str, str] = {}
+    for c in candidates:
+        for code in c["ksicCodes"]:
+            code_names.setdefault(code, c["name"])
     match_summary = {
         "state": data["state"],
         "name": data["primary"]["name"],
         "confidence": data["primary"].get("confidence", ""),
         "question": data.get("question", ""),
+        "codeNames": code_names,
     }
     return nts_codes, ksic_codes, match_summary
 
@@ -482,6 +492,7 @@ def get_diagnosis_report(session_id: int, user_id: int = Depends(get_current_use
             "industryMatchName": industry_match_summary.get("name"),
             "industryMatchState": industry_match_summary.get("state"),
             "industryMatchConfidence": industry_match_summary.get("confidence"),
+            "industryMatchCodeNames": industry_match_summary.get("codeNames") or {},
             "analysisByCode": analysis_by_code,
         },
     })
