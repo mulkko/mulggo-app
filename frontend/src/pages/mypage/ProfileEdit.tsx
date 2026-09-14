@@ -4,7 +4,8 @@ import styles from "../../styles/profileEditV2.module.css";
 import { getUserId } from "../../auth/session";
 import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
 import BottomNav from "../../components/BottomNav/BottomNav";
-import { Chevron, TextField, SelectField } from "../../components/FormField/FormField";
+import { TextField, SelectField } from "../../components/FormField/FormField";
+import SelectSheet from "../../components/SelectSheet/SelectSheet";
 import logo from "../../assets/logo.svg";
 
 /**
@@ -501,24 +502,21 @@ function ProfileEdit() {
                 ))}
               </div>
             )}
-            <div className={styles.selectWrap}>
-              <select
-                className={styles.select}
-                value=""
-                onChange={(e) => addRegion(e.target.value)}
-              >
-                <option value="" disabled>
-                  지역 추가
-                </option>
-                {SIDO_OPTIONS.filter((sido) => !form.regions.includes(sido)).map((sido) => (
-                  <option key={sido} value={sido}>
-                    {sido}
-                  </option>
-                ))}
-              </select>
-              <Chevron className={styles.selectChevron} />
-            </div>
           </div>
+          {/* [2026-09-14] 네이티브 select 대신 SelectSheet(하단 시트 팝업) - "지역 추가"는
+              고른 즉시 칩으로 옮겨가고 자기 자신은 항상 빈 값(value="")으로 리셋되는
+              add-menu라 FormField.tsx의 SelectField(값 바인딩형)로는 안 맞아 직접 씀. */}
+          <SelectSheet
+            label="지역 추가"
+            name="regionAdd"
+            value=""
+            placeholder="지역 선택"
+            options={SIDO_OPTIONS.filter((sido) => !form.regions.includes(sido)).map((sido) => ({
+              label: sido,
+              value: sido,
+            }))}
+            onChange={addRegion}
+          />
 
           {isProspective ? (
             <p className={styles.groupSub}>

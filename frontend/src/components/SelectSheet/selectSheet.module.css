@@ -49,6 +49,22 @@
   color: var(--color-stone-gray);
 }
 
+/* ===== variant="chip" 트리거 (배경·패딩·flex 배치는 호출부 className이 전부 맡음,
+   여기선 라벨 말줄임/아이콘 크기 같은 구조만 최소로 정의) ===== */
+.chipTriggerLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.chipChevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 /* ===== 하단 시트 팝업 ===== */
 .sheetOverlay {
   position: fixed;
