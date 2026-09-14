@@ -95,7 +95,7 @@ function Home() {
               아이디어 구체화하기
             </button>
             <button type="button" className={styles.menuItem} onClick={() => { setMenuOpen(false); navigate("/matching"); }}>
-              매칭공고 보기
+              맞춤 지원사업 찾아보기
             </button>
             <button type="button" className={styles.menuItem} onClick={() => { setMenuOpen(false); navigate("/mypage"); }}>
               마이페이지
@@ -143,10 +143,10 @@ function Home() {
             </button>
             <button
               type="button"
-              className={styles.signupBtn}
+              className={styles.signupBtn2}
               onClick={() => navigate("/matching")}
             >
-              매칭공고 보기 →
+              맞춤 지원사업 찾아보기 →
             </button>
           </>
         ) : (

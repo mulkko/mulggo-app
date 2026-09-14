@@ -602,8 +602,8 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
   return (
     <div className={styles.overlay}>
       <div className={styles.reviewBox} role="dialog" aria-modal="true" aria-label="사업자등록증 확인">
-        <p className={styles.reviewDesc}>
-          자동으로 인식된 정보예요. 틀린 부분이 있으면 고치고 확인을 눌러주세요.
+        <p className={styles.reviewDesc2}>
+          자동으로 인식된 정보예요. 틀린 부분이 있으면 고쳐주세요.
         </p>
 
         {REVIEW_FIELDS.map(({ key, label }) => (
