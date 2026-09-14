@@ -18,6 +18,7 @@ type ChatFabVariant = "default" | "withBottomNav" | "top";
 
 interface ChatFabProps {
   variant?: ChatFabVariant;
+  style?: React.CSSProperties; // 화면별 미세조정용 (인라인이라 variant보다 우선 적용됨)
 }
 
 const VARIANT_CLASS: Record<ChatFabVariant, string> = {
@@ -26,7 +27,7 @@ const VARIANT_CLASS: Record<ChatFabVariant, string> = {
   top: styles.top,
 };
 
-function ChatFab({ variant = "default" }: ChatFabProps) {
+function ChatFab({ variant = "default", style }: ChatFabProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -37,6 +38,7 @@ function ChatFab({ variant = "default" }: ChatFabProps) {
     <button
       type="button"
       className={`${styles.fab} ${VARIANT_CLASS[variant]}`}
+      style={style}
       onClick={handleClick}
       aria-label="챗봇 상담 시작하기"
     >

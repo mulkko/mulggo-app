@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styles from "../../styles/onboarding.module.css";
 import BizCertUpload, {
@@ -50,10 +50,13 @@ type StepContent = {
   mascotSrc: string;
 };
 
-/** step 0~4 본문 카피 — 프로토타입(260912 최신본) 값 그대로. 이름은 더미데이터 일관성 위해 "김창업". */
+/** step 0~4 본문 카피 — 프로토타입(260912 최신본) 값 그대로. step 0의 이름 부분은
+ * STEP_CONTENT가 컴포넌트 밖 상수라 실제 로그인 이름을 못 담아서, 렌더링 시점에
+ * Onboarding()의 step0Title로 대체한다(아래 escapeHtml 참고 - dangerouslySetInnerHTML이라
+ * 그대로 꽂으면 XSS 위험, 반드시 이스케이프 후 사용). */
 const STEP_CONTENT: Record<0 | 1 | 2 | 3 | 4, StepContent> = {
   0: {
-    title: "김창업 님,<br>가입이 완료되었습니다",
+    title: "{{NAME}} 님,<br>가입이 완료되었습니다",
     desc: "저는 물꼬의 어시스턴트 물꼬미 입니다.<br>저희 서비스에 대해 간단하게 설명을 드릴게요.",
     mascotSrc: onboardHello,
   },
@@ -66,7 +69,7 @@ const STEP_CONTENT: Record<0 | 1 | 2 | 3 | 4, StepContent> = {
   2: {
     badge: "STEP 2 · 맞춤 분석",
     title: "업종코드를 찾아<br>상권·기술창업 분석까지",
-    desc: "정리된 내용으로 업종코드를 판정해 상권형 또는 기술창업형 리포트로 이어드려요.",
+    desc: "정리된 내용으로 업종코드를 판정해<br>상권형 또는 기술형 리포트로 이어드려요.",
     mascotSrc: onboardSearching,
   },
   3: {
@@ -88,6 +91,12 @@ const TOTAL_STEPS = 6;
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+// STEP_CONTENT[0].title이 dangerouslySetInnerHTML로 렌더링돼서, 실제 로그인
+// 이름(사용자 입력값)을 그대로 꽂으면 안 되고 이스케이프해야 한다.
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 /** 마스코트 원 — 모든 step 공통. step별 캐릭터 이미지를 원 안에 담는다. */
 function Mascot({ src, size = "82%" }: { src: string; size?: string }) {
   return (
@@ -106,7 +115,29 @@ function Onboarding() {
   // 안 거친 진입), 그 경우 location.state가 비어 userId가 없다 - 폴백값으로 채워서
   // 팝업 자체는 항상 테스트 가능하게 한다(MyPage.tsx/ProfileEdit.tsx의 FALLBACK_USER_ID와 동일 이유).
   const FALLBACK_USER_ID = 27;
-  const userId = (location.state as { userId?: number } | null)?.userId ?? FALLBACK_USER_ID;
+  const userId = (location.state as { userId?: number; name?: string } | null)?.userId ?? FALLBACK_USER_ID;
+
+  // [2026-09-14, 사용자 확인] "김창업"(더미데이터)로 고정돼있던 걸 실제 가입자 이름으로
+  // 교체 - Signup.tsx가 가입 성공 응답의 name을 navigate state로 같이 넘겨준다(정상
+  // 가입 흐름은 이 값 하나로 충분, 추가 요청 없음). state에 없으면(dev_links.html
+  // "회원가입_완료"로 직접 진입 등, userId도 FALLBACK_USER_ID인 경우) 그 user_id
+  // 기준으로 프로필을 조회해서 채운다(MyPage.tsx GET /api/mypage/profile와 동일 API).
+  const [name, setName] = useState<string>(
+    (location.state as { name?: string } | null)?.name ?? "",
+  );
+  useEffect(() => {
+    if (name) return;
+    fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${userId}`)
+      .then((res) => res.json())
+      .then((res: { success: boolean; data?: { name: string } }) => {
+        if (res.success && res.data?.name) setName(res.data.name);
+      })
+      .catch(() => {
+        /* 조회 실패 시 아래 "회원" 폴백 문구 그대로 표시 */
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const step0Title = STEP_CONTENT[0].title.replace("{{NAME}}", escapeHtml(name || "회원"));
 
   // 사업자등록증 첨부 팝업 상태
   const bizCertRef = useRef<BizCertUploadHandle>(null);
@@ -243,7 +274,7 @@ function Onboarding() {
               <h1 className={styles.startTitle}>
                 이제 물꼬를 시작해볼
                 <br />
-                준비가 되셔나요?
+                준비가 되셨나요?
               </h1>
               <p className={styles.startSubtitle}>무엇부터 해보고 싶은지 알려주세요.</p>
             </div>
@@ -272,7 +303,7 @@ function Onboarding() {
             )}
             <h1
               className={styles.title}
-              dangerouslySetInnerHTML={{ __html: STEP_CONTENT[step].title }}
+              dangerouslySetInnerHTML={{ __html: step === 0 ? step0Title : STEP_CONTENT[step].title }}
             />
             {STEP_CONTENT[step].desc && (
               <p
@@ -373,7 +404,7 @@ function Onboarding() {
             aria-modal="true"
             aria-label="사업자등록증 나중에 등록 완료"
           >
-            <h2 className={styles.laterPopupTitle}>김창업님, 물꼬가 트였어요!</h2>
+            <h2 className={styles.laterPopupTitle}>{name || "회원"}님, 물꼬가 트였어요!</h2>
             <p className={styles.laterPopupDesc}>
               사업자등록증을 등록하면 딱 맞는 지원사업을 바로 찾아드릴게요.
             </p>

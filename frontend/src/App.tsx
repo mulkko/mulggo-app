@@ -87,6 +87,8 @@ import DiagnosisStep7Test from "./pages/diagnosis/_backup/DiagnosisStep7_test";
 import DiagnosisStep8Test from "./pages/diagnosis/_backup/DiagnosisStep8_test";
 import DiagnosisStep9Test from "./pages/diagnosis/_backup/DiagnosisStep9_test";
 import DiagnosisIndustryResultTest from "./pages/diagnosis/_backup/DiagnosisIndustryResult_test";
+// [2026-09-14, 개인 확인용 - 시연 영상 촬영용] 정밀진단 데모(Q1~Q10 자동 채움) 진입 페이지.
+import DiagnosisPreciseDemoStartTest from "./pages/diagnosis/DiagnosisPreciseDemoStart_test";
 // [2026-09-13, 디자인 검토용, 라이브 미적용] "업종코드를 찾았어요" 화면을 프로토타입
 // 실측값대로 다시 만든 미리보기 - 검토 후 괜찮으면 DiagnosisIndustryResult.tsx에
 // 반영하고 이 줄+아래 라우트+파일 정리할 것. 상세 이유는 파일 자체 주석 참고.
@@ -255,6 +257,7 @@ function App() {
         <Route path="/diagnosis/9-test" element={<DiagnosisStep8Test />} />
         <Route path="/diagnosis/10-test" element={<DiagnosisStep9Test />} />
         <Route path="/diagnosis/industry-result-test" element={<DiagnosisIndustryResultTest />} />
+        <Route path="/dev/diagnosis-precise-demo-test" element={<DiagnosisPreciseDemoStartTest />} />
         <Route path="/diagnosis/industry-result-preview" element={<DiagnosisIndustryResultPreview />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />

@@ -118,16 +118,21 @@ def _resolve_industry_codes(
     data = result["data"]
     candidates = [data["primary"], *data["additional"]]
     nts_codes = [c["code"] for c in candidates]
-    ksic_codes = list(dict.fromkeys(code for c in candidates for code in c["ksicCodes"]))
+    # [2026-09-14, 사용자 확인] 업종코드 후보는 "최대 3개"(primary+additional 최대 2개)가
+    # 기준인데, NTS 후보 하나가 KSIC 코드 여러 개로 매핑되는 경우(nts_ksic_mapping이
+    # 1:다)가 있어서 그대로 다 펼치면 3개를 넘겼다(실측 - 후보 3개 중 하나가 KSIC 2개로
+    # 매핑돼 총 4개가 나옴). 후보(candidates)당 대표 KSIC 코드 1개(ksicCodes[0])만 써서
+    # 항상 NTS 후보 수만큼(최대 3개)만 나오게 고쳤다.
+    ksic_codes = list(dict.fromkeys(c["ksicCodes"][0] for c in candidates if c["ksicCodes"]))
     # [2026-09-14] 이전엔 primary(1순위) 이름 하나만 남겨서, 화면(업종코드 결과/분석
     # 리포트 셀렉박스)이 후보 3개 전부에 같은 이름을 찍어주는 버그가 있었음(사용자 확인).
-    # 각 후보(candidates)는 자기 name을 갖고 있으니, 후보 순서대로 자기 ksicCodes에
-    # 이름을 매핑해서 code_names로 같이 내려준다(이미 채워진 코드는 먼저 온 후보
-    # 이름을 유지 - candidates가 primary 먼저라 primary 소유 코드가 우선됨).
+    # 각 후보(candidates)는 자기 name을 갖고 있으니, 후보 순서대로 자기 대표 KSIC
+    # 코드에 이름을 매핑해서 code_names로 같이 내려준다(이미 채워진 코드는 먼저 온
+    # 후보 이름을 유지 - candidates가 primary 먼저라 primary 소유 코드가 우선됨).
     code_names: dict[str, str] = {}
     for c in candidates:
-        for code in c["ksicCodes"]:
-            code_names.setdefault(code, c["name"])
+        if c["ksicCodes"]:
+            code_names.setdefault(c["ksicCodes"][0], c["name"])
     match_summary = {
         "state": data["state"],
         "name": data["primary"]["name"],

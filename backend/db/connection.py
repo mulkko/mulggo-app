@@ -41,6 +41,7 @@ ANALYSIS_DB_PASSWORD = os.getenv("ANALYSIS_DB_PASSWORD")
 _POOL_MIN_CONN = 1
 _POOL_MAX_CONN = 10
 _connection_pool: "psycopg2.pool.ThreadedConnectionPool | None" = None
+_analysis_connection_pool: "psycopg2.pool.ThreadedConnectionPool | None" = None
 
 
 def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
@@ -61,6 +62,27 @@ def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
             sslmode="require",
         )
     return _connection_pool
+
+
+def _get_analysis_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _analysis_connection_pool
+    if _analysis_connection_pool is None:
+        if not all([ANALYSIS_DB_HOST, ANALYSIS_DB_PORT, ANALYSIS_DB_NAME, ANALYSIS_DB_USER, ANALYSIS_DB_PASSWORD]):
+            raise RuntimeError(
+                "ANALYSIS_DB_HOST, ANALYSIS_DB_PORT, ANALYSIS_DB_NAME, ANALYSIS_DB_USER, "
+                "ANALYSIS_DB_PASSWORD가 .env에 설정되어 있지 않습니다."
+            )
+        _analysis_connection_pool = psycopg2.pool.ThreadedConnectionPool(
+            _POOL_MIN_CONN,
+            _POOL_MAX_CONN,
+            host=ANALYSIS_DB_HOST,
+            port=ANALYSIS_DB_PORT,
+            dbname=ANALYSIS_DB_NAME,
+            user=ANALYSIS_DB_USER,
+            password=ANALYSIS_DB_PASSWORD,
+            sslmode="require",
+        )
+    return _analysis_connection_pool
 
 
 class _PooledConnection:
@@ -87,21 +109,15 @@ def get_connection():
 
 def get_analysis_connection():
     """상권분석용 대용량 참고 데이터 전용 DB 연결 (commercial_districts 등).
-    메인 DB(get_connection())와 별개 Supabase 프로젝트 - FK로 안 엮여 있어서
-    분리 가능했음."""
-    if not all([ANALYSIS_DB_HOST, ANALYSIS_DB_PORT, ANALYSIS_DB_NAME, ANALYSIS_DB_USER, ANALYSIS_DB_PASSWORD]):
-        raise RuntimeError(
-            "ANALYSIS_DB_HOST, ANALYSIS_DB_PORT, ANALYSIS_DB_NAME, ANALYSIS_DB_USER, "
-            "ANALYSIS_DB_PASSWORD가 .env에 설정되어 있지 않습니다."
-        )
+    메인 DB(get_connection())와 별개 Supabase 프로젝트(싱가포르 리전) - FK로 안
+    엮여 있어서 분리 가능했음.
 
-    return psycopg2.connect(
-        host=ANALYSIS_DB_HOST,
-        port=ANALYSIS_DB_PORT,
-        dbname=ANALYSIS_DB_NAME,
-        user=ANALYSIS_DB_USER,
-        password=ANALYSIS_DB_PASSWORD,
-    )
+    [2026-09-14, 사용자 확인] 메인 DB와 마찬가지로 호출마다 새 TCP+TLS 커넥션을
+    맺던 것을 ThreadedConnectionPool로 재사용하도록 변경 - 리전이 멀어(싱가포르)
+    핸드셰이크 지연이 메인 DB보다 더 크게 실서버 체감 속도에 영향을 줬다."""
+    pool = _get_analysis_pool()
+    conn = pool.getconn()
+    return _PooledConnection(pool, conn)
 
 
 def log_crawl_batch(source: str, fetched_count: int, inserted_count: int, status: str) -> None:
