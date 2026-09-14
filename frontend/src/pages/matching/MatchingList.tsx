@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "../../styles/matchingList.module.css";
+import logo from "../../assets/logo.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
 import AnnouncementCard, {
@@ -381,18 +382,7 @@ function MatchingList() {
       <header className={styles.header}>
         <span className={styles.logo}>
           <span className={styles.logoText}>MULKKO MATCHING</span>
-          <svg
-            className={styles.logoMark}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--color-light-teal)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 3c3 3.6 6 6.9 6 10.5A6 6 0 0 1 6 13.5C6 9.9 9 6.6 12 3Z" />
-          </svg>
+          <img className={styles.logoMark} src={logo} alt="물꼬 로고" />
         </span>
         <button type="button" className={styles.analysisLink} onClick={handleAnalysisClick}>
           물꼬 분석
