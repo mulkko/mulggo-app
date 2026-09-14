@@ -13,7 +13,7 @@
   #   또는 https://github.com/oschwartz10612/poppler-windows 릴리스 받아 PATH 등록)
 
 [GPU]
-  Qwen2.5-VL 때문에 OCR 단계는 GPU 필요. HWPX 채우기 단계는 가벼움(CPU).
+  Qwen2.5-VL(MODEL_ID) 때문에 OCR 단계는 GPU 필요. HWPX 채우기 단계는 가벼움(CPU).
 
 [CLI 실행]
   python -m backend.assistant.biz_cert_ocr \
@@ -42,6 +42,10 @@ try:
 except ImportError:
     _PDF_ERRORS = ()
 
+# [2026-09-14] Qwen3-VL-2B-Instruct 테스트 후 원복. 실사(휴대폰 사진) 기준
+# 동일 이미지 비교 결과 2B는 상호/대표자를 못 읽고 법인명에 발급기관 이름을
+# 잘못 채우는 반면, 3B는 정확히 읽음 - 세대(아키텍처)보다 파라미터 수가
+# 실사진 세밀 인식엔 더 크게 작용한 것으로 판단, 3B로 원복.
 MODEL_ID = "Qwen/Qwen2.5-VL-3B-Instruct"
 
 # 사업자등록증 OCR 결과(한글 key) → 내부 key
@@ -70,7 +74,7 @@ EXCLUDE = [
 # 1) OCR: 사업자등록증 읽기
 # ══════════════════════════════════════════════════════
 def load_vision_model():
-    """Qwen2.5-VL 모델/프로세서 로딩. import 시점이 아니라 필요할 때 호출."""
+    """Qwen2.5-VL(MODEL_ID) 모델/프로세서 로딩. import 시점이 아니라 필요할 때 호출."""
     import torch
     from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 

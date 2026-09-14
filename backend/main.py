@@ -3,6 +3,8 @@
 담당: 백엔드 인프라 TA
 """
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -31,9 +33,12 @@ app.add_middleware(
         "http://3.107.87.41:5173",
     ],
     # [테스트] OCR 하이브리드 구조: 팀원들이 각자 PC의 프론트(5173)에서 GPU PC(192.168.0.160)의
-    # 백엔드로 직접 OCR 요청을 보낸다. 팀원마다 IP가 달라 하나하나 등록하는 대신,
-    # 같은 공유기 대역(192.168.0.x)의 5173 포트는 전부 허용한다.
-    allow_origin_regex=r"http://192\.168\.0\.\d{1,3}:5173",
+    # 백엔드로 직접 OCR 요청을 보낸다. 팀원마다 IP가 달라 하나하나 등록하는 대신
+    # 같은 공유기 대역(192.168.0.x)을 전부 허용해뒀던 것을, [2026-09-14] localhost/
+    # 127.0.0.1까지 넓히고 포트 고정(5173)도 풀었다 - 팀원용 5173(포트 8000)은
+    # 그대로 두고, 본인 PC에서 별도 포트로 두 번째 프론트+백엔드 쌍을 띄워 테스트할
+    # 때도(예: 5175/8001) 매번 이 목록에 추가할 필요 없게 함(사용자 확인).
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1|192\.168\.0\.\d{1,3}):\d{2,5}",
     # 개발용 CORS 허용 목록. frontend/.env의 VITE_API_BASE_URL이 가리키는 포트(8000)와
     # 이 서버가 실제로 뜨는 포트가 일치해야 한다.
     allow_methods=["*"],
@@ -69,7 +74,11 @@ def _warm_industry_matcher() -> None:
 def main():
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # [2026-09-14, 사용자 확인] 기본값은 그대로 8000(안 건드리면 예전과 100% 동일) -
+    # 팀원들이 쓰는 인스턴스를 안 건드리고, 본인 PC에서 두 번째 인스턴스를 다른
+    # 포트로 띄우고 싶을 때만 BACKEND_PORT=8001 같은 식으로 환경변수를 줘서 쓴다.
+    port = int(os.getenv("BACKEND_PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 
 if __name__ == "__main__":

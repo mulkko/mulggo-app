@@ -100,10 +100,17 @@ function Signup() {
 
       if (data.success) {
         setShowToast(true);
-        // [2026-09-10] 온보딩 "바로 지원사업 매칭" 팝업(사업자등록증 첨부)이
-        // user_id를 필요로 해서 같이 넘긴다 - 로그인 세션은 가입 직후엔 아직 없음.
-        const userId = data.data?.user_id;
-        setTimeout(() => navigate("/onboarding", { state: { userId } }), 1400);
+        // [2026-09-14, 사용자 확인] 원래 여기서 바로 "/onboarding"으로 보냈는데, 회원가입
+        // API가 가입 직후 자동로그인을 안 해줘서(로그인 세션 없이 user_id만 들고 진입)
+        // 온보딩→진단하기를 로그인 없이 쭉 진행하다가 맨 마지막(업종코드 확인) 단계에서만
+        // 401로 막히는 문제가 있었다(실측). 이제 로그인 화면으로 보내서 실제로 로그인을
+        // 마친 뒤에 온보딩으로 이어지게 한다 - 로그인 이메일 입력칸은 방금 가입한
+        // 이메일로 미리 채워둔다. LoginForm.tsx가 이 state(justSignedUp)를 보고
+        // 로그인 성공 시 "/home" 대신 "/onboarding"으로 보낸다.
+        setTimeout(
+          () => navigate("/login", { state: { justSignedUp: true, email } }),
+          1400
+        );
       } else {
         setErrorMessage(data.error?.message ?? "회원가입에 실패했습니다.");
       }

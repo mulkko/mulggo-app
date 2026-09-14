@@ -6,6 +6,7 @@ import DiagnosisHeader from "./DiagnosisHeader";
 import { authHeaders } from "../../auth/session";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import ChatFab from "../../components/ChatFab/ChatFab";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const POLL_INTERVAL_MS = 2000;
@@ -162,9 +163,7 @@ function DiagnosisIndustryResult() {
         <h1 className={industryStyles.title}>업종코드를 찾았어요</h1>
         <div className={industryStyles.anchorBox}>
           <span className={industryStyles.anchorText}>
-            {ksicCodes.length > 1
-              ? "물꼬가 찾은 후보 업종이 여러 개예요. 전부 분석해서 다음 화면 상단에서 골라볼 수 있어요."
-              : "방금 답변하신 문제인식·해결방식 등 PSST 내용을 물꼬가 종합해서, 가장 가까운 업종코드를 아래처럼 찾아드렸어요."}
+            방금 답변하신 문제인식·해결방식 등 PSST 내용을 물꼬가 종합해서, 가장 가까운 업종코드를 아래처럼 찾아드렸어요.
           </span>
         </div>
         <p className={industryStyles.disclaimer}>이건 참고용 추천이며, 최종 등록 시 세무 전문가 확인을 권장합니다.</p>
@@ -246,6 +245,7 @@ function DiagnosisIndustryResult() {
       )}
 
       <BottomNav active="idea" />
+      <ChatFab variant="withBottomNav" style={{ bottom: 120 }} />
     </div>
   );
 }
