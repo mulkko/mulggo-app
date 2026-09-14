@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "../../styles/matchingList.module.css";
+import logo from "../../assets/logo.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import logo from "../../assets/logo.svg";
 import ChatFab from "../../components/ChatFab/ChatFab";

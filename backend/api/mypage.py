@@ -283,6 +283,27 @@ def list_fill_history(user_id: int = Depends(get_current_user_id)) -> JSONRespon
     return JSONResponse(content={"success": True, "data": data})
 
 
+@router.delete("/fill-history/{application_id}")
+def delete_fill_history(application_id: int, user_id: int = Depends(get_current_user_id)) -> JSONResponse:
+    """마이페이지 "채우기 이용내역" 항목 삭제 - 본인 소유(profile_id)인 것만 지운다."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        if row is None:
+            return JSONResponse(content={"success": False}, status_code=404)
+        profile_id = row[0]
+        cur.execute(
+            "DELETE FROM applications WHERE application_id = %s AND profile_id = %s",
+            (application_id, profile_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return JSONResponse(content={"success": True})
+
+
 @router.get("/apply-status")
 def list_apply_status(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
     """마이페이지 "나의 지원내역". [2026-09-14] apply_status는 지원 취소해도 행을
@@ -383,3 +404,29 @@ def list_reports(user_id: int = Depends(get_current_user_id)) -> JSONResponse:
         conn.close()
 
     return JSONResponse(content={"success": True, "data": data})
+
+
+@router.delete("/apply-history/{submission_id}")
+def delete_apply_history(submission_id: int, user_id: int = Depends(get_current_user_id)) -> JSONResponse:
+    """마이페이지 "나의 지원내역" 항목 삭제 - 본인 소유(profile_id)인 것만 지운다.
+
+    [2026-09-14] 지원내역 대응 테이블은 schema.sql에 없는 apply_status임(describe_table로
+    실측 확인 - PK는 submission_id). 목록 조회(GET) 자체가 아직 없어서 지금은 삭제
+    API/프론트 핸들러만 미리 만들어두는 것까지가 범위(사용자 확인) - 조회 기능을 만들 때
+    이 엔드포인트를 그대로 연결하면 된다."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        if row is None:
+            return JSONResponse(content={"success": False}, status_code=404)
+        profile_id = row[0]
+        cur.execute(
+            "DELETE FROM apply_status WHERE submission_id = %s AND profile_id = %s",
+            (submission_id, profile_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return JSONResponse(content={"success": True})

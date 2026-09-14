@@ -41,6 +41,7 @@
 /* [2026-09-13, 사용자 확인] 인라인 SVG 리프 아이콘 대신 이미지 로고(logo.svg)로 통일 */
 .logoMark {
   width: 28px;
+  height: auto;
   flex-shrink: 0;
   display: block;
 }
@@ -399,4 +400,96 @@
   color: var(--color-stone-gray);
   cursor: pointer;
   text-decoration: underline;
+}
+
+/* ===== 삭제 확인 팝업 (시나리오 보드 19번, 문구만 수정) ===== */
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--color-scrim-download);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 28px;
+  box-sizing: border-box;
+}
+
+.confirmCard {
+  width: 100%;
+  max-width: 300px;
+  box-sizing: border-box;
+  background: var(--color-white);
+  border-radius: var(--radius-confirm-card);
+  padding: 26px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: var(--shadow-confirm-card);
+}
+
+.confirmText {
+  margin: 0;
+  text-align: center;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--color-ink-charcoal);
+}
+
+.confirmButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.confirmCancelBtn,
+.confirmDeleteBtn {
+  flex: 1;
+  box-sizing: border-box;
+  padding: 13px;
+  border: none;
+  border-radius: var(--radius-confirm-btn);
+  font-family: var(--font-family-base);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirmCancelBtn {
+  background: var(--color-cancel-bg);
+  color: var(--color-cancel-text);
+}
+
+.confirmDeleteBtn {
+  background: var(--color-danger-bg);
+  color: var(--color-white);
+}
+
+/* ===== 삭제 완료 토스트 (matchingDetail.module.css .toast와 동일 스펙 - 1.5초 후 자동 소멸) ===== */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: calc(var(--mobile-frame-width) - 2 * var(--spacing-outer));
+  padding: 12px 20px;
+  border-radius: var(--radius-input);
+  background: var(--color-ink-charcoal);
+  color: var(--color-white);
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  text-align: center;
+  animation: toastIn 160ms ease-out;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }

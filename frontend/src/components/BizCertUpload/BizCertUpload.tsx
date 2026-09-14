@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import type { ChangeEvent } from "react";
 import styles from "./bizCertUpload.module.css";
+import OcrStagePopup from "./OcrStagePopup";
 
 /** 법인/개인 필드 - 값 자체를 누르면 선택 팝업이 뜬다는 걸 알려주는 화살표. */
 function Chevron() {
@@ -539,15 +540,7 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
   }
 
   if (phase === "uploading") {
-    return (
-      <div className={styles.overlay}>
-        <div className={styles.loadingBox} role="status" aria-live="polite">
-          <div className={styles.spinner} />
-          <p className={styles.loadingText}>인식 중입니다... ({elapsedSeconds}초 경과)</p>
-          <p className={styles.loadingHint}>첫 요청은 모델 로딩 때문에 시간이 걸릴 수 있어요</p>
-        </div>
-      </div>
-    );
+    return <OcrStagePopup elapsedSeconds={elapsedSeconds} onSkip={onSkip} />;
   }
 
   if (phase === "error") {
