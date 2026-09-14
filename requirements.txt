@@ -46,7 +46,8 @@ paddlex==3.1.1            # paddleocr 3.1.1과 짝 (버전 안 맞으면 최신 
 kiwipiepy==0.23.2         # 한국어 형태소분석(명사 추출)
 scipy==1.16.3             # ML Gate embed_rule 특징(OneHotEncoder 결과 sparse 결합)
 sentence-transformers==6.0.1  # ML Gate Champion(embed_rule) SBERT 임베딩 — models/ml_gate_v2_champion.joblib 로드 시 필수
-torch==2.6.0              # sentence-transformers 런타임 백엔드 (GPU 환경이면 CUDA 빌드로 자동 대체됨)
+torch>=2.6.0              # sentence-transformers 런타임 백엔드 (GPU 환경이면 CUDA 빌드로 자동 대체됨)
+                          # [2026-09-14] WAS 파이썬 버전엔 2.6.0 휠이 없어서 하한만 지정하도록 완화
 joblib==1.5.2             # ML Gate 아티팩트(.joblib) 로드
 
 # paddleocr는 paddlepaddle(또는 paddlepaddle-gpu)이 별도로 필요합니다 (위 두 항목처럼 requirements.txt로 안 잡힘):
