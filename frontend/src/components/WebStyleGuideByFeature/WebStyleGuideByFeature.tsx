@@ -62,6 +62,10 @@ const ALL_COLORS: ColorToken[] = [
   { name: "Card Skill BG", hex: "rgba(232,169,60,.08)", usage: '"보유역량 활용" 아이디어 카드 배경', varName: "--color-card-skill-bg", role: "bg" },
   { name: "Badge Target BG", hex: "#BFEAE1", usage: '"타깃 관점" 뱃지 배경', varName: "--color-badge-target-bg", role: "bg" },
   { name: "Market Density", hex: "#7A2A0A", usage: '상권분석 "동일업종 밀집도" 히트맵 그라데이션 진한 끝', varName: "--color-market-density", role: "other" },
+  { name: "Industry Anchor BG", hex: "#F3F8FF", usage: '"업종코드를 찾았어요" 화면 안내박스 배경', varName: "--color-industry-anchor-bg", role: "bg" },
+  { name: "Danger BG", hex: "#E0273F", usage: '마이페이지 삭제 확인 팝업 "삭제" 버튼 배경', varName: "--color-danger-bg", role: "bg" },
+  { name: "Cancel BG", hex: "#ECEEF1", usage: '마이페이지 삭제 확인 팝업 "취소" 버튼 배경', varName: "--color-cancel-bg", role: "bg" },
+  { name: "Cancel Text", hex: "#4B5160", usage: '마이페이지 삭제 확인 팝업 "취소" 버튼 텍스트', varName: "--color-cancel-text", role: "text" },
 ];
 
 // 브랜드 전용 - UI 팔레트가 아니라 컴포넌트에 재사용 금지 (WebStyleGuide.tsx LOGO_COLORS + KAKAO_COLORS)
@@ -337,6 +341,31 @@ function WebStyleGuideByFeature() {
                 --shadow-modal(0 24px 50px -20px rgba(21,50,140,.4)), 배경 딤은 --color-scrim-download
               </p>
               <span className={styles.codeLabel}>다운로드 모달 (스펙만, 라이브 프리뷰 없음)</span>
+            </div>
+          </div>
+          <div className={styles.componentRow}>
+            <div className={styles.componentItem}>
+              <div className={styles.confirmPreviewCard}>
+                <p className={styles.confirmPreviewText}>
+                  이 공고를 삭제할까요?
+                  <br />
+                  나의 관심있는 지원사업에서 사라지고, 다시 불러올 수 없어요.
+                </p>
+                <div className={styles.confirmPreviewButtons}>
+                  <span className={styles.confirmPreviewCancelBtn}>취소</span>
+                  <span className={styles.confirmPreviewDeleteBtn}>삭제</span>
+                </div>
+              </div>
+              <span className={styles.codeLabel}>
+                마이페이지 삭제 확인 팝업 · --radius-confirm-card · --shadow-confirm-card · 배경 딤은
+                --color-scrim-download 재사용
+              </span>
+            </div>
+            <div className={styles.componentItem}>
+              <div className={styles.toastPreview}>나의 관심있는 지원사업에서 삭제됐어요.</div>
+              <span className={styles.codeLabel}>
+                삭제 완료 토스트 · 위 Toast와 동일 스펙(1.5초 후 자동 소멸)
+              </span>
             </div>
           </div>
         </div>

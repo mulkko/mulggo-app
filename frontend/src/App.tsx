@@ -72,6 +72,7 @@ import DiagnosisReportSummaryPreview from "./pages/diagnosis/_backup/DiagnosisRe
 // 그대로 두고, 스크롤 콘텐츠 영역 안쪽 내용만 비웠다 + 하단에 실제 BottomNav 추가.
 // 확인 끝나면 이 줄 + 아래 라우트 + 파일 지울 것.
 import DiagnosisReportSummaryFixedLayoutTest from "./pages/diagnosis/DiagnosisReportSummaryFixedLayout_test";
+import OcrPopupPreview from "./pages/onboarding/OcrPopupPreview";
 // [2026-09-13, 개인 디자인 확인용] 진단 흐름 화면들이 전부 이전 단계 가드가 있어서
 // 직접 URL로 들어가면 앞 단계로 튕겨버려 디자인만 따로 확인하기 어렵다는 요청으로
 // 만든 격리 사본들 - 세션/백엔드 의존 전혀 없음. 확인 끝나면 이 블록 + 아래 라우트들
@@ -260,6 +261,7 @@ function App() {
         <Route path="/dev/web-style-guide-by-feature" element={<WebStyleGuideByFeature />} />
         <Route path="/dev/report-summary-preview" element={<DiagnosisReportSummaryPreview />} />
         <Route path="/dev/report-summary-fixed-layout-test" element={<DiagnosisReportSummaryFixedLayoutTest />} />
+        <Route path="/dev/ocr-popup-preview" element={<OcrPopupPreview />} />
         <Route path="/admin/login" element={<LoginForm variant="admin" />} />
         <Route
           path="/admin"
