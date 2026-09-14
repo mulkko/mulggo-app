@@ -131,6 +131,10 @@
   width: 12px;
   height: 12px;
   flex-shrink: 0;
+  /* [2026-09-14, 사용자 확인] .chipLabel이 내용만큼만 폭을 차지해서, 칩이 넓어지면
+     (flex:1로 균등분배) 아이콘이 글자 옆에 붙어 보이던 문제 - margin-left:auto로
+     남는 공간을 아이콘 앞으로 밀어서 항상 칩 오른쪽 끝에 붙게 한다. */
+  margin-left: auto;
 }
 
 .chipLabel {
@@ -232,6 +236,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* [2026-09-14, 사용자 확인] "업종 맞춤 공고"/"업종 무관 공고" 섹션 사이 간격이
+     .scrollArea 기본 gap(12px)만으론 부족해 보여서 추가 - .scrollArea gap과
+     별도로 더해진다(총 12+20px). */
+  margin-bottom: 20px;
 }
 
 .sectionHead {

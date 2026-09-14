@@ -537,6 +537,19 @@
   animation: diagnosisReportSpin 0.8s linear infinite;
 }
 
+/* [2026-09-14, 사용자 확인] "매칭 지원사업 수" 통계 카드 안에서 쓰는 작은 스피너 -
+   큰 로딩오버레이용 .spinner(32px)는 카드 안에 넣기엔 커서 축소 버전을 따로 둔다.
+   같은 회전 애니메이션(diagnosisReportSpin) 재사용. */
+.statSpinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border-web);
+  border-top-color: var(--color-navy-sphere);
+  border-radius: 50%;
+  animation: diagnosisReportSpin 0.8s linear infinite;
+}
+
 @keyframes diagnosisReportSpin {
   to {
     transform: rotate(360deg);

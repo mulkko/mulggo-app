@@ -62,13 +62,6 @@ function AnnouncementCard({ item, onClick, onDelete }: AnnouncementCardProps) {
         </div>
       </button>
 
-      {/* [임시, 2026-09-14, 사용자 확인] 매칭된 업종코드 확인용 - 카드 클릭(상세 이동)
-          영역과 겹치지 않게 카드 바깥, 별도 박스로 아래에 붙인다. 확인 끝나면 이
-          블록 통째로 제거. */}
-      {item.ksicCodesMatched && item.ksicCodesMatched.length > 0 && (
-        <div className={styles.ksicDebug}>업종코드: {item.ksicCodesMatched.join(", ")}</div>
-      )}
-
       {onDelete && (
         <button
           type="button"
