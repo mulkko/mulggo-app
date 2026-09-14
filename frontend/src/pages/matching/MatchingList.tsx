@@ -5,6 +5,7 @@ import logo from "../../assets/logo.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
+import { authHeaders } from "../../auth/session";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
@@ -249,6 +250,7 @@ function MatchingList() {
         `&ksic=${ksic}&region=${encodeURIComponent(region)}&company=${encodeURIComponent(company)}` +
         `&field=${encodeURIComponent(field)}&biz_age=${encodeURIComponent(bizAge)}` +
         `&age=${encodeURIComponent(age)}&sort=${sort}`,
+      { headers: authHeaders() },
     )
       .then((res) => res.json())
       .then((body: MatchingListResponse) => {
