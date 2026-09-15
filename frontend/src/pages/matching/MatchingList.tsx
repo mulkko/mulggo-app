@@ -222,16 +222,14 @@ function MatchingList() {
         if (!body.success || !body.data) return;
         const codesNow = initialMatchedCodesRef.current ?? [];
         const matched = body.data.filter((o) => codesNow.includes(o.code));
-        // [2026-09-12, 버그 수정] 매칭된 코드가 1개뿐이면 "매칭된 업종 전체"의 value(그
-        // 코드 하나)와 아래 개별 항목의 value가 완전히 같은 문자열이 된다 - 라디오는
-        // opt.value === 현재값으로 활성 여부를 판정하는데, 값이 같은 행이 2개 있으면
-        // 라디오(단일선택) 구조에서도 둘 다 활성으로 보인다(체크박스처럼 보이는 원인).
-        // 코드가 1개뿐이면 "전체"와 "그 하나"가 어차피 같은 의미라 "전체" 행 자체를
-        // 빼서 중복을 없앤다.
+        // [2026-09-15, 사용자 확인] "매칭된 업종 전체"(후보 코드 다 합친 옵션)는 삭제하고,
+        // 필터 자체를 안 거는 진짜 "업종 전체"(value: "")만 남긴다 - 업종1/2/3 후보는
+        // 개별 옵션으로, 기본 선택은 지역과 동일하게 1순위(업종1)로 건다.
         setMatchedKsicOptions([
-          ...(codesNow.length > 1 ? [{ label: "매칭된 업종 전체", value: codesNow.join(",") }] : []),
+          { label: "업종 전체", value: "" },
           ...matched.map((o) => ({ label: o.name, value: o.code })),
         ]);
+        if (codesNow.length > 1) updateParam("ksic", codesNow[0]);
       })
       .catch(() => setMatchedKsicOptions(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
