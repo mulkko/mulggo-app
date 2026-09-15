@@ -5,6 +5,7 @@ import diagnosisStyles from "../../../styles/diagnosis.module.css";
 import marketReportStyles from "../../../styles/diagnosisMarketReport.module.css";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "../diagnosisAnswers";
 import ChatFab from "../../../components/ChatFab/ChatFab";
+import StageLoadingPopup from "../../../components/StageLoadingPopup/StageLoadingPopup";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -41,6 +42,7 @@ function DiagnosisIndustryCode() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [matchReady, setMatchReady] = useState(false);
   const [data, setData] = useState<IndustryCodeData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [selectedCode, setSelectedCode] = useState("");
@@ -52,6 +54,7 @@ function DiagnosisIndustryCode() {
 
     setLoading(true);
     setError(null);
+    setMatchReady(false);
     fetch(`${API_BASE_URL}/api/industry-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -73,8 +76,11 @@ function DiagnosisIndustryCode() {
         }
       })
       .catch(() => setError({ message: "업종코드를 찾지 못했어요. 네트워크를 확인해주세요.", code: "NETWORK_ERROR" }))
-      .finally(() => setLoading(false));
+      .finally(() => setMatchReady(true));
   }, []);
+
+  // StageLoadingPopup 진행바가 100%까지 채워지는 걸 보여준 다음(onDone) 결과/에러를 노출한다.
+  const handleMatchDone = () => setLoading(false);
 
   useEffect(() => {
     const answers = getDiagnosisAnswers();
@@ -120,10 +126,13 @@ function DiagnosisIndustryCode() {
       <ChatFab variant="top" />
 
       {loading && (
-        <div className={marketReportStyles.stateArea}>
-          <div className={marketReportStyles.spinner} aria-hidden="true" />
-          <p className={marketReportStyles.stateText}>업종코드를 찾는 중이에요, 최대 30초 정도 걸려요</p>
-        </div>
+        <StageLoadingPopup
+          stages={[{ afterSeconds: 0, title: "업종코드를 분석하고 있어요" }]}
+          hint="잠시만 기다려주세요"
+          ready={matchReady}
+          onDone={handleMatchDone}
+          maxSeconds={20}
+        />
       )}
 
       {!loading && error && (
