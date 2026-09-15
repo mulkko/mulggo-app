@@ -76,25 +76,31 @@ EXCLUDE = [
 def load_vision_model():
     """Qwen2.5-VL(MODEL_ID) 모델/프로세서 로딩. import 시점이 아니라 필요할 때 호출."""
     import torch
-    from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
+    from transformers import AutoProcessor, BitsAndBytesConfig, Qwen2_5_VLForConditionalGeneration
 
-    # [테스트] float16 -> bfloat16 (2026-09-06): VRAM 부족(8GB)으로 일부 레이어가 CPU로
-    # 오프로딩될 때 fp16 혼합 연산이 불안정해져 확률이 깨지고("!!!" 반복 등 이상 출력) 하는
-    # 문제 확인. bfloat16은 표현 범위가 fp32와 같아 오버플로우/NaN에 훨씬 덜 취약함.
-    # ===== 원본 (GPU 전용) 시작 =====
+    # [2026-09-15, 사용자 확인] bf16 풀정밀도는 이 카드(VRAM 8GB) 기준 로딩만으로 6.5GB를
+    # 써서, 추론 중 이미지 토큰까지 더하면 VRAM을 넘어 일부 레이어가 CPU로 오프로딩되고
+    # 그 왕복 때문에 OCR 한 번에 97~162초가 걸렸다(실측, "Some parameters are on the
+    # meta device because they were offloaded to the cpu" 경고로 확인). 8bit 양자화
+    # (bitsandbytes)로 바꾸면 VRAM이 6GB대로 줄어 오프로딩이 사라지고 26~30초로
+    # 단축된다(실측, 약 3~6배). 정확도는 실사 이미지 3장 테스트 기준 상호/사업자번호/
+    # 주소 등 대부분 필드는 기존과 동일했고, 생년월일·개업일·법인등록번호 등 일부
+    # 필드가 간혹 뒤섞이는 문제가 있었으나(사용자 확인 후 감수) - OCR 결과는 사용자가
+    # 확인/수정 팝업에서 검토한 뒤에만 저장되므로(auth.py::biz_cert_ocr_endpoint 참고)
+    # 틀린 값이 그대로 저장되진 않는다.
+    # 되돌리려면: 아래 두 줄 대신 `model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+    # MODEL_ID, torch_dtype=torch.bfloat16, device_map="auto")`로 교체.
+    bnb_config = BitsAndBytesConfig(load_in_8bit=True)
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-        MODEL_ID, torch_dtype=torch.bfloat16, device_map="auto"
+        MODEL_ID, quantization_config=bnb_config, device_map="auto"
     )
-    # ===== 원본 (GPU 전용) 끝 =====
 
-    # ===== [대안] 모든 환경 호환 (CPU 폴백) 시작 =====
-    # GPU 없으면 float16이 CPU에서 에러날 수 있어서 float32로 폴백.
-    # CPU는 여전히 매우 느림(수 분/장 가능) — 진짜 해결은 GPU 확보.
+    # ===== [대안] GPU 없는 환경(CPU만) 폴백 - 양자화(bitsandbytes)는 CUDA 전용이라 GPU가
+    # 없으면 이걸 쓸 것. CPU는 여전히 매우 느림(수 분/장 가능) — 진짜 해결은 GPU 확보. =====
     # dtype = torch.float16 if torch.cuda.is_available() else torch.float32
     # model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
     #     MODEL_ID, torch_dtype=dtype, device_map="auto"
     # )
-    # ===== [대안] 모든 환경 호환 (CPU 폴백) 끝 =====
     processor = AutoProcessor.from_pretrained(MODEL_ID)
     model.eval()
     return model, processor

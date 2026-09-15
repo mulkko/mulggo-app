@@ -59,6 +59,9 @@ function MatchingDetail() {
   const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
   const [contentExpanded, setContentExpanded] = useState(false);
+  const [noticeFileOpen, setNoticeFileOpen] = useState(false);
+  const noticeFileExt = detail?.noticeFileName?.toLowerCase().split(".").pop();
+  const isViewableNoticeFile = noticeFileExt === "pdf" || noticeFileExt === "hwpx";
   const { toastMessage, showToast } = useToast();
 
   useEffect(() => {
@@ -247,17 +250,50 @@ function MatchingDetail() {
             내용이 132px보다 짧아도 버튼은 항상 보임(오버플로 여부를 JS로 안 재서 단순화). */}
         <section className={styles.card}>
           <h2 className={styles.cardTitle}>공고 내용</h2>
-          <div className={`${styles.contentWrap} ${contentExpanded ? "" : styles.contentCollapsed}`}>
-            <p className={styles.contentBody}>{detail.content}</p>
-            {!contentExpanded && <div className={styles.contentFade} aria-hidden="true" />}
-          </div>
-          <button
-            type="button"
-            className={styles.expandButton}
-            onClick={() => setContentExpanded((prev) => !prev)}
-          >
-            {contentExpanded ? "접기" : "펼쳐보기"}
-          </button>
+          {/* [2026-09-15] PDF/HWPX는 서버가 원문 그대로 보여줄 수 있어서(PDF는 브라우저 내장
+              뷰어, HWPX는 서버 변환 HTML) 요약 텍스트(content) 대신 iframe을 바로 띄운다.
+              HWP(구버전)는 LibreOffice로 변환해보니 텍스트가 깨져서 뷰어를 못 만들었고,
+              K-Startup은 원본 첨부 자체가 없다 - 이 둘은 기존 방식(요약 텍스트 + 다운로드용
+              토글 버튼) 그대로 유지. */}
+          {isViewableNoticeFile ? (
+            <iframe
+              src={`${API_BASE_URL}/api/matching/${id}/notice-file#toolbar=0&navpanes=0`}
+              title="원본 공고문"
+              style={{ width: "100%", height: 600, border: "none" }}
+            />
+          ) : (
+            <>
+              <div className={`${styles.contentWrap} ${contentExpanded ? "" : styles.contentCollapsed}`}>
+                <p className={styles.contentBody}>{detail.content}</p>
+                {!contentExpanded && <div className={styles.contentFade} aria-hidden="true" />}
+              </div>
+              <button
+                type="button"
+                className={styles.expandButton}
+                onClick={() => setContentExpanded((prev) => !prev)}
+              >
+                {contentExpanded ? "접기" : "펼쳐보기"}
+              </button>
+              {detail.noticeFileName && (
+                <>
+                  <button
+                    type="button"
+                    className={styles.expandButton}
+                    onClick={() => setNoticeFileOpen((prev) => !prev)}
+                  >
+                    {noticeFileOpen ? "원본 공고문 닫기" : "원본 공고문 보기"}
+                  </button>
+                  {noticeFileOpen && (
+                    <iframe
+                      src={`${API_BASE_URL}/api/matching/${id}/notice-file#toolbar=0&navpanes=0`}
+                      title="원본 공고문"
+                      style={{ width: "100%", height: 600, border: "none", marginTop: 10 }}
+                    />
+                  )}
+                </>
+              )}
+            </>
+          )}
         </section>
 
         {/* 서류 자동채움 안내 배너 */}
