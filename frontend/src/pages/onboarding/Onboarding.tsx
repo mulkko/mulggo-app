@@ -234,7 +234,8 @@ function Onboarding() {
         setBizCertError("저장에 실패했어요. 다시 시도해주세요.");
         return;
       }
-      navigate("/matching");
+      const ksicCode = bizCertFields.ksic_code;
+      navigate(ksicCode ? `/matching?ksic=${encodeURIComponent(ksicCode)}` : "/matching");
     } catch {
       setBizCertError("서버에 연결할 수 없어요.");
     } finally {

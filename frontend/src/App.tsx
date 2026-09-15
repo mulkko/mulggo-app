@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
-import { getUserEmail, getUserId, logout } from "./auth/session";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Splash from "./pages/splash/Splash";
 import Signup from "./pages/auth/Signup";
 import Home from "./pages/home/Home";
@@ -87,110 +85,14 @@ import DiagnosisStep7Test from "./pages/diagnosis/_backup/DiagnosisStep7_test";
 import DiagnosisStep8Test from "./pages/diagnosis/_backup/DiagnosisStep8_test";
 import DiagnosisStep9Test from "./pages/diagnosis/_backup/DiagnosisStep9_test";
 import DiagnosisIndustryResultTest from "./pages/diagnosis/_backup/DiagnosisIndustryResult_test";
-// [2026-09-14, 개인 확인용 - 시연 영상 촬영용] 정밀진단 데모(Q1~Q10 자동 채움) 진입 페이지.
-import DiagnosisPreciseDemoStartTest from "./pages/diagnosis/DiagnosisPreciseDemoStart_test";
 // [2026-09-13, 디자인 검토용, 라이브 미적용] "업종코드를 찾았어요" 화면을 프로토타입
 // 실측값대로 다시 만든 미리보기 - 검토 후 괜찮으면 DiagnosisIndustryResult.tsx에
 // 반영하고 이 줄+아래 라우트+파일 정리할 것. 상세 이유는 파일 자체 주석 참고.
 import DiagnosisIndustryResultPreview from "./pages/diagnosis/_backup/DiagnosisIndustryResultPreview";
 
-/**
- * [임시/디버그] 지금 로그인된 사람이 누구인지 확인용 - 확인 끝나면 지울 것.
- * 화면 가리지 않게 우하단 작은 플로팅 점으로 표시, 클릭하면 펼쳐서 상세 표시.
- * [2026-09-12, 사용자 확인] 펼쳤을 때 로그아웃 버튼도 같이 노출 - MyPage.tsx의
- * 로그아웃(clearSession + /login 이동)과 동일하게 동작.
- */
-function DevAuthBadge() {
-  const navigate = useNavigate();
-  const [session, setSessionState] = useState({ userId: getUserId(), email: getUserEmail() });
-  const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    const tick = () => setSessionState({ userId: getUserId(), email: getUserEmail() });
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const color = session.userId ? "#0a7d32" : "#c0392b";
-
-  const handleLogout = async () => {
-    await logout();
-    setSessionState({ userId: getUserId(), email: getUserEmail() });
-    navigate("/login");
-  };
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 12,
-        right: 12,
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        borderRadius: 999,
-        padding: expanded ? "5px 8px 5px 10px" : 0,
-        background: expanded ? "#222" : "transparent",
-        boxShadow: expanded ? "0 1px 4px rgba(0,0,0,0.3)" : "none",
-      }}
-    >
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          border: "none",
-          borderRadius: 999,
-          padding: 0,
-          width: expanded ? "auto" : 14,
-          height: expanded ? "auto" : 14,
-          background: expanded ? "transparent" : color,
-          color: "#fff",
-          fontSize: 11,
-          lineHeight: 1.4,
-          cursor: "pointer",
-          boxShadow: expanded ? "none" : "0 1px 4px rgba(0,0,0,0.3)",
-        }}
-        title="[DEV] 로그인 상태 (클릭해서 펼치기)"
-      >
-        {expanded ? (
-          <>
-            <span style={{ width: 8, height: 8, borderRadius: 999, background: color, flexShrink: 0 }} />
-            {session.userId
-              ? `user_id=${session.userId}${session.email ? ` (${session.email})` : ""}`
-              : "로그인 안 됨"}
-          </>
-        ) : null}
-      </button>
-      {expanded && session.userId && (
-        <button
-          type="button"
-          onClick={handleLogout}
-          style={{
-            border: "none",
-            borderRadius: 999,
-            padding: "3px 8px",
-            background: "#c0392b",
-            color: "#fff",
-            fontSize: 11,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          로그아웃
-        </button>
-      )}
-    </div>
-  );
-}
-
 function App() {
   return (
     <BrowserRouter>
-      <DevAuthBadge />
       <Routes>
         <Route path="/" element={<Splash />} />
         <Route path="/home" element={<Home />} />
@@ -257,7 +159,6 @@ function App() {
         <Route path="/diagnosis/9-test" element={<DiagnosisStep8Test />} />
         <Route path="/diagnosis/10-test" element={<DiagnosisStep9Test />} />
         <Route path="/diagnosis/industry-result-test" element={<DiagnosisIndustryResultTest />} />
-        <Route path="/dev/diagnosis-precise-demo-test" element={<DiagnosisPreciseDemoStartTest />} />
         <Route path="/diagnosis/industry-result-preview" element={<DiagnosisIndustryResultPreview />} />
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
