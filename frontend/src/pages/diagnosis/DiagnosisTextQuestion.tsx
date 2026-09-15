@@ -1,13 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "../../styles/diagnosis.module.css";
 import { MIN_ANSWER_LENGTH } from "./diagnosisAnswers";
-
-// [2026-09-14, 임시 - 시연 영상 촬영용, 사용자 확인] 데모 계정으로 미리 채워둔 답변을
-// 실제 타이핑처럼 한 글자씩 보여주는 기능. /dev/diagnosis-precise-demo-test(테스트
-// 전용 진입 페이지)에서만 이 sessionStorage 플래그를 켠다 - 일반 사용자·실제 서비스
-// 흐름은 이 키가 항상 비어있어서 100% 예전과 동일하게 동작한다. 확인 끝나면 이
-// 상수 + 아래 useEffect 블록만 지우면 통째로 원복된다.
-export const DEMO_TYPING_KEY = "mulkko_diagnosis_demo_typing";
 
 interface DiagnosisTextQuestionProps {
   topicBadge: string;
@@ -43,24 +36,8 @@ function DiagnosisTextQuestion({
   onSubmit,
   error,
 }: DiagnosisTextQuestionProps) {
-  // 데모 타이핑 모드면 시작값을 비워둔다 - 아래 useEffect가 initialValue를 한
-  // 글자씩 채워넣는 걸 보여줘야 하는데, 처음부터 다 차있으면 애니메이션이 의미 없음.
-  const demoTyping =
-    typeof window !== "undefined" && sessionStorage.getItem(DEMO_TYPING_KEY) === "1" && !!initialValue;
-  const [value, setValue] = useState(demoTyping ? "" : initialValue);
+  const [value, setValue] = useState(initialValue);
   const tooShort = required && value.trim().length < MIN_ANSWER_LENGTH;
-
-  useEffect(() => {
-    if (!demoTyping) return;
-    let i = 0;
-    const timer = setInterval(() => {
-      i += 1;
-      setValue(initialValue.slice(0, i));
-      if (i >= initialValue.length) clearInterval(timer);
-    }, 35);
-    return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <>
