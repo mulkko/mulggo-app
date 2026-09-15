@@ -52,7 +52,7 @@ function DiagnosisIndustryResultPreview() {
             방금 답변하신 문제인식·해결방식 등 PSST 내용을 물꼬가 종합해서, 가장 가까운 업종코드를 아래처럼 찾아드렸어요.
           </span>
         </div>
-        <p className={industryStyles.disclaimer}>이건 참고용 추천이며, 최종 등록 시 세무 전문가 확인을 권장합니다.</p>
+        <p className={industryStyles.disclaimer}></p>
 
         <div className={styles.cardList}>
           {MOCK_CODES.map((code) => (

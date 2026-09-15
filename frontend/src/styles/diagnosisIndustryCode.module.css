@@ -71,12 +71,31 @@
   color: var(--color-ink-charcoal);
 }
 
-.disclaimer {
-  margin: 0;
+.disclaimerBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
   margin-top: 20px;
   margin-bottom: -5px;
+  padding: 11px 12px;
+  border-radius: var(--radius-input);
+  background: var(--color-bg-hover-mist);
+  border: 1px solid var(--color-border-nav);
+}
+
+.disclaimerIcon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--color-tab-active-icon);
+}
+
+.disclaimer {
+  margin: 0;
   font-size: 12px;
-  color: var(--color-stone-gray);
+  font-weight: 600;
+  color: var(--color-cancel-text);
   line-height: 1.6;
 }
 
