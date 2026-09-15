@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
+import ReportWaitPopup from "./ReportWaitPopup";
 import { authHeaders } from "../../auth/session";
 import { getDiagnosisAnswers, saveDiagnosisAnswers, type Origin, type StoreType } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
@@ -87,8 +88,8 @@ function DiagnosisAnswerSummary() {
   const [ready, setReady] = useState(false);
   const [answers, setAnswers] = useState(getDiagnosisAnswers());
   const [submitting, setSubmitting] = useState(false);
+  const [startReady, setStartReady] = useState(false);
   const [error, setError] = useState("");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const [editingKey, setEditingKey] = useState<EditKey | null>(null);
   const [textDraft, setTextDraft] = useState("");
@@ -97,13 +98,6 @@ function DiagnosisAnswerSummary() {
   const [draftDong, setDraftDong] = useState("");
   const [regions, setRegions] = useState<RegionRow[]>([]);
   const [regionsError, setRegionsError] = useState(false);
-
-  useEffect(() => {
-    if (!submitting) return;
-    setElapsedSeconds(0);
-    const timer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
-    return () => clearInterval(timer);
-  }, [submitting]);
 
   useEffect(() => {
     const a = getDiagnosisAnswers();
@@ -217,6 +211,7 @@ function DiagnosisAnswerSummary() {
 
     setSubmitting(true);
     setError("");
+    setStartReady(false);
     try {
       const res = await fetch(`${API_BASE_URL}/api/diagnosis/start`, {
         method: "POST",
@@ -235,11 +230,13 @@ function DiagnosisAnswerSummary() {
       });
       if (res.status === 401) {
         setError("로그인이 필요해요. 로그인 후 다시 시도해주세요.");
+        setSubmitting(false);
         return;
       }
       const data: DiagnosisStartResponse = await res.json();
       if (!data.success || !data.data) {
         setError(data.error?.message || "진단 시작에 실패했어요.");
+        setSubmitting(false);
         return;
       }
       const match = data.data.industryMatch;
@@ -252,10 +249,11 @@ function DiagnosisAnswerSummary() {
         industryMatchCodeNames: match?.codeNames ?? {},
         track: data.data.track,
       });
-      navigate("/diagnosis/industry-result");
+      // ReportWaitPopup의 진행바가 100%까지 채워지는 걸 보여준 다음(onDone) 이동한다
+      // (DiagnosisIndustryResult.tsx와 동일한 패턴) - 여기서 바로 navigate하지 않는다.
+      setStartReady(true);
     } catch {
       setError("서버에 연결할 수 없습니다.");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -435,13 +433,13 @@ function DiagnosisAnswerSummary() {
         </button>
       </div>
       {submitting && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.loadingBox} role="status" aria-live="polite">
-            <div className={styles.spinner} />
-            <p className={styles.loadingText}>업종코드를 분석하고 있어요... ({elapsedSeconds}초 경과)</p>
-            <p className={styles.loadingHint}>업종을 확인하고 나면 상권·기술창업 분석을 이어서 준비할게요</p>
-          </div>
-        </div>
+        <ReportWaitPopup
+          title="업종코드를 분석하고 있어요"
+          ready={startReady}
+          onDone={() => navigate("/diagnosis/industry-result")}
+          maxSeconds={13}
+          hideEtaHint
+        />
       )}
 
       <BottomNav active="idea" />

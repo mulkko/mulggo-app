@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
@@ -41,6 +41,7 @@ function DiagnosisStep9() {
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [initialValue, setInitialValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [finishReady, setFinishReady] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [cards, setCards] = useState<IdeaCard[]>([]);
@@ -48,6 +49,13 @@ function DiagnosisStep9() {
   const [variant, setVariant] = useState<"market" | "tech">("market");
   const [ksicQuery, setKsicQuery] = useState("");
   const [sido, setSido] = useState("");
+  // handleSubmit 응답은 StageLoadingPopup 진행바가 100%까지 채워지는 걸 보여준 다음
+  // (onDone) 반영한다 - 그 전까지는 화면 상태를 안 바꾸고 ref에만 들고 있는다.
+  const finishResultRef = useRef<{
+    cards: IdeaCard[];
+    ksicQuery: string;
+    summary: { target: string; differentiator: string; revenueModel: string; coreSkill: string };
+  } | null>(null);
 
   useEffect(() => {
     const answers = getDiagnosisAnswers();
@@ -71,6 +79,7 @@ function DiagnosisStep9() {
 
     setSubmitting(true);
     setError("");
+    setFinishReady(false);
     try {
       const res = await fetch(`${API_BASE_URL}/api/diagnosis/${sessionId}/finish`, {
         method: "POST",
@@ -84,28 +93,43 @@ function DiagnosisStep9() {
       });
       if (res.status === 401) {
         setError("로그인이 필요해요. 로그인 후 다시 시도해주세요.");
+        setSubmitting(false);
         return;
       }
       const data: DiagnosisFinishResponse = await res.json();
       if (!data.success) {
         setError(data.error?.message || "제출에 실패했어요.");
+        setSubmitting(false);
         return;
       }
-      setCards(data.data?.cards ?? []);
-      setKsicQuery((data.data?.resolvedKsicCodes ?? []).join(","));
-      setSummary({
-        target: answers.target || "",
-        differentiator: answers.differentiator || "",
-        revenueModel: answers.revenueModel || "",
-        coreSkill: value,
-      });
-      setSubmitted(true);
-      clearDiagnosisAnswers();
+      finishResultRef.current = {
+        cards: data.data?.cards ?? [],
+        ksicQuery: (data.data?.resolvedKsicCodes ?? []).join(","),
+        summary: {
+          target: answers.target || "",
+          differentiator: answers.differentiator || "",
+          revenueModel: answers.revenueModel || "",
+          coreSkill: value,
+        },
+      };
+      // StageLoadingPopup 진행바가 100%까지 채워지는 걸 보여준 다음(onDone) 결과 화면으로 전환한다.
+      setFinishReady(true);
     } catch {
       setError("서버에 연결할 수 없습니다.");
-    } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleFinishDone = () => {
+    const result = finishResultRef.current;
+    if (result) {
+      setCards(result.cards);
+      setKsicQuery(result.ksicQuery);
+      setSummary(result.summary);
+      setSubmitted(true);
+      clearDiagnosisAnswers();
+    }
+    setSubmitting(false);
   };
 
   if (!ready) return null;
@@ -141,10 +165,13 @@ function DiagnosisStep9() {
       />
       {submitting && (
         <StageLoadingPopup
-          hint="조금만 기다려 주세요! (최대 100초 정도 걸려요)"
+          ready={finishReady}
+          onDone={handleFinishDone}
+          maxSeconds={60}
+          hint="조금만 기다려 주세요! (최대 1분 소요)"
           stages={[
-            { afterSeconds: 0, title: "사업구체화 결과를 정리하고 있어요.", image: ocrWriting, progressPercent: 35 },
-            { afterSeconds: 45, title: "아이디어 카드를 만들고 있어요.", image: ocrIdea, progressPercent: 75 },
+            { afterSeconds: 0, title: "사업구체화 결과를 정리하고 있어요.", image: ocrWriting },
+            { afterSeconds: 45, title: "아이디어 카드를 만들고 있어요.", image: ocrIdea },
           ]}
         />
       )}
