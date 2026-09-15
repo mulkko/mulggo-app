@@ -83,7 +83,7 @@ function DiagnosisReportSummary({
         </span>
       </header>
 
-      <ChatFab variant="top" />
+      <ChatFab variant="withBottomNav" />
 
       <div className={styles.subHeader}>사업구체화 리포트</div>
 
@@ -135,8 +135,6 @@ function DiagnosisReportSummary({
             </div>
           );
         })}
-
-        <p className={styles.caption}>참고용 아이디어예요 · 원래 계획은 그대로 유지해요</p>
       </div>
 
       <div className={styles.footer}>
@@ -144,7 +142,7 @@ function DiagnosisReportSummary({
           이전
         </button>
         <button type="button" className={styles.matchButton} onClick={handleMatch}>
-          지원사업 매칭 보기 →
+          매칭된 지원사업 보기
         </button>
       </div>
 
