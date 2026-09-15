@@ -7,6 +7,9 @@ import DiagnosisReportSummary, { type IdeaCard } from "./DiagnosisReportSummary"
 import { authHeaders } from "../../auth/session";
 import { clearDiagnosisAnswers, getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import StageLoadingPopup from "../../components/StageLoadingPopup/StageLoadingPopup";
+import ocrWriting from "../../assets/ocr_writing.png";
+import ocrIdea from "../../assets/ocr_idea.png";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -137,17 +140,13 @@ function DiagnosisStep9() {
         error={error}
       />
       {submitting && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.loadingBox} role="status" aria-live="polite">
-            <div className={styles.spinner} />
-            <p className={styles.loadingText}>
-              사업구체화 결과를 정리하고 있어요.
-              <br />
-              아이디어 카드를 만들고 있어요.
-            </p>
-            <p className={styles.loadingHint}>조금만 기다려 주세요! (최대 100초 정도 걸려요)</p>
-          </div>
-        </div>
+        <StageLoadingPopup
+          hint="조금만 기다려 주세요! (최대 100초 정도 걸려요)"
+          stages={[
+            { afterSeconds: 0, title: "사업구체화 결과를 정리하고 있어요.", image: ocrWriting, progressPercent: 35 },
+            { afterSeconds: 45, title: "아이디어 카드를 만들고 있어요.", image: ocrIdea, progressPercent: 75 },
+          ]}
+        />
       )}
 
       <BottomNav active="idea" />

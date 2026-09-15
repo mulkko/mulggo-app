@@ -17,21 +17,38 @@ from backend.db.connection import get_connection
 router = APIRouter(prefix="/api/matching", tags=["matching"])
 
 
-def _lookup_profile_ksic_code(conn, user_id: int) -> str | None:
-    """로그인한 user_id 본인이 사업자등록증에서 확정한 KSIC 코드. 없으면(프로필/등록증
-    미등록, 업종 미확정) None - 호출부는 이 경우 ksic 필터 없이(전체 공고) 보여준다."""
+def _lookup_profile_ksic_code(conn, user_id: int) -> list[str]:
+    """로그인한 user_id 본인의 매칭 필터용 KSIC 코드 목록.
+    1순위: 사업자등록증에서 확정한 코드(profile_business_types, 기존사업자).
+    2순위(예비창업자 등 1순위가 없을 때): 가장 최근에 완료한 사업구체화 리포트
+    (idea_refinement_sessions, status='완료')의 resolved_ksic_codes - 진단을
+    한 번도 안 돌린 사람은 이 화면(매칭 탭)까지 올 방법이 구조상 없어서(사용자
+    확인) 그 경우는 따로 처리 안 함.
+    둘 다 없으면 빈 배열 - 호출부는 이 경우 ksic 필터 없이(전체 공고) 보여준다."""
     cur = conn.cursor()
     cur.execute("SELECT profile_id FROM business_profiles WHERE user_id = %s", (user_id,))
     row = cur.fetchone()
     if row is None:
-        return None
+        return []
+    profile_id = row[0]
+
     cur.execute(
         "SELECT ksic_code FROM profile_business_types "
         "WHERE profile_id = %s AND ksic_code IS NOT NULL ORDER BY is_primary DESC LIMIT 1",
-        (row[0],),
+        (profile_id,),
     )
     row = cur.fetchone()
-    return row[0] if row else None
+    if row:
+        return [row[0]]
+
+    cur.execute(
+        "SELECT resolved_ksic_codes FROM idea_refinement_sessions "
+        "WHERE profile_id = %s AND status = '완료' AND resolved_ksic_codes IS NOT NULL "
+        "ORDER BY created_at DESC LIMIT 1",
+        (profile_id,),
+    )
+    row = cur.fetchone()
+    return row[0] if row and row[0] else []
 
 
 def _lookup_profile_regions(conn, user_id: int) -> list[str]:
@@ -148,7 +165,9 @@ def list_announcements(
     자주 나오는 몇 개만 넣어서 필터링 자체가 되는지 확인하는 용도.
     [2026-09-11] 비워서 호출하고 로그인 상태면, 사용자가 사업자등록증에서 확정한
     ksic_code(profile_business_types)로 대신 채운다 - 프론트가 매번 안 넘겨도
-    "내 업종 기준" 매칭이 되게. 그마저 없으면(미등록/미확정) 그냥 전체 공고.
+    "내 업종 기준" 매칭이 되게. [2026-09-15] 그마저 없으면(예비창업자 등 등록증
+    미등록/업종 미확정) 가장 최근에 완료한 사업구체화 리포트의 resolved_ksic_codes로
+    대신 채운다(_lookup_profile_ksic_code 참고) - 둘 다 없으면 그냥 전체 공고.
 
     [2026-09-12, 사용자 확인] ksic_status가 "업종무관(기본값)"/"특정불가"인 공고는
     ksic_codes_matched가 항상 빈 배열이라(schema.sql 참고 - decide_industry()가 특정
@@ -204,9 +223,7 @@ def list_announcements(
     conn = get_connection()
     try:
         if not ksic_codes and user_id is not None:
-            profile_ksic = _lookup_profile_ksic_code(conn, user_id)
-            if profile_ksic:
-                ksic_codes = [profile_ksic]
+            ksic_codes = _lookup_profile_ksic_code(conn, user_id)
         if not regions and user_id is not None:
             regions = _lookup_profile_regions(conn, user_id)
 

@@ -101,20 +101,23 @@
 
 .summaryRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
 }
 
 .summaryIcon {
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-white);
   font-size: 11px;
+  line-height: 1;
+  text-align: center;
 }
 
 .summaryIconTarget {
@@ -142,14 +145,15 @@
 }
 
 .summaryLabel {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
+  line-height: 16px;
   color: var(--color-stone-gray);
 }
 
 .summaryValue {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 400;
   color: var(--color-ink-charcoal);
   line-height: 1.4;
   word-break: break-word;
