@@ -217,56 +217,6 @@ def logout_endpoint(authorization: str | None = Header(default=None)) -> AuthRes
     return AuthResponse(success=True, data=None)
 
 
-def _dev_auto_login(response: Response, email_env: str, password_env: str, require_admin: bool = False) -> AuthResponse:
-    """[개발 전용] 공통 로직 - .env의 두 값으로 서버가 대신 로그인해서 토큰을 내려준다.
-    비밀번호는 프론트/브라우저에 절대 노출되지 않는다(.env는 서버에만 있고 커밋 안 됨).
-    두 값이 .env에 없으면(= 대부분의 환경) 그냥 비활성 상태로 404."""
-    email = os.environ.get(email_env)
-    password = os.environ.get(password_env)
-    if not email or not password:
-        response.status_code = 404
-        return AuthResponse(
-            success=False,
-            error=AuthErrorDetail(message="자동 로그인이 설정되어 있지 않습니다.", code="NOT_CONFIGURED"),
-        )
-
-    result = login(email, password)
-    if not result["success"]:
-        response.status_code = 500
-        return AuthResponse(
-            success=False,
-            error=AuthErrorDetail(message="자동 로그인 계정 인증에 실패했습니다 (.env 값을 확인하세요).", code="AUTO_LOGIN_FAILED"),
-        )
-
-    user = result["user"]
-    if require_admin and not user["is_admin"]:
-        response.status_code = 403
-        return AuthResponse(
-            success=False,
-            error=AuthErrorDetail(message="자동 로그인 계정에 관리자 권한이 없습니다.", code="FORBIDDEN"),
-        )
-
-    token = create_session(user["user_id"])
-    response.status_code = 200
-    return AuthResponse(
-        success=True,
-        data=AuthUserData(user_id=user["user_id"], email=user["email"], name=user["name"], token=token),
-    )
-
-
-@router.post("/dev-auto-login", response_model=AuthResponse)
-def dev_auto_login_endpoint(response: Response) -> AuthResponse:
-    """[개발 전용] 일반 사용자 로그인 화면 - DEV_AUTO_LOGIN_EMAIL/PASSWORD 계정으로 대신 로그인."""
-    return _dev_auto_login(response, "DEV_AUTO_LOGIN_EMAIL", "DEV_AUTO_LOGIN_PASSWORD")
-
-
-@router.post("/dev-auto-login-admin", response_model=AuthResponse)
-def dev_auto_login_admin_endpoint(response: Response) -> AuthResponse:
-    """[개발 전용] 관리자 로그인 화면 - DEV_ADMIN_AUTO_LOGIN_EMAIL/PASSWORD 계정으로 대신 로그인.
-    admin-login과 동일하게 is_admin 서버 검증 포함."""
-    return _dev_auto_login(response, "DEV_ADMIN_AUTO_LOGIN_EMAIL", "DEV_ADMIN_AUTO_LOGIN_PASSWORD", require_admin=True)
-
-
 @router.post("/admin-login", response_model=AuthResponse)
 def admin_login_endpoint(payload: LoginRequest, response: Response) -> AuthResponse:
     # 로그인 로직 자체는 재사용하고, 관리자 화면 전용으로 is_admin만 서버에서 추가 검증.

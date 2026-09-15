@@ -5,10 +5,11 @@ import logo from "../../assets/logo.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
-import { authHeaders } from "../../auth/session";
+import { authHeaders, getAuthToken } from "../../auth/session";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
+import BackButton from "../../components/BackButton/BackButton";
 
 /**
  * 지원사업 매칭 리스트(공고 리스트) 화면.
@@ -236,6 +237,56 @@ function MatchingList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // [2026-09-15, 사용자 확인] 진단 링크가 아니라 그냥 바로 /matching 탭으로 들어온
+  // 경우(ksic 쿼리 없음) - 로그인 상태고 사업자등록증/진단으로 확정된 업종코드가
+  // 있으면 "업종 전체"(기본 선택, 진짜 전체 공고)와 "매칭된 업종" 두 개를 고를 수
+  // 있게 옵션을 만든다. 예전엔 이 경우도 /api/matching이 서버에서 조용히 ksic을
+  // 채워 넣어서 "업종 전체"라고 보이면서 실제로는 이미 좁혀진 결과가 나오는
+  // 불일치가 있었다 - GET /my-ksic로 값을 받아 프론트가 명시적인 옵션으로 보여준다.
+  useEffect(() => {
+    if (ksic || !getAuthToken()) return; // 진단 링크(위 useEffect가 처리) 또는 비로그인이면 건너뜀
+    fetch(`${API_BASE_URL}/api/matching/my-ksic`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((body: { success: boolean; data?: { codes: string[] } }) => {
+        const codes = body.success ? body.data?.codes ?? [] : [];
+        if (codes.length === 0) return;
+        return fetch(`${API_BASE_URL}/api/ksic/options`)
+          .then((res) => res.json())
+          .then((optBody: { success: boolean; data?: KsicOption[] }) => {
+            if (!optBody.success || !optBody.data) return;
+            const matched = optBody.data.filter((o) => codes.includes(o.code));
+            setMatchedKsicOptions([
+              { label: "업종 전체", value: "" },
+              ...matched.map((o) => ({ label: o.name, value: o.code })),
+            ]);
+          });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // [2026-09-15, 사용자 확인] 위 업종 옵션과 같은 이유 - 지역도 로그인 상태고
+  // 사업자등록증 주소에서 뽑혔거나 직접 추가한 희망 지역이 있으면, 전체 지역
+  // 목록(REGION_SHEET_OPTIONS)은 그대로 두고 맨 앞에 "매칭된 지역" 한 줄만
+  // 추가한다(업종과 달리 지역은 목록 전체가 계속 유용해서 완전히 대체하지 않음).
+  const [matchedRegionOptions, setMatchedRegionOptions] = useState<SheetOption[] | null>(null);
+  useEffect(() => {
+    if (region || !getAuthToken()) return;
+    fetch(`${API_BASE_URL}/api/matching/my-regions`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((body: { success: boolean; data?: { regions: string[] } }) => {
+        const regions = body.success ? body.data?.regions ?? [] : [];
+        if (regions.length === 0) return;
+        setMatchedRegionOptions([
+          { label: "지역 전체", value: "" },
+          { label: "매칭된 지역", value: regions.join(",") },
+          ...REGION_SHEET_OPTIONS.slice(1),
+        ]);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // [2026-09-12] 매칭 섹션/업종무관 섹션 각자 자기 offset/limit을 갖는다 - 한쪽만
   // "더보기"로 늘릴 때는 다른 쪽 limit을 0으로 보내 그쪽 데이터는 그냥 무시한다
   // (백엔드가 항상 두 섹션을 같이 계산해 내려주므로, 필요없는 쪽만 응답에서 안 쓰면 됨 -
@@ -341,11 +392,7 @@ function MatchingList() {
           레이아웃) + "물꼬 분석" 링크는 삭제(사용자 확인) */}
       <header className={styles.header}>
         <span className={styles.headerLeft}>
-          <button type="button" className={styles.backButton} onClick={handleBack} aria-label="뒤로가기">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M16 5l-8 7 8 7" />
-            </svg>
-          </button>
+          <BackButton onClick={handleBack} />
           <span className={styles.logo}>
             <span className={styles.logoText}>MULKKO MATCHING</span>
             <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
@@ -361,7 +408,7 @@ function MatchingList() {
           label="지역"
           name="region"
           value={region}
-          options={REGION_SHEET_OPTIONS}
+          options={matchedRegionOptions ?? REGION_SHEET_OPTIONS}
           onChange={(v) => updateParam("region", v)}
         />
         <SelectSheet

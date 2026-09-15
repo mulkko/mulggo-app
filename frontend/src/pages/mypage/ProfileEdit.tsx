@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/profileEditV2.module.css";
-import { getUserId } from "../../auth/session";
+import { authHeaders, clearSession, getAuthToken, getUserId } from "../../auth/session";
 import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import { TextField, SelectField } from "../../components/FormField/FormField";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
+import BackButton from "../../components/BackButton/BackButton";
 import logo from "../../assets/logo.svg";
 
 /**
@@ -31,8 +32,9 @@ import logo from "../../assets/logo.svg";
  *
  * [2026-09-09] backend/api/mypage.py의 GET/PUT /api/mypage/profile 연동함
  * (business_profiles 테이블 - 실제 로그인 사용자 6명 데이터 있음).
- * [2026-09-10] user_id를 로그인 세션(auth/session.ts::getUserId)에서 가져오도록 교체,
- * 세션 없으면(자동로그인 미설정 등) FALLBACK_USER_ID로 동작.
+ * [2026-09-10] user_id를 로그인 세션(auth/session.ts::getUserId)에서 가져오도록 교체.
+ * [2026-09-15, 사용자 확인] 로그인 안 됐거나 세션이 서버에서 무효화됐으면(GET /api/auth/me
+ * 검증) /login으로 보낸다 - 예전엔 폴백 계정(27번)으로 항상 뭔가 보여줬는데 없앰.
  *
  * "기업유형"은 예비창업자/개인/법인 3가지뿐 - business_profiles.profile_type +
  * entity_type_code(OCR로 자동 판별)를 그대로 읽기전용으로 보여준다(사용자가 임의로
@@ -54,9 +56,6 @@ import logo from "../../assets/logo.svg";
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// 로그인 세션(getUserId)이 없을 때만 쓰는 폴백 - business_profiles에 실데이터가 있는 계정.
-const FALLBACK_USER_ID = 27;
 
 /** 계정 이메일 — 읽기전용(이 화면에서 수정 불가). API 응답의 email로 갱신됨. */
 const DEFAULT_READONLY_EMAIL = "startup@email.com";
@@ -185,7 +184,7 @@ function ProfileEdit() {
   // [2026-09-12] 사업자등록증 재등록 팝업 열림 상태.
   const [bizCertPopupOpen, setBizCertPopupOpen] = useState(false);
 
-  const userId = getUserId() ?? FALLBACK_USER_ID;
+  const userId = getUserId();
   const isProspective = profileType === "예비창업자";
 
   // [2026-09-15] 사업자등록증 등록 직후 "재등록 영역"이 안 보이는 버그 수정 - 마운트 시
@@ -195,6 +194,20 @@ function ProfileEdit() {
   const latestProfileFetchId = useRef(0);
 
   useEffect(() => {
+    // [2026-09-15, 사용자 확인] "로그인 없어도 항상 27번 폴백 계정으로 보여준다"던
+    // 개발 편의 동작을 없앤다 - 로그인 안 됐거나 세션이 서버에서 무효화됐으면
+    // (Home.tsx/MyPage.tsx와 동일하게 GET /api/auth/me로 검증) 로그인 화면으로 보낸다.
+    if (!getAuthToken() || !userId) {
+      navigate("/login");
+      return;
+    }
+    fetch(`${API_BASE_URL}/api/auth/me`, { headers: authHeaders() }).then((res) => {
+      if (!res.ok) {
+        clearSession();
+        navigate("/login");
+      }
+    });
+
     const fetchId = ++latestProfileFetchId.current;
     fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${userId}`)
       .then((res) => res.json())
@@ -343,7 +356,7 @@ function ProfileEdit() {
     }
 
     try {
-      await fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${getUserId() ?? FALLBACK_USER_ID}`, {
+      await fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -365,11 +378,7 @@ function ProfileEdit() {
       </div>
 
       <header className={styles.header}>
-        <button type="button" className={styles.backButton} onClick={handleBack} aria-label="뒤로가기">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M16 5l-8 7 8 7" />
-          </svg>
-        </button>
+        <BackButton onClick={handleBack} />
         <span className={styles.headerTitle}>프로필 수정</span>
       </header>
 
@@ -405,11 +414,6 @@ function ProfileEdit() {
                 사업자등록증에 등록된 원본 정보예요. 바꾸려면 사업자등록증을 다시 올려주세요.
               </span>
             </div>
-            {hasBizCert === true && (
-              <button type="button" className={styles.avatarChange} onClick={handleBizCertClick}>
-                변경하기
-              </button>
-            )}
           </div>
 
           {hasBizCert === false ? (

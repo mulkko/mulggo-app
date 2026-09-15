@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 // [2026-09-10, 임시 주석] BizCertUpload를 쓰는 페이지 자체를 바꿀 예정이라 잠시 꺼둠.
 // import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
 import TermsModal from "../../components/TermsModal/TermsModal";
+import Toast from "../../components/Toast/Toast";
 import backArrow from "../../assets/backArrow.svg";
 import styles from "../../styles/signup.module.css";
 
@@ -272,11 +273,7 @@ function Signup() {
         {errorMessage && <p className={styles.error}>{errorMessage}</p>}
       </form>
 
-      {showToast && (
-        <div className={styles.toast} role="status">
-          가입이 완료되었습니다
-        </div>
-      )}
+      <Toast message={showToast ? "가입이 완료되었습니다" : null} />
 
       {openTerms && (
         <TermsModal

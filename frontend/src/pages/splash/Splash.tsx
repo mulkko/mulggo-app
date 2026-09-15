@@ -5,9 +5,9 @@ import logo from '../../assets/logo.svg';
 function Splash() {
   const navigate = useNavigate();
 
-  // 화면을 탭하면 로그인 화면으로 이동한다.
+  // 화면을 탭하면 홈 화면으로 이동한다.
   const handleTap = () => {
-    navigate("/login");
+    navigate("/home");
   };
 
   return (

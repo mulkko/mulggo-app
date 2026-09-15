@@ -56,24 +56,6 @@
   box-sizing: border-box;
 }
 
-.backButton {
-  flex-shrink: 0;
-  border: none;
-  background: none;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: var(--color-ink-charcoal);
-  line-height: 0;
-}
-
-.backButton svg {
-  width: 20px;
-  height: 20px;
-  display: block;
-}
-
 .headerTitle {
   font-size: 15px;
   font-weight: 700;
