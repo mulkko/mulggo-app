@@ -6,6 +6,7 @@ import techStyles from "../../styles/diagnosisTechReport.module.css";
 import { authHeaders } from "../../auth/session";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import BackButton from "../../components/BackButton/BackButton";
 import logo from "../../assets/logo.svg";
 import ReportWaitPopup from "../../components/ReportWaitPopup/ReportWaitPopup";
 
@@ -623,7 +624,6 @@ function PatentChart({ title, data }: { title: string; data: PatentTrendData }) 
             <p className={techStyles.patentNote}>* 2026년은 특허 공개 지연으로 현재 집계 수치만 제공, 예측 불가</p>
           </>
         )}
-        <p className={techStyles.emptyText}>검색 키워드(AI 자동생성): {data.keyword}</p>
       </div>
     </section>
   );
@@ -1064,11 +1064,7 @@ function DiagnosisReport() {
     <div className={`pageContainer ${styles.page}`}>
       <header className={styles.reportHeader}>
         <div className={styles.reportHeaderTop}>
-          <button type="button" className={styles.backButton} onClick={handleBack} aria-label="뒤로가기">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M16 5l-8 7 8 7" />
-            </svg>
-          </button>
+          <BackButton onClick={handleBack} />
           <span className={styles.logo}>
             <span className={styles.logoText}>MULKKO REPORT</span>
             <img src={logo} alt="물꼬 로고" className={styles.logoMark} />

@@ -3,14 +3,16 @@ import { useNavigate } from "react-router-dom";
 // [2026-09-10, 임시 주석] BizCertUpload를 쓰는 페이지 자체를 바꿀 예정이라 잠시 꺼둠.
 // import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
 import TermsModal from "../../components/TermsModal/TermsModal";
+import Toast from "../../components/Toast/Toast";
 import backArrow from "../../assets/backArrow.svg";
 import styles from "../../styles/signup.module.css";
+import { setSession } from "../../auth/session";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface SignupResponse {
   success: boolean;
-  data: { user_id: number; email: string; name: string } | null;
+  data: { user_id: number; email: string; name: string; token: string | null } | null;
   error: { message: string; code: string } | null;
 }
 
@@ -98,17 +100,17 @@ function Signup() {
       });
       const data: SignupResponse = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         setShowToast(true);
-        // [2026-09-14, 사용자 확인] 원래 여기서 바로 "/onboarding"으로 보냈는데, 회원가입
-        // API가 가입 직후 자동로그인을 안 해줘서(로그인 세션 없이 user_id만 들고 진입)
-        // 온보딩→진단하기를 로그인 없이 쭉 진행하다가 맨 마지막(업종코드 확인) 단계에서만
-        // 401로 막히는 문제가 있었다(실측). 이제 로그인 화면으로 보내서 실제로 로그인을
-        // 마친 뒤에 온보딩으로 이어지게 한다 - 로그인 이메일 입력칸은 방금 가입한
-        // 이메일로 미리 채워둔다. LoginForm.tsx가 이 state(justSignedUp)를 보고
-        // 로그인 성공 시 "/home" 대신 "/onboarding"으로 보낸다.
+        // [2026-09-15, 사용자 확인] 회원가입 API가 이제 가입 직후 바로 세션을 만들어준다
+        // (backend/api/auth.py::signup_endpoint) - 예전엔 자동로그인이 안 돼서 온보딩→
+        // 진단하기를 로그인 없이 진행하다가 맨 마지막(업종코드 확인) 단계에서만 401로
+        // 막히는 문제가 있었고, 그걸 "로그인 화면으로 우회 이동"으로 임시 처리했었다.
+        // 이제 세션이 바로 생기므로 그 우회 없이 온보딩으로 곧장 이어간다.
+        const { user_id, email: userEmail, name, token } = data.data;
+        if (token) setSession(token, user_id, userEmail);
         setTimeout(
-          () => navigate("/login", { state: { justSignedUp: true, email } }),
+          () => navigate("/onboarding", { state: { userId: user_id, name } }),
           1400
         );
       } else {
@@ -272,11 +274,7 @@ function Signup() {
         {errorMessage && <p className={styles.error}>{errorMessage}</p>}
       </form>
 
-      {showToast && (
-        <div className={styles.toast} role="status">
-          가입이 완료되었습니다
-        </div>
-      )}
+      <Toast message={showToast ? "가입이 완료되었습니다" : null} />
 
       {openTerms && (
         <TermsModal

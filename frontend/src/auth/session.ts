@@ -53,23 +53,3 @@ export async function logout(): Promise<void> {
     clearSession();
   }
 }
-
-/**
- * 앱 시작 시 한 번 호출. 이미 로그인돼있으면(토큰 있음) 아무 것도 안 함.
- * 토큰이 없으면 개발용 자동로그인(POST /api/auth/dev-auto-login)을 시도한다 -
- * 서버 .env에 DEV_AUTO_LOGIN_EMAIL/PASSWORD가 없으면(팀원 기본 환경, 배포 환경)
- * 서버가 404를 주므로 조용히 아무 일도 안 일어나고 정상 로그인 화면으로 가야 한다.
- */
-export async function ensureDevAutoLogin(): Promise<void> {
-  if (getAuthToken()) return;
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/auth/dev-auto-login`, { method: "POST" });
-    if (!res.ok) return;
-    const body = await res.json();
-    if (body.success && body.data?.token) {
-      setSession(body.data.token, body.data.user_id, body.data.email);
-    }
-  } catch {
-    // 서버가 아직 안 떴거나 네트워크 문제 - 조용히 무시, 로그인 화면에서 정상 로그인하면 됨
-  }
-}

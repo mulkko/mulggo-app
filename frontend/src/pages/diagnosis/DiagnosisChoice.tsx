@@ -4,6 +4,8 @@ import styles from "../../styles/diagnosisChoice.module.css";
 import { clearDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
+import BackButton from "../../components/BackButton/BackButton";
+import { prefetchRegions } from "./regionsData";
 
 /**
  * 진단 방식 선택 화면 (`/diagnosis/choice`).
@@ -25,31 +27,27 @@ function DiagnosisChoice() {
   // [2026-09-14, 사용자 확인] clearDiagnosisAnswers()는 원래 완주 시(DiagnosisStep9)에만
   // 불렸는데, 중간에 실패/이탈한 이전 시도의 답변이 sessionStorage에 남아있어서 여기서
   // 새로 시작할 때 이전 입력이 그대로 보이는 문제가 있었다 - 시작 시점에도 초기화한다.
+  // [2026-09-15, 사용자 확인] Q6(지역 선택, DiagnosisStep5.tsx)의 GET /analysis/regions가
+  // 그 화면에 도달해서야 요청돼 로딩을 기다려야 했다 - 진단하기 시작 시점에 미리
+  // 불러와 두면(regionsData.ts에 모듈 레벨 캐싱) Q1~Q5를 답하는 동안 준비가 끝난다.
   const startFast = () => {
     clearDiagnosisAnswers();
     saveDiagnosisAnswers({ mode: "fast" });
+    prefetchRegions();
     navigate("/diagnosis/1");
   };
 
   const startPrecise = () => {
     clearDiagnosisAnswers();
     saveDiagnosisAnswers({ mode: "precise" });
+    prefetchRegions();
     navigate("/diagnosis/1");
   };
 
   return (
     <div className={`pageContainer ${styles.page}`}>
       <header className={styles.header}>
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={() => navigate("/home")}
-          aria-label="뒤로가기"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" aria-hidden="true">
-            <path d="M16 5l-8 7 8 7" />
-          </svg>
-        </button>
+        <BackButton onClick={() => navigate("/home")} />
         <span className={styles.brandName}>MULKKO IDEA</span>
         <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
       </header>

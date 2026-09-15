@@ -4,13 +4,7 @@ import styles from "../../styles/docPreview.module.css";
 import type { RequiredDoc } from "./matchingDetailData";
 import { fetchFilledDocument, saveFilledBlob } from "../../utils/downloadFilledDoc";
 import { authHeaders } from "../../auth/session";
-import ReportWaitPopup from "../../components/ReportWaitPopup/ReportWaitPopup";
-
-// [2026-09-15] "나의 정보로 채우기" 최대 대기시간 - backend/api/matching.py fill_attachment의
-// 원본 첨부파일 다운로드 요청(requests.get(..., timeout=30), 459행)이 실측 가능한 유일한
-// 상한이라 그 값을 그대로 씀. LLM/외부 API 호출 없이 로컬 hwpx 필드 치환만 하는 구조라
-// 실제로는 훨씬 짧게 끝나는 경우가 대부분이다.
-const FILL_WAIT_MAX_SECONDS = 30;
+import BackButton from "../../components/BackButton/BackButton";
 
 // ============================================================
 // [실험용, 2026-09-11] "채워질 정보 미리보기" 카드 - 사용자 확인 중인 실험 기능.
@@ -120,59 +114,31 @@ function DocPreview() {
   const fileName = doc?.fileName ?? "신청 서류";
   const attachmentId = doc?.attachmentId;
 
-  // 다운로드 모달 open 여부 — 이 화면 안에서만 쓰는 로컬 UI 상태
-  const [downloadOpen, setDownloadOpen] = useState(false);
   const [fillError, setFillError] = useState("");
   const [filling, setFilling] = useState(false);
-  // [2026-09-10] 채우기 성공 시 바로 다운로드하지 않고 여기 잠깐 들고 있다가,
-  // 모달에서 "로컬저장" 눌렀을 때만 실제로 저장한다(attachmentId 없는 더미 fallback
-  // 케이스는 채울 blob 자체가 없어서 null로 둠).
-  const [filledBlob, setFilledBlob] = useState<Blob | null>(null);
-  // fetchFilledDocument 응답이 실제로 왔는지 - ReportWaitPopup 진행바가 100%까지
-  // 채워지는 걸 보여준 다음(onDone) 모달을 연다(DiagnosisIndustryResult.tsx 등과 동일 패턴).
-  const [fillReady, setFillReady] = useState(false);
 
   const handleBack = () => {
     navigate(`/matching/${id}`);
   };
 
+  // [2026-09-15, 사용자 확인] "로컬저장/카카오공유" 선택 모달 없앰 - 채우기 성공하면
+  // 바로 다운로드시키고 곧장 마이페이지로 이동한다(채우기 이용내역에서 다시 받을 수 있음).
   const handleFill = async () => {
     if (!attachmentId) {
-      // attachmentId 없이 들어온 경우(더미데이터 fallback) - 실제 실행할 대상이 없어 모달만 보여준다.
-      setFilledBlob(null);
-      setDownloadOpen(true);
+      // attachmentId 없이 들어온 경우(더미데이터 fallback) - 실제 채울 대상이 없어 이동만 한다.
+      navigate("/mypage");
       return;
     }
     setFillError("");
     setFilling(true);
-    setFillReady(false);
     const result = await fetchFilledDocument(attachmentId);
     if ("error" in result) {
       setFilling(false);
       setFillError(result.error);
       return;
     }
-    setFilledBlob(result.blob);
-    setFillReady(true);
-  };
-
-  const handleFillPopupDone = () => {
-    setFilling(false);
-    setDownloadOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setDownloadOpen(false);
-  };
-
-  const handleLocalSave = () => {
-    if (filledBlob) saveFilledBlob(filledBlob, fileName);
-    setDownloadOpen(false);
-  };
-
-  const handleKakaoShare = () => {
-    // TODO: 카카오톡 공유 SDK 연동 — 지금은 모달만 닫는다
-    setDownloadOpen(false);
+    saveFilledBlob(result.blob, fileName);
+    navigate("/mypage");
   };
 
   if (loading) {
@@ -187,16 +153,7 @@ function DocPreview() {
     <div className={`pageContainer ${styles.page}`}>
       {/* 헤더: 뒤로가기 + 파일명 */}
       <header className={styles.header}>
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={handleBack}
-          aria-label="뒤로가기"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M16 5l-8 7 8 7" />
-          </svg>
-        </button>
+        <BackButton onClick={handleBack} />
         <span className={styles.headerTitle}>{fileName}</span>
       </header>
 
@@ -234,70 +191,6 @@ function DocPreview() {
           {filling ? "채우는 중..." : "나의 정보로 채우기"}
         </button>
       </div>
-
-      {filling && (
-        <ReportWaitPopup
-          title="서류를 채우고 있어요"
-          ready={fillReady}
-          onDone={handleFillPopupDone}
-          maxSeconds={FILL_WAIT_MAX_SECONDS}
-        />
-      )}
-
-      {downloadOpen && (
-        <div className={styles.overlay} onClick={handleCloseModal}>
-          <div
-            className={styles.modalCard}
-            role="dialog"
-            aria-modal="true"
-            aria-label="서류 다운로드"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className={styles.modalHead}>
-              <p className={styles.modalTitle}>서류가 준비됐어요</p>
-              <p className={styles.modalSub}>{fileName}</p>
-            </div>
-            <div className={styles.modalButtons}>
-              <button
-                type="button"
-                className={styles.localSaveButton}
-                onClick={handleLocalSave}
-              >
-                <svg
-                  className={styles.modalIcon}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M12 3v12" />
-                  <path d="M7 11l5 5 5-5" />
-                  <path d="M5 20h14" />
-                </svg>
-                <span className={styles.modalButtonText}>{"로컬 저장소에\n저장하기"}</span>
-              </button>
-              <button
-                type="button"
-                className={styles.kakaoButton}
-                onClick={handleKakaoShare}
-              >
-                <svg
-                  className={styles.modalIcon}
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M12 3.5C6.75 3.5 2.5 6.9 2.5 11.1c0 2.7 1.79 5.06 4.5 6.42-.2.72-.72 2.62-.83 3.03-.13.5.19.5.39.36.16-.1 2.55-1.73 3.58-2.44.44.06.9.09 1.36.09 5.25 0 9.5-3.4 9.5-7.6S17.25 3.5 12 3.5z" />
-                </svg>
-                <span className={styles.modalButtonText}>{"카카오톡\n공유하기"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

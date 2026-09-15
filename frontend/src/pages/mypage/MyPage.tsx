@@ -7,13 +7,12 @@ import BottomNav from "../../components/BottomNav/BottomNav";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
+import Toast from "../../components/Toast/Toast";
+import { useToast } from "../../components/Toast/useToast";
 import { authHeaders, getUserId, logout } from "../../auth/session";
 import { downloadFilledDocument } from "../../utils/downloadFilledDoc";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// 로그인 세션(getUserId)이 없을 때만 쓰는 폴백 - 자동로그인(.env) 미설정 환경 등 (ProfileEdit.tsx와 동일 사유).
-const FALLBACK_USER_ID = 27;
 
 interface ProfileSummary {
   name: string;
@@ -28,8 +27,10 @@ interface ProfileSummary {
  * 4개 섹션 + 하단 공통 BottomNav("마이페이지" 탭 활성).
  *
  * [2026-09-09] 프로필 요약(이름/유형/지역)만 backend/api/mypage.py 실데이터로 교체함.
- * [2026-09-10] user_id를 로그인 세션(auth/session.ts::getUserId)에서 가져오도록 교체,
- * 세션 없으면 FALLBACK_USER_ID로 동작(ProfileEdit.tsx 참고).
+ * [2026-09-10] user_id를 로그인 세션(auth/session.ts::getUserId)에서 가져오도록 교체.
+ * [2026-09-15, 사용자 확인] 로그인 안 됐거나 세션이 서버에서 무효화됐으면(GET /api/auth/me
+ * 검증, Home.tsx와 동일 패턴) /login으로 보낸다 - 예전엔 폴백 계정(27번)으로 항상
+ * 뭔가 보여줬는데, 그게 "로그인 안 했는데 로그인된 것처럼 보이는" 혼란을 줘서 없앰.
  * [2026-09-10] 관심있는 지원사업(찜하기)도 backend/api/mypage.py(GET /bookmarks) +
  * backend/api/matching.py(POST·DELETE .../bookmark) 실데이터로 교체함 - 이 섹션만
  * 세션 토큰(authHeaders) 기준이라 비로그인이면 빈 목록으로 보인다.
@@ -182,10 +183,14 @@ function MyPage() {
     id: string;
     label: string;
   } | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const { toastMessage, showToast } = useToast();
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${getUserId() ?? FALLBACK_USER_ID}`)
+    // [2026-09-15, 사용자 확인] 로그인 검증은 App.tsx의 RequireAuth가 라우트 단에서
+    // 이미 처리한다(무효면 여기 렌더되기 전에 /login으로 보냄) - 여기선 유효한
+    // getUserId()가 있다고 보고 바로 쓴다. 예전의 27번 폴백 계정 동작은 없앰.
+    const userId = getUserId();
+    fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${userId}`)
       .then((res) => res.json())
       .then((res: { success: boolean; data?: ProfileSummary }) => {
         if (res.success && res.data) setProfile(res.data);
@@ -323,8 +328,7 @@ function MyPage() {
     }
 
     setConfirmTarget(null);
-    setToastMessage(`나의 ${label}에서 삭제됐어요.`);
-    setTimeout(() => setToastMessage(null), 1500);
+    showToast(`나의 ${label}에서 삭제됐어요.`);
   };
 
   const handleFillHistoryClick = async (item: FillHistoryItem) => {
@@ -493,11 +497,7 @@ function MyPage() {
         />
       )}
 
-      {toastMessage && (
-        <div className={styles.toast} role="status">
-          {toastMessage}
-        </div>
-      )}
+      <Toast message={toastMessage} />
     </div>
   );
 }

@@ -14,6 +14,9 @@ function Chevron() {
 //   1) 브라우저에 저장해둔 주소가 있으면 그걸 우선 사용
 //      (주소가 바뀌면 개발자 콘솔에서 localStorage.setItem("ocr_api_base_url", "http://새주소:8000") 로 갱신)
 //   2) 없으면 GPU PC 고정 주소 사용
+// [2026-09-15] 실서버로 잠깐 옮겨봤다가(OCR 프로그램을 실서버에도 올림) 다시 로컬
+// GPU PC 기준으로 되돌림(사용자 확인) - 실서버 쪽 설정이 아직 안정적이지 않아 개발은
+// 계속 이 방식으로 진행.
 const OCR_SERVER_HOST = "192.168.0.160";
 
 function resolveOcrApiBaseUrl(): string {

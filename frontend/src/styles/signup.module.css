@@ -277,30 +277,3 @@
 }
 
 /* ===== 가입 완료 토스트 ===== */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 44px;
-  transform: translateX(-50%);
-  z-index: 100;
-  max-width: calc(var(--mobile-frame-width) - 2 * var(--spacing-outer));
-  padding: 12px 20px;
-  border-radius: var(--radius-input);
-  background: var(--color-ink-charcoal);
-  color: var(--color-white);
-  font-size: var(--font-size-body);
-  font-weight: 700;
-  text-align: center;
-  animation: toastIn 160ms ease-out;
-}
-
-@keyframes toastIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 8px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}

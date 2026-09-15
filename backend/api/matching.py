@@ -4,17 +4,48 @@
 import os
 import tempfile
 from datetime import date
+from urllib.parse import quote
 
 import requests
 from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import Response
 from fastapi.responses import FileResponse, JSONResponse
 
 from backend.assistant.hwpx_fill import fill_hwpx_all
+from backend.assistant.hwpx_view import hwpx_to_html
 from backend.assistant.pipeline import _load_mapping
 from backend.auth.session import get_current_user_id, get_optional_user_id
 from backend.db.connection import get_connection
 
 router = APIRouter(prefix="/api/matching", tags=["matching"])
+
+
+@router.get("/my-ksic")
+def get_my_ksic(user_id: int = Depends(get_current_user_id)) -> dict:
+    """[2026-09-15] 로그인한 사용자의 매칭 필터용 확정 업종코드 목록 - 프론트(MatchingList.tsx)가
+    업종 드롭다운에 "업종 전체"와 별개로 "매칭된 업종" 옵션을 만들 때 쓴다. 예전엔 이 코드를
+    /api/matching이 쿼리에 ksic이 없을 때 서버에서 조용히 채워 넣었는데, 그러면 프론트는
+    "업종 전체"를 선택한 것처럼 보여주면서 실제로는 이미 좁혀진 결과를 보여주는 불일치가
+    있었다(사용자 확인) - 이제 필터링은 프론트가 이 값을 받아 명시적으로 ksic 쿼리에 실어
+    보낼 때만 적용되고, 기본값(빈 쿼리)은 진짜로 전체 공고를 보여준다."""
+    conn = get_connection()
+    try:
+        codes = _lookup_profile_ksic_code(conn, user_id)
+    finally:
+        conn.close()
+    return {"success": True, "data": {"codes": codes}}
+
+
+@router.get("/my-regions")
+def get_my_regions(user_id: int = Depends(get_current_user_id)) -> dict:
+    """[2026-09-15] get_my_ksic과 같은 이유 - 지역 필터도 서버가 조용히 채워 넣던 걸
+    없애고, 프론트가 이 값을 받아 "내 지역" 옵션을 명시적으로 보여주게 한다."""
+    conn = get_connection()
+    try:
+        regions = _lookup_profile_regions(conn, user_id)
+    finally:
+        conn.close()
+    return {"success": True, "data": {"regions": regions}}
 
 
 def _lookup_profile_ksic_code(conn, user_id: int) -> list[str]:
@@ -163,11 +194,12 @@ def list_announcements(
     ksic_codes_matched 배열과 하나라도 겹치는 것만 필터. [2026-09-09, 테스트용]
     지금은 업종 드롭다운에 전체 KSIC(1,200여개)가 아니라 실제로 매칭된 것 중
     자주 나오는 몇 개만 넣어서 필터링 자체가 되는지 확인하는 용도.
-    [2026-09-11] 비워서 호출하고 로그인 상태면, 사용자가 사업자등록증에서 확정한
-    ksic_code(profile_business_types)로 대신 채운다 - 프론트가 매번 안 넘겨도
-    "내 업종 기준" 매칭이 되게. [2026-09-15] 그마저 없으면(예비창업자 등 등록증
-    미등록/업종 미확정) 가장 최근에 완료한 사업구체화 리포트의 resolved_ksic_codes로
-    대신 채운다(_lookup_profile_ksic_code 참고) - 둘 다 없으면 그냥 전체 공고.
+    [2026-09-15] 비워서 호출하면(로그인 여부 무관) 진짜 전체 공고를 보여준다 - 예전엔
+    로그인 상태면 사용자의 확정 업종코드(_lookup_profile_ksic_code)로 서버가 조용히
+    채워 넣었는데, 그러면 프론트 드롭다운은 "업종 전체"를 보여주면서 실제로는 이미
+    좁혀진 결과라 화면과 실제 동작이 어긋났다(사용자 확인). 이제 "내 업종 기준" 필터는
+    GET /api/matching/my-ksic로 프론트가 값을 받아 명시적으로 이 쿼리에 실어 보낼
+    때만 적용된다.
 
     [2026-09-12, 사용자 확인] ksic_status가 "업종무관(기본값)"/"특정불가"인 공고는
     ksic_codes_matched가 항상 빈 배열이라(schema.sql 참고 - decide_industry()가 특정
@@ -187,8 +219,10 @@ def list_announcements(
     region: 콤마로 구분된 시/도 목록 (예: "서울특별시,경기도"). 공고의 regions
     배열과 하나라도 겹치는 것만 필터. regions는 시/군 단위까지만 있고 구 단위는
     없음(extract_region.py 팀 결정 - 오탐 위험 때문에 의도적으로 제외).
-    [2026-09-14] 비워서 호출하고 로그인 상태면, ksic과 동일한 패턴으로 사업자등록증
-    주소에서 자동으로 뽑힌(또는 직접 추가한) business_profiles.regions로 대신 채운다.
+    [2026-09-15] 비워서 호출하면(로그인 여부 무관) 진짜 전체 지역을 보여준다 - ksic과
+    같은 이유로 서버가 조용히 채워 넣던 걸 없앴다. "내 지역 기준" 필터는
+    GET /api/matching/my-regions로 프론트가 값을 받아 명시적으로 이 쿼리에 실어
+    보낼 때만 적용된다.
 
     company: 콤마로 구분된 기업유형 목록 (예: "소상공인,중소기업"). target_summary가
     그중 하나와 정확히 일치하는 것만 필터. bizinfo만 값이 있음(kstartup의
@@ -222,10 +256,6 @@ def list_announcements(
 
     conn = get_connection()
     try:
-        if not ksic_codes and user_id is not None:
-            ksic_codes = _lookup_profile_ksic_code(conn, user_id)
-        if not regions and user_id is not None:
-            regions = _lookup_profile_regions(conn, user_id)
 
         # [2026-09-09] 이미 마감 지난 공고는 리스트에서 아예 뺀다. announcements 원본
         # 데이터는 안 지운다(raw/가공 원칙) - 여기 조회 조건에서만 제외. 마감일이
@@ -513,7 +543,7 @@ def get_announcement_detail(
             """
             SELECT a.title, a.content, a.host_org_name, a.supervising_org, a.target_summary,
                    a.apply_method, a.contact, a.apply_start_date, a.apply_end_date,
-                   a.detail_page_url, b.hashtags
+                   a.detail_page_url, b.hashtags, b.print_file_nm, b.file_nm
             FROM announcements a
             LEFT JOIN announcements_raw_bizinfo b ON b.raw_bizinfo_id = a.raw_bizinfo_id
             WHERE a.announcement_id = %s
@@ -526,7 +556,12 @@ def get_announcement_detail(
 
         (title, content, host_org_name, supervising_org, target_summary,
          apply_method, contact, apply_start_date, apply_end_date,
-         detail_page_url, raw_hashtags) = row
+         detail_page_url, raw_hashtags, print_file_nm, file_nm) = row
+
+        # [2026-09-15] 원본 공고문(PDF/HWP) - 기업마당(bizinfo) 공고만 있음(K-Startup 원본엔
+        # 이 파일 경로 자체가 없음). 실제 파일은 용량 크고 자주 안 쓰여서 여기선 파일명만
+        # 내려주고, 실제 다운로드는 버튼 눌렀을 때 GET /{id}/notice-file이 그때 가져온다.
+        notice_file_name = print_file_nm or (file_nm.split("@")[0] if file_nm else None)
 
         # 해시태그는 기업마당(bizinfo) 원본에만 있는 필드 (K-Startup 원본엔 없음).
         # 원본은 "경영,전남광주,홍보시책" 처럼 콤마로만 구분돼있어 "#" 붙여서 공백으로 이어붙인다.
@@ -578,8 +613,72 @@ def get_announcement_detail(
             "content": content or "",
             "docs": docs,
             "homepageUrl": detail_page_url,
+            "noticeFileName": notice_file_name,
         },
     }
+
+
+@router.get("/{announcement_id}/notice-file")
+def get_notice_file(announcement_id: int) -> Response:
+    """[2026-09-15] "원본 공고문 보기" - 기업마당(bizinfo) 원본 첨부(대표 공고문)를 서버가
+    대신 받아서 그대로 돌려준다. 브라우저가 bizinfo.go.kr을 직접 못 여는 문제(User-Agent
+    없으면 403, 세션 쿠키 기반이라 크로스오리진 iframe으론 안 뜸)를 피하려고 서버 대 서버로
+    받는다 - backend/preprocessing/extract_all_texts.py::get_notice_full_text()가 이미 이
+    방식(같은 User-Agent)으로 성공적으로 받아오고 있는 것과 동일한 접근.
+    대표 파일(print_flpth_nm) 실패 시 flpth_nm의 나머지 후보를 순서대로 시도한다
+    (그쪽 원문 추출 로직과 동일한 폴백)."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT b.print_flpth_nm, b.print_file_nm, b.flpth_nm, b.file_nm
+            FROM announcements a
+            JOIN announcements_raw_bizinfo b ON b.raw_bizinfo_id = a.raw_bizinfo_id
+            WHERE a.announcement_id = %s
+            """,
+            (announcement_id,),
+        )
+        row = cur.fetchone()
+    finally:
+        conn.close()
+
+    if row is None:
+        return JSONResponse(status_code=404, content={"success": False, "error": {"message": "원본 공고문이 없습니다.", "code": "NOT_FOUND"}})
+
+    print_flpth_nm, print_file_nm, flpth_nm, file_nm = row
+    urls = ([print_flpth_nm] if print_flpth_nm else []) + (flpth_nm.split("@") if flpth_nm else [])
+    names = ([print_file_nm] if print_file_nm else []) + (file_nm.split("@") if file_nm else [])
+    if not urls:
+        return JSONResponse(status_code=404, content={"success": False, "error": {"message": "원본 공고문이 없습니다.", "code": "NOT_FOUND"}})
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    for i, url in enumerate(urls):
+        try:
+            resp = requests.get(url, headers=headers, timeout=20)
+            if resp.status_code == 200 and resp.content:
+                file_name = names[i] if i < len(names) else "공고문"
+                ext = os.path.splitext(file_name)[1].lower()
+                # HWPX(신버전)만 서버가 HTML로 변환해 그대로 보여준다 - PDF는 브라우저 내장
+                # 뷰어가 바로 렌더링하고, HWP(구버전)는 LibreOffice로 실제 샘플 변환해보니
+                # 텍스트가 깨져(9600여 페이지짜리 쓰레기 PDF) 포기 - 다운로드로만 처리한다.
+                if ext == ".hwpx":
+                    try:
+                        return Response(content=hwpx_to_html(resp.content), media_type="text/html; charset=utf-8")
+                    except Exception:
+                        pass
+                content_type = "application/pdf" if ext == ".pdf" else "application/octet-stream"
+                # Content-Disposition 헤더는 라틴1만 허용 - 한글 파일명은 RFC 5987로 인코딩.
+                encoded_name = quote(file_name)
+                return Response(
+                    content=resp.content,
+                    media_type=content_type,
+                    headers={"Content-Disposition": f"inline; filename*=UTF-8''{encoded_name}"},
+                )
+        except requests.RequestException:
+            continue
+
+    return JSONResponse(status_code=502, content={"success": False, "error": {"message": "원본 공고문을 불러오지 못했습니다.", "code": "FETCH_FAILED"}})
 
 
 @router.post("/{announcement_id}/bookmark")

@@ -25,6 +25,8 @@ langchain-core    # '대표자' 계열 라벨 판별 체인 (label_llm.py) — �
 # OCR은 GPU 권장(CPU도 동작). 무거워서 기본 설치에서 제외 — 별도 설치 (CUDA 환경):
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 #   pip install "transformers>=4.49" qwen-vl-utils accelerate   # 기본정보 OCR (Qwen2.5-VL)
+#   pip install bitsandbytes                                    # [2026-09-15] 8bit 양자화 - VRAM 8GB 카드에서
+#                                                                 # CPU 오프로딩 없이 돌리려면 필수(biz_cert_ocr.py::load_vision_model)
 #   pip install easyocr                                          # 업태·종목 표 OCR (category_ocr.py)
 
 # --- 업종코드 매칭 구버전 (backend/ml/industry_code_matching, 폐기 예정) ---

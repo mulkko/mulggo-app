@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styles from "../../styles/onboarding.module.css";
+import { getUserId } from "../../auth/session";
 import BizCertUpload, {
   type BizCertUploadHandle,
 } from "../../components/BizCertUpload/BizCertUpload";
@@ -31,13 +32,14 @@ import onboardRunning from "../../assets/onboard_running.png";
  *
  * [2026-09-10] step5 "바로 지원사업 매칭을 받아보고 싶어요" 카드 → 사업자등록증
  * 첨부 팝업(BizCertUpload, 원래 Signup.tsx에 있던 컴포넌트를 여기로 옮겨옴 - 사용자
- * 확인). Signup.tsx가 가입 성공 시 navigate state로 user_id를 넘겨주는데(로그인
- * 세션은 가입 직후엔 아직 없어서), dev_links.html의 "회원가입_완료"처럼 온보딩에
- * 직접 URL로 들어와 state가 없는 경우엔 FALLBACK_USER_ID(27, MyPage.tsx/
- * ProfileEdit.tsx와 동일)로 대신 채워서 팝업 자체는 항상 테스트 가능하게 한다.
- * 팝업 흐름: 드롭존(취소만 노출) → OCR 확인(BizCertUpload 자체 오버레이) → 확인
- * 완료(fields 확정)되면 이 팝업은 닫히고 BizCertDonePopup으로 교체됨 →
+ * 확인). 팝업 흐름: 드롭존(취소만 노출) → OCR 확인(BizCertUpload 자체 오버레이) →
+ * 확인 완료(fields 확정)되면 이 팝업은 닫히고 BizCertDonePopup으로 교체됨 →
  * "지원사업 보러가기" 클릭 시 POST /api/mypage/biz-cert 저장 후 /matching 이동.
+ *
+ * [2026-09-15] 회원가입(Signup.tsx)이 가입 직후 자동으로 세션을 만들어서(backend/
+ * api/auth.py::signup_endpoint) navigate state로 userId까지 같이 넘겨준다 - 아래
+ * useEffect가 state에 없으면 실제 로그인 세션(getUserId)을 대신 쓰고, 그것도 없으면
+ * (dev_links.html "회원가입_완료"로 직접 진입 등, 진짜 비로그인) "/login"으로 보낸다.
  */
 
 type Step = 0 | 1 | 2 | 3 | 4 | 5;
@@ -111,17 +113,17 @@ function Onboarding() {
   const location = useLocation();
   const [step, setStep] = useState<Step>(0);
 
-  // dev_links.html의 "회원가입_완료"가 /onboarding으로 직접 연결돼 있어서(실제 회원가입을
-  // 안 거친 진입), 그 경우 location.state가 비어 userId가 없다 - 폴백값으로 채워서
-  // 팝업 자체는 항상 테스트 가능하게 한다(MyPage.tsx/ProfileEdit.tsx의 FALLBACK_USER_ID와 동일 이유).
-  const FALLBACK_USER_ID = 27;
-  const userId = (location.state as { userId?: number; name?: string } | null)?.userId ?? FALLBACK_USER_ID;
+  // [2026-09-15, 사용자 확인] 로그인 검증은 App.tsx의 RequireAuth가 라우트 단에서
+  // 이미 처리한다(무효면 여기 렌더되기 전에 /login으로 보냄) - 여기선 정상 흐름의
+  // location.state.userId가 있으면 그걸 쓰고, 없으면(직접 진입 등) 유효한
+  // getUserId()를 대신 쓴다. 예전의 27번 폴백 계정 동작은 없앰.
+  const stateUserId = (location.state as { userId?: number; name?: string } | null)?.userId;
+  const userId = stateUserId ?? getUserId();
 
   // [2026-09-14, 사용자 확인] "김창업"(더미데이터)로 고정돼있던 걸 실제 가입자 이름으로
   // 교체 - Signup.tsx가 가입 성공 응답의 name을 navigate state로 같이 넘겨준다(정상
-  // 가입 흐름은 이 값 하나로 충분, 추가 요청 없음). state에 없으면(dev_links.html
-  // "회원가입_완료"로 직접 진입 등, userId도 FALLBACK_USER_ID인 경우) 그 user_id
-  // 기준으로 프로필을 조회해서 채운다(MyPage.tsx GET /api/mypage/profile와 동일 API).
+  // 가입 흐름은 이 값 하나로 충분, 추가 요청 없음). state에 없으면 위 userId(로그인
+  // 세션 기준) 기준으로 프로필을 조회해서 채운다(MyPage.tsx GET /api/mypage/profile와 동일 API).
   const [name, setName] = useState<string>(
     (location.state as { name?: string } | null)?.name ?? "",
   );
@@ -234,7 +236,8 @@ function Onboarding() {
         setBizCertError("저장에 실패했어요. 다시 시도해주세요.");
         return;
       }
-      navigate("/matching");
+      const ksicCode = bizCertFields.ksic_code;
+      navigate(ksicCode ? `/matching?ksic=${encodeURIComponent(ksicCode)}` : "/matching");
     } catch {
       setBizCertError("서버에 연결할 수 없어요.");
     } finally {

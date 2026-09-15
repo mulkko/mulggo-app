@@ -26,24 +26,6 @@
   border-bottom: 1px solid var(--color-border-web);
 }
 
-.backButton {
-  flex-shrink: 0;
-  border: none;
-  background: none;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: var(--color-ink-charcoal);
-  line-height: 0;
-}
-
-.backButton svg {
-  width: 20px;
-  height: 20px;
-  display: block;
-}
-
 .headerTitle {
   font-size: var(--font-size-h1);
   font-weight: var(--font-weight-h1);

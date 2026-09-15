@@ -1,11 +1,7 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/home.module.css";
-import { authHeaders, clearSession, getAuthToken } from "../../auth/session";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 /**
  * 홈 화면(/home).
@@ -15,6 +11,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
  *
  * "HOW IT WORKS" 섹션은 원본 문구는 100% 유지하되 레이아웃만 새 스펙(민트 박스 +
  * 흰색 카드 3분리 + 단계별 단순 아이콘)으로 교체했다.
+ *
+ * [2026-09-15, 사용자 확인] "로그인 안 하면 서비스 자체를 못 쓴다" 원칙으로
+ * App.tsx가 이 라우트를 RequireAuth로 감싸서, 이 컴포넌트는 항상 로그인된
+ * 상태로만 렌더된다 - 로그인 여부 분기(비로그인용 회원가입/로그인 버튼, 조건부
+ * BottomNav)를 없애고 로그인 상태 UI만 남김.
  */
 
 /**
@@ -39,25 +40,6 @@ const HOW_IT_WORKS = [
 
 function Home() {
   const navigate = useNavigate();
-  // [2026-09-15, 사용자 확인] getAuthToken() 존재 여부만 보면 - 서버 auth_sessions에서
-  // 토큰이 지워져도(전체 로그아웃 등) localStorage엔 그대로 남아있어서 "로그인된 것처럼"
-  // 잘못 보였다(다른 화면은 API 호출이 401을 받아서 스스로 걸러졌는데 Home은 로그인
-  // 여부로 API를 아예 안 불러서 못 걸렀음). GET /api/auth/me로 서버에 직접 확인한다.
-  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(getAuthToken()));
-
-  useEffect(() => {
-    if (!getAuthToken()) return;
-    fetch(`${API_BASE_URL}/api/auth/me`, { headers: authHeaders() })
-      .then((res) => {
-        if (!res.ok) {
-          clearSession();
-          setIsLoggedIn(false);
-        }
-      })
-      .catch(() => {
-        /* 네트워크 오류 - 판단 보류, 기존 상태 유지 */
-      });
-  }, []);
 
   return (
     <div className={`pageContainer ${styles.page}`}>
@@ -88,48 +70,23 @@ function Home() {
           지원사업까지 이어드려요.
         </p>
 
-        {isLoggedIn ? (
-          // [2026-09-11] 진단 진입점 /diagnosis/choice(빠른매칭 vs 정밀구체화) → /diagnosis/1(Q1) →
-          // /diagnosis/select(Q2) → /diagnosis/3~10. 업종코드 매칭/분석 리포트 연결은 아직 준비 중이라
-          // 질문 흐름까지만 동작함.
-          <>
-            <button
-              type="button"
-              className={styles.signupBtn}
-              onClick={() => navigate("/diagnosis/choice")}
-            >
-              아이디어 구체화하기 →
-            </button>
-            <button
-              type="button"
-              className={styles.signupBtn2}
-              onClick={() => navigate("/matching")}
-            >
-              맞춤 지원사업 찾아보기 →
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              className={styles.signupBtn}
-              onClick={() => navigate("/signup")}
-            >
-              회원가입하기 →
-            </button>
-
-            <p className={styles.loginPrompt}>
-              이미 계정이 있으신가요?{" "}
-              <button
-                type="button"
-                className={styles.loginLink}
-                onClick={() => navigate("/login")}
-              >
-                로그인
-              </button>
-            </p>
-          </>
-        )}
+        {/* [2026-09-11] 진단 진입점 /diagnosis/choice(빠른매칭 vs 정밀구체화) → /diagnosis/1(Q1) →
+            /diagnosis/select(Q2) → /diagnosis/3~10. 업종코드 매칭/분석 리포트 연결은 아직 준비 중이라
+            질문 흐름까지만 동작함. */}
+        <button
+          type="button"
+          className={styles.signupBtn}
+          onClick={() => navigate("/diagnosis/choice")}
+        >
+          아이디어 구체화하기 →
+        </button>
+        <button
+          type="button"
+          className={styles.signupBtn2}
+          onClick={() => navigate("/matching")}
+        >
+          맞춤 지원사업 찾아보기 →
+        </button>
 
         {/* ===== HOW IT WORKS (레이아웃만 교체, 문구는 원본 유지) ===== */}
         <section className={styles.howBox}>
@@ -153,9 +110,7 @@ function Home() {
       </div>
 
       <ChatFab variant="withBottomNav" />
-
-      {/* 로그인 상태에서만 하단 네비게이션 표시 ("홈" 탭 활성) */}
-      {isLoggedIn && <BottomNav active="home" />}
+      <BottomNav active="home" />
     </div>
   );
 }

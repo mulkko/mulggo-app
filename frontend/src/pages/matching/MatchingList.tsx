@@ -5,10 +5,11 @@ import logo from "../../assets/logo.svg";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
-import { authHeaders } from "../../auth/session";
+import { authHeaders, getAuthToken } from "../../auth/session";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
+import BackButton from "../../components/BackButton/BackButton";
 
 /**
  * 지원사업 매칭 리스트(공고 리스트) 화면.
@@ -221,18 +222,60 @@ function MatchingList() {
         if (!body.success || !body.data) return;
         const codesNow = initialMatchedCodesRef.current ?? [];
         const matched = body.data.filter((o) => codesNow.includes(o.code));
-        // [2026-09-12, 버그 수정] 매칭된 코드가 1개뿐이면 "매칭된 업종 전체"의 value(그
-        // 코드 하나)와 아래 개별 항목의 value가 완전히 같은 문자열이 된다 - 라디오는
-        // opt.value === 현재값으로 활성 여부를 판정하는데, 값이 같은 행이 2개 있으면
-        // 라디오(단일선택) 구조에서도 둘 다 활성으로 보인다(체크박스처럼 보이는 원인).
-        // 코드가 1개뿐이면 "전체"와 "그 하나"가 어차피 같은 의미라 "전체" 행 자체를
-        // 빼서 중복을 없앤다.
+        // [2026-09-15, 사용자 확인] "매칭된 업종 전체"(후보 코드 다 합친 옵션)는 삭제하고,
+        // 필터 자체를 안 거는 진짜 "업종 전체"(value: "")만 남긴다 - 업종1/2/3 후보는
+        // 개별 옵션으로, 기본 선택은 지역과 동일하게 1순위(업종1)로 건다.
         setMatchedKsicOptions([
-          ...(codesNow.length > 1 ? [{ label: "매칭된 업종 전체", value: codesNow.join(",") }] : []),
+          { label: "업종 전체", value: "" },
           ...matched.map((o) => ({ label: o.name, value: o.code })),
         ]);
+        if (codesNow.length > 1) updateParam("ksic", codesNow[0]);
       })
       .catch(() => setMatchedKsicOptions(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // [2026-09-15, 사용자 확인] 진단 링크가 아니라 그냥 바로 /matching 탭으로 들어온
+  // 경우(ksic 쿼리 없음) - 로그인 상태고 사업자등록증/진단으로 확정된 업종코드가
+  // 있으면 "업종 전체"(기본 선택, 진짜 전체 공고)와 "매칭된 업종" 두 개를 고를 수
+  // 있게 옵션을 만든다. 예전엔 이 경우도 /api/matching이 서버에서 조용히 ksic을
+  // 채워 넣어서 "업종 전체"라고 보이면서 실제로는 이미 좁혀진 결과가 나오는
+  // 불일치가 있었다 - GET /my-ksic로 값을 받아 프론트가 명시적인 옵션으로 보여준다.
+  useEffect(() => {
+    if (ksic || !getAuthToken()) return; // 진단 링크(위 useEffect가 처리) 또는 비로그인이면 건너뜀
+    fetch(`${API_BASE_URL}/api/matching/my-ksic`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((body: { success: boolean; data?: { codes: string[] } }) => {
+        const codes = body.success ? body.data?.codes ?? [] : [];
+        if (codes.length === 0) return;
+        return fetch(`${API_BASE_URL}/api/ksic/options`)
+          .then((res) => res.json())
+          .then((optBody: { success: boolean; data?: KsicOption[] }) => {
+            if (!optBody.success || !optBody.data) return;
+            const matched = optBody.data.filter((o) => codes.includes(o.code));
+            setMatchedKsicOptions([
+              { label: "업종 전체", value: "" },
+              ...matched.map((o) => ({ label: o.name, value: o.code })),
+            ]);
+          });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // [2026-09-15, 사용자 확인] 업종과 다르게 지역은 별도 "매칭된 지역" 옵션을 만들지
+  // 않고, 사업자등록증 주소에서 자동으로 뽑힌 지역이 "그것 하나뿐"일 때만 그 지역
+  // 자체를 기본 선택값으로 넣는다. 희망 지역 칩을 추가해서 2개 이상이 되면(어느 게
+  // 자동으로 뽑힌 건지 구분 안 됨) 기본값은 그냥 "지역 전체"로 둔다.
+  useEffect(() => {
+    if (region || !getAuthToken()) return;
+    fetch(`${API_BASE_URL}/api/matching/my-regions`, { headers: authHeaders() })
+      .then((res) => res.json())
+      .then((body: { success: boolean; data?: { regions: string[] } }) => {
+        const regions = body.success ? body.data?.regions ?? [] : [];
+        if (regions.length === 1) updateParam("region", regions[0]);
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -341,11 +384,7 @@ function MatchingList() {
           레이아웃) + "물꼬 분석" 링크는 삭제(사용자 확인) */}
       <header className={styles.header}>
         <span className={styles.headerLeft}>
-          <button type="button" className={styles.backButton} onClick={handleBack} aria-label="뒤로가기">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M16 5l-8 7 8 7" />
-            </svg>
-          </button>
+          <BackButton onClick={handleBack} />
           <span className={styles.logo}>
             <span className={styles.logoText}>MULKKO MATCHING</span>
             <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
@@ -429,7 +468,7 @@ function MatchingList() {
           {/* [2026-09-13] 업종코드 필터가 걸려있으면(분석 리포트에서 넘어온 경우) 업종
               맞춤 섹션(total)만이 아니라 업종무관 섹션(unclassifiedTotal)까지 합친 값을
               보여준다(사용자 확인) - 필터 없을 땐 unclassifiedTotal이 0이라 total 그대로. */}
-          <span className={styles.countValue}>{total + unclassifiedTotal}건</span>
+          <span className={styles.countValue}>{(total + unclassifiedTotal).toLocaleString()}건</span>
         </div>
 
         {loading && <p className={styles.guide}>불러오는 중...</p>}

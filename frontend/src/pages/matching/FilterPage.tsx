@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "../../styles/filterPage.module.css";
+import BackButton from "../../components/BackButton/BackButton";
 
 /**
  * 전체 필터 화면.
@@ -236,24 +237,7 @@ function FilterPage() {
       {/* 헤더: 뒤로가기 + "필터" + 초기화 */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <button
-            type="button"
-            className={styles.backButton}
-            onClick={handleBack}
-            aria-label="뒤로가기"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M16 5l-8 7 8 7" />
-            </svg>
-          </button>
+          <BackButton onClick={handleBack} />
           <span className={styles.headerTitle}>필터</span>
         </div>
         <button type="button" className={styles.resetButton} onClick={handleReset}>

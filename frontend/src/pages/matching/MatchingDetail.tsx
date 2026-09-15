@@ -5,6 +5,9 @@ import type { AnnouncementDetail } from "./matchingDetailData";
 import { authHeaders } from "../../auth/session";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
+import Toast from "../../components/Toast/Toast";
+import { useToast } from "../../components/Toast/useToast";
+import BackButton from "../../components/BackButton/BackButton";
 
 /**
  * 공고 상세(지원사업 상세) 화면.
@@ -56,7 +59,10 @@ function MatchingDetail() {
   const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
   const [contentExpanded, setContentExpanded] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [noticeFileOpen, setNoticeFileOpen] = useState(false);
+  const noticeFileExt = detail?.noticeFileName?.toLowerCase().split(".").pop();
+  const isViewableNoticeFile = noticeFileExt === "pdf" || noticeFileExt === "hwpx";
+  const { toastMessage, showToast } = useToast();
 
   useEffect(() => {
     if (!id) {
@@ -90,8 +96,7 @@ function MatchingDetail() {
   // 설명 없이 도로 꺼지는 것처럼 보이는 문제가 있었다(팀원 확인) - 실패 사유를
   // 토스트로 보여주도록 handleToggleSave/handleToggleApplied 둘 다 고친다.
   const showFailureToast = (res: Response) => {
-    setToastMessage(res.status === 401 ? "로그인이 필요합니다" : "처리에 실패했습니다. 다시 시도해주세요.");
-    setTimeout(() => setToastMessage(null), 1500);
+    showToast(res.status === 401 ? "로그인이 필요합니다" : "처리에 실패했습니다. 다시 시도해주세요.");
   };
 
   const handleToggleSave = () => {
@@ -107,12 +112,10 @@ function MatchingDetail() {
         showFailureToast(res);
         return;
       }
-      setToastMessage(next ? "선택하신 공고가 찜하기 되었습니다" : "찜하기가 취소되었습니다");
-      setTimeout(() => setToastMessage(null), 1500);
+      showToast(next ? "선택하신 공고가 찜하기 되었습니다" : "찜하기가 취소되었습니다");
     }).catch(() => {
       setSaved(!next);
-      setToastMessage("서버에 연결할 수 없습니다.");
-      setTimeout(() => setToastMessage(null), 1500);
+      showToast("서버에 연결할 수 없습니다.");
     });
   };
 
@@ -129,12 +132,10 @@ function MatchingDetail() {
         showFailureToast(res);
         return;
       }
-      setToastMessage(next ? "지원한 공고로 표시되었습니다" : "지원 표시가 취소되었습니다");
-      setTimeout(() => setToastMessage(null), 1500);
+      showToast(next ? "지원한 공고로 표시되었습니다" : "지원 표시가 취소되었습니다");
     }).catch(() => {
       setApplied(!next);
-      setToastMessage("서버에 연결할 수 없습니다.");
-      setTimeout(() => setToastMessage(null), 1500);
+      showToast("서버에 연결할 수 없습니다.");
     });
   };
 
@@ -163,16 +164,7 @@ function MatchingDetail() {
       <div className={`pageContainer ${styles.page}`}>
         <header className={styles.header}>
           <div className={styles.headerLeft}>
-            <button
-              type="button"
-              className={styles.backButton}
-              onClick={handleBack}
-              aria-label="뒤로가기"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M16 5l-8 7 8 7" />
-              </svg>
-            </button>
+            <BackButton onClick={handleBack} />
             <span className={styles.headerTitle}>지원사업 상세</span>
           </div>
         </header>
@@ -191,16 +183,7 @@ function MatchingDetail() {
       {/* 헤더: 뒤로가기 + 타이틀 + 북마크(저장) 토글 */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <button
-            type="button"
-            className={styles.backButton}
-            onClick={handleBack}
-            aria-label="뒤로가기"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M16 5l-8 7 8 7" />
-            </svg>
-          </button>
+          <BackButton onClick={handleBack} />
           <span className={styles.headerTitle}>지원사업 상세</span>
         </div>
         <button
@@ -267,17 +250,50 @@ function MatchingDetail() {
             내용이 132px보다 짧아도 버튼은 항상 보임(오버플로 여부를 JS로 안 재서 단순화). */}
         <section className={styles.card}>
           <h2 className={styles.cardTitle}>공고 내용</h2>
-          <div className={`${styles.contentWrap} ${contentExpanded ? "" : styles.contentCollapsed}`}>
-            <p className={styles.contentBody}>{detail.content}</p>
-            {!contentExpanded && <div className={styles.contentFade} aria-hidden="true" />}
-          </div>
-          <button
-            type="button"
-            className={styles.expandButton}
-            onClick={() => setContentExpanded((prev) => !prev)}
-          >
-            {contentExpanded ? "접기" : "펼쳐보기"}
-          </button>
+          {/* [2026-09-15] PDF/HWPX는 서버가 원문 그대로 보여줄 수 있어서(PDF는 브라우저 내장
+              뷰어, HWPX는 서버 변환 HTML) 요약 텍스트(content) 대신 iframe을 바로 띄운다.
+              HWP(구버전)는 LibreOffice로 변환해보니 텍스트가 깨져서 뷰어를 못 만들었고,
+              K-Startup은 원본 첨부 자체가 없다 - 이 둘은 기존 방식(요약 텍스트 + 다운로드용
+              토글 버튼) 그대로 유지. */}
+          {isViewableNoticeFile ? (
+            <iframe
+              src={`${API_BASE_URL}/api/matching/${id}/notice-file#toolbar=0&navpanes=0`}
+              title="원본 공고문"
+              style={{ width: "100%", height: 600, border: "none" }}
+            />
+          ) : (
+            <>
+              <div className={`${styles.contentWrap} ${contentExpanded ? "" : styles.contentCollapsed}`}>
+                <p className={styles.contentBody}>{detail.content}</p>
+                {!contentExpanded && <div className={styles.contentFade} aria-hidden="true" />}
+              </div>
+              <button
+                type="button"
+                className={styles.expandButton}
+                onClick={() => setContentExpanded((prev) => !prev)}
+              >
+                {contentExpanded ? "접기" : "펼쳐보기"}
+              </button>
+              {detail.noticeFileName && (
+                <>
+                  <button
+                    type="button"
+                    className={styles.expandButton}
+                    onClick={() => setNoticeFileOpen((prev) => !prev)}
+                  >
+                    {noticeFileOpen ? "원본 공고문 닫기" : "원본 공고문 보기"}
+                  </button>
+                  {noticeFileOpen && (
+                    <iframe
+                      src={`${API_BASE_URL}/api/matching/${id}/notice-file#toolbar=0&navpanes=0`}
+                      title="원본 공고문"
+                      style={{ width: "100%", height: 600, border: "none", marginTop: 10 }}
+                    />
+                  )}
+                </>
+              )}
+            </>
+          )}
         </section>
 
         {/* 서류 자동채움 안내 배너 */}
@@ -351,11 +367,7 @@ function MatchingDetail() {
         </div>
       </div>
 
-      {toastMessage && (
-        <div className={styles.toast} role="status">
-          {toastMessage}
-        </div>
-      )}
+      <Toast message={toastMessage} />
 
       <BottomNav active="matching" />
       <ChatFab variant="withBottomNav" />
