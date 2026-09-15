@@ -265,23 +265,17 @@ function MatchingList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // [2026-09-15, 사용자 확인] 위 업종 옵션과 같은 이유 - 지역도 로그인 상태고
-  // 사업자등록증 주소에서 뽑혔거나 직접 추가한 희망 지역이 있으면, 전체 지역
-  // 목록(REGION_SHEET_OPTIONS)은 그대로 두고 맨 앞에 "매칭된 지역" 한 줄만
-  // 추가한다(업종과 달리 지역은 목록 전체가 계속 유용해서 완전히 대체하지 않음).
-  const [matchedRegionOptions, setMatchedRegionOptions] = useState<SheetOption[] | null>(null);
+  // [2026-09-15, 사용자 확인] 업종과 다르게 지역은 별도 "매칭된 지역" 옵션을 만들지
+  // 않고, 사업자등록증 주소에서 자동으로 뽑힌 지역이 "그것 하나뿐"일 때만 그 지역
+  // 자체를 기본 선택값으로 넣는다. 희망 지역 칩을 추가해서 2개 이상이 되면(어느 게
+  // 자동으로 뽑힌 건지 구분 안 됨) 기본값은 그냥 "지역 전체"로 둔다.
   useEffect(() => {
     if (region || !getAuthToken()) return;
     fetch(`${API_BASE_URL}/api/matching/my-regions`, { headers: authHeaders() })
       .then((res) => res.json())
       .then((body: { success: boolean; data?: { regions: string[] } }) => {
         const regions = body.success ? body.data?.regions ?? [] : [];
-        if (regions.length === 0) return;
-        setMatchedRegionOptions([
-          { label: "지역 전체", value: "" },
-          { label: "매칭된 지역", value: regions.join(",") },
-          ...REGION_SHEET_OPTIONS.slice(1),
-        ]);
+        if (regions.length === 1) updateParam("region", regions[0]);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -408,7 +402,7 @@ function MatchingList() {
           label="지역"
           name="region"
           value={region}
-          options={matchedRegionOptions ?? REGION_SHEET_OPTIONS}
+          options={REGION_SHEET_OPTIONS}
           onChange={(v) => updateParam("region", v)}
         />
         <SelectSheet

@@ -10,6 +10,7 @@ import AdminMembers from "./pages/admin/AdminMembers";
 import AnnouncementsSync from "./pages/admin/AnnouncementsSync";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminRoute from "./pages/admin/AdminRoute";
+import RequireAuth from "./components/RequireAuth/RequireAuth";
 import AdminStyleGuide from "./components/AdminStyleGuide/AdminStyleGuide";
 import WebStyleGuide from "./components/WebStyleGuide/WebStyleGuide";
 import WebStyleGuideByFeature from "./components/WebStyleGuideByFeature/WebStyleGuideByFeature";
@@ -94,38 +95,50 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* 공개 라우트 - 로그인 없이 접근 가능한 딱 3개(입구) */}
         <Route path="/" element={<Splash />} />
-        <Route path="/home" element={<Home />} />
         <Route path="/login" element={<LoginForm variant="user" />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/diagnosis/choice" element={<DiagnosisChoice />} />
-        <Route path="/matching" element={<MatchingList />} />
+
+        {/* [2026-09-15, 사용자 확인] "로그인 안 하면 서비스 자체를 못 쓴다" 원칙 -
+            실제 서비스 화면은 전부 RequireAuth로 감싼다(관리자는 AdminRoute가 따로 담당).
+            테스트/디자인 참고/미리보기 라우트(아래 나머지 전부)는 팀 공용 확인 용도라 제외. */}
+        <Route element={<RequireAuth />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/diagnosis/choice" element={<DiagnosisChoice />} />
+          <Route path="/matching" element={<MatchingList />} />
+          <Route path="/matching/filter" element={<FilterPage />} />
+          <Route path="/matching/:id" element={<MatchingDetail />} />
+          <Route path="/matching/:id/doc-preview" element={<DocPreview />} />
+          <Route path="/mypage" element={<MyPage />} />
+          <Route path="/mypage/edit" element={<ProfileEdit />} />
+          <Route path="/support" element={<CustomerSupport />} />
+          <Route path="/support/chat" element={<CustomerSupportChat />} />
+          <Route path="/diagnosis/select" element={<DiagnosisSelect />} />
+          <Route path="/diagnosis/1" element={<DiagnosisStep1 />} />
+          <Route path="/diagnosis/3" element={<DiagnosisStep2 />} />
+          <Route path="/diagnosis/4" element={<DiagnosisStep3 />} />
+          <Route path="/diagnosis/5" element={<DiagnosisStep4 />} />
+          <Route path="/diagnosis/6" element={<DiagnosisStep5 />} />
+          {/* [2026-09-12] 메인 흐름 - DiagnosisStep5.tsx가 Q6 제출 후 여기로 이동시킨다
+              (위 import 주석 참고). emkim99님 화면 디자인을 이쪽으로 옮겨 입히는 작업 진행 중. */}
+          <Route path="/diagnosis/summary" element={<DiagnosisAnswerSummary />} />
+          <Route path="/diagnosis/industry-result" element={<DiagnosisIndustryResult />} />
+          <Route path="/diagnosis/report" element={<DiagnosisReport />} />
+          {/* [2026-09-13] 마이페이지 "분석 리포트"에서 지난 세션을 다시 열어볼 때 - 같은
+              컴포넌트가 URL의 sessionId 유무로 "진행 중" vs "완료된 리포트 보기"를 가른다. */}
+          <Route path="/diagnosis/report/:sessionId" element={<DiagnosisReport />} />
+          <Route path="/diagnosis/7" element={<DiagnosisStep6 />} />
+          <Route path="/diagnosis/8" element={<DiagnosisStep7 />} />
+          <Route path="/diagnosis/9" element={<DiagnosisStep8 />} />
+          <Route path="/diagnosis/10" element={<DiagnosisStep9 />} />
+        </Route>
+
         {/* [2026-09-12] 디자인 검토 완료 - 실제 /matching(MatchingList.tsx)에 반영됨.
             이 사본 자체는 팀원 참고용으로 당분간 남겨둠. */}
         <Route path="/matching-draft" element={<MatchingListDraft />} />
-        <Route path="/matching/filter" element={<FilterPage />} />
-        <Route path="/matching/:id" element={<MatchingDetail />} />
-        <Route path="/matching/:id/doc-preview" element={<DocPreview />} />
-        <Route path="/mypage" element={<MyPage />} />
-        <Route path="/mypage/edit" element={<ProfileEdit />} />
         <Route path="/edit-v2" element={<ProfileEditV2 />} />
-        <Route path="/support" element={<CustomerSupport />} />
-        <Route path="/support/chat" element={<CustomerSupportChat />} />
-        <Route path="/diagnosis/select" element={<DiagnosisSelect />} />
-        <Route path="/diagnosis/1" element={<DiagnosisStep1 />} />
-        <Route path="/diagnosis/3" element={<DiagnosisStep2 />} />
-        <Route path="/diagnosis/4" element={<DiagnosisStep3 />} />
-        <Route path="/diagnosis/5" element={<DiagnosisStep4 />} />
-        <Route path="/diagnosis/6" element={<DiagnosisStep5 />} />
-        {/* [2026-09-12] 메인 흐름 - DiagnosisStep5.tsx가 Q6 제출 후 여기로 이동시킨다
-            (위 import 주석 참고). emkim99님 화면 디자인을 이쪽으로 옮겨 입히는 작업 진행 중. */}
-        <Route path="/diagnosis/summary" element={<DiagnosisAnswerSummary />} />
-        <Route path="/diagnosis/industry-result" element={<DiagnosisIndustryResult />} />
-        <Route path="/diagnosis/report" element={<DiagnosisReport />} />
-        {/* [2026-09-13] 마이페이지 "분석 리포트"에서 지난 세션을 다시 열어볼 때 - 같은
-            컴포넌트가 URL의 sessionId 유무로 "진행 중" vs "완료된 리포트 보기"를 가른다. */}
-        <Route path="/diagnosis/report/:sessionId" element={<DiagnosisReport />} />
         {/* [2026-09-12, 개인 테스트용] 확인 끝나면 이 2줄도 위 import 2줄과 같이 지울 것 */}
         <Route path="/diagnosis/summary-test" element={<DiagnosisAnswerSummaryTest />} />
         <Route path="/diagnosis/report-test" element={<DiagnosisReportTest />} />
@@ -142,10 +155,6 @@ function App() {
         {/* [2026-09-12, 개인 테스트용] 확인 끝나면 이 2줄도 위 import 2줄과 같이 지울 것 */}
         <Route path="/diagnosis/market-report-test" element={<DiagnosisMarketReportTest />} />
         <Route path="/diagnosis/tech-report-test" element={<DiagnosisTechReportTest />} />
-        <Route path="/diagnosis/7" element={<DiagnosisStep6 />} />
-        <Route path="/diagnosis/8" element={<DiagnosisStep7 />} />
-        <Route path="/diagnosis/9" element={<DiagnosisStep8 />} />
-        <Route path="/diagnosis/10" element={<DiagnosisStep9 />} />
         {/* [2026-09-13, 개인 디자인 확인용] 확인 끝나면 이 라우트들도 위 import 블록과
             같이 지울 것. DiagnosisStep4는 같은 이름의 무관한 기존 스크래치 파일이 있어
             이번 배치에서 제외했음(App.tsx 위쪽 import 주석 참고) - Q5(매장 운영 형태)

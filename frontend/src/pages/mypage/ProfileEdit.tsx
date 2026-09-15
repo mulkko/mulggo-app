@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/profileEditV2.module.css";
-import { authHeaders, clearSession, getAuthToken, getUserId } from "../../auth/session";
+import { getUserId } from "../../auth/session";
 import BizCertUpload from "../../components/BizCertUpload/BizCertUpload";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import { TextField, SelectField } from "../../components/FormField/FormField";
@@ -194,20 +194,9 @@ function ProfileEdit() {
   const latestProfileFetchId = useRef(0);
 
   useEffect(() => {
-    // [2026-09-15, 사용자 확인] "로그인 없어도 항상 27번 폴백 계정으로 보여준다"던
-    // 개발 편의 동작을 없앤다 - 로그인 안 됐거나 세션이 서버에서 무효화됐으면
-    // (Home.tsx/MyPage.tsx와 동일하게 GET /api/auth/me로 검증) 로그인 화면으로 보낸다.
-    if (!getAuthToken() || !userId) {
-      navigate("/login");
-      return;
-    }
-    fetch(`${API_BASE_URL}/api/auth/me`, { headers: authHeaders() }).then((res) => {
-      if (!res.ok) {
-        clearSession();
-        navigate("/login");
-      }
-    });
-
+    // [2026-09-15, 사용자 확인] 로그인 검증은 App.tsx의 RequireAuth가 라우트 단에서
+    // 이미 처리한다(무효면 여기 렌더되기 전에 /login으로 보냄) - 여기선 유효한
+    // getUserId()가 있다고 보고 바로 쓴다. 예전의 27번 폴백 계정 동작은 없앰.
     const fetchId = ++latestProfileFetchId.current;
     fetch(`${API_BASE_URL}/api/mypage/profile?user_id=${userId}`)
       .then((res) => res.json())
