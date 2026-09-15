@@ -114,11 +114,13 @@ function LoginForm({ variant }: LoginFormProps) {
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
-        <div className={styles.badge}>
-          <img src={logo} alt="물꼬 로고" />
+        <div className={styles.heroContent}>
+          <div className={styles.badge}>
+            <img src={logo} alt="물꼬 로고" />
+          </div>
+          <p className={styles.wordmark}>{variant === "admin" ? "MULKKO 관리자" : "MULKKO"}</p>
+          <p className={styles.tagline}>{variant === "admin" ? "관리자 전용 페이지입니다." : "창업의 물꼬를 트다"}</p>
         </div>
-        <p className={styles.wordmark}>{variant === "admin" ? "MULKKO 관리자" : "MULKKO"}</p>
-        <p className={styles.tagline}>{variant === "admin" ? "관리자 전용 페이지입니다." : "창업의 물꼬를 트다."}</p>
         {/* 시안에는 없지만 스크린리더/문서 타이틀용으로 title을 숨겨 유지 */}
         <h1 className={styles.srOnly}>{title}</h1>
         <svg

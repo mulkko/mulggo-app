@@ -501,34 +501,6 @@
   cursor: pointer;
 }
 
-/* [2026-09-12] "리포트 분석 중" 로딩 오버레이 - DiagnosisReport.tsx가 참조하는데
-   정의가 빠져있던 클래스들. BizCertUpload/DocPreview의 로딩 팝업과 같은 톤
-   (화면 전체 딤 + 가운데 흰 박스 + 도는 스피너)으로 맞춤. */
-.loadingOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-outer);
-  box-sizing: border-box;
-  background: var(--color-scrim);
-}
-
-.loadingBox {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  box-sizing: border-box;
-  padding: 32px 24px;
-  border-radius: var(--radius-input);
-  background: var(--color-white);
-  box-shadow: var(--shadow-app);
-  text-align: center;
-}
-
 .spinner {
   width: 32px;
   height: 32px;
@@ -557,17 +529,9 @@
   }
 }
 
-.loadingText {
-  margin: 0;
-  font-size: var(--font-size-body);
-  color: var(--color-ink-charcoal);
-}
-
-.loadingHint {
-  margin: 0;
-  font-size: var(--font-size-caption);
-  color: var(--color-stone-gray);
-}
+/* [2026-09-15] "리포트 분석 중" 로딩 오버레이/진행바(.loadingOverlay/.loadingBox/
+   .loadingText/.loadingHint/.reportWait*)는 여러 페이지가 공유하는 컴포넌트로 옮기면서
+   components/ReportWaitPopup/reportWaitPopup.module.css로 이전했다. */
 
 /* [2026-09-12] "업종코드 매칭 결과" 카드 - .confirmCard와 같은 카드 톤 재사용,
    라벨/제목/설명 3단 구성만 다름(DiagnosisReport.tsx가 참조하는데 정의가 빠져있었음). */

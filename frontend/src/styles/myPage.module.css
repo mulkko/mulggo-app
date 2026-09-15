@@ -46,6 +46,27 @@
   display: block;
 }
 
+.contactBtn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink-charcoal);
+}
+
+.contactBtnImg {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  display: block;
+}
+
 /* ===== 스크롤 영역 ===== */
 .scrollArea {
   flex: 1;

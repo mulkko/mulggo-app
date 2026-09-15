@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/myPage.module.css";
 import logo from "../../assets/logo.svg";
+import contactIcon from "../../assets/8_white.png";
 import BottomNav from "../../components/BottomNav/BottomNav";
-import ChatFab from "../../components/ChatFab/ChatFab";
 import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
@@ -249,6 +249,10 @@ function MyPage() {
     navigate("/mypage/edit");
   };
 
+  const handleContactClick = () => {
+    navigate("/support");
+  };
+
   const handleNewAnalysisClick = () => {
     navigate("/diagnosis/choice");
   };
@@ -342,6 +346,14 @@ function MyPage() {
           <span className={styles.logoText}>MULKKO PAGE</span>
           <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
         </span>
+        <button
+          type="button"
+          className={styles.contactBtn}
+          aria-label="1:1 문의"
+          onClick={handleContactClick}
+        >
+          <img src={contactIcon} alt="" className={styles.contactBtnImg} />
+        </button>
       </header>
 
       <div className={styles.scrollArea}>
@@ -468,8 +480,6 @@ function MyPage() {
           </button>
         </div>
       </div>
-
-      <ChatFab variant="withBottomNav" />
 
       {/* 8. 하단 네비게이션 ("마이페이지" 탭 활성) */}
       <BottomNav active="my" />

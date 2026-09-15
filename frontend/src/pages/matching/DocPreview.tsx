@@ -4,6 +4,13 @@ import styles from "../../styles/docPreview.module.css";
 import type { RequiredDoc } from "./matchingDetailData";
 import { fetchFilledDocument, saveFilledBlob } from "../../utils/downloadFilledDoc";
 import { authHeaders } from "../../auth/session";
+import ReportWaitPopup from "../../components/ReportWaitPopup/ReportWaitPopup";
+
+// [2026-09-15] "나의 정보로 채우기" 최대 대기시간 - backend/api/matching.py fill_attachment의
+// 원본 첨부파일 다운로드 요청(requests.get(..., timeout=30), 459행)이 실측 가능한 유일한
+// 상한이라 그 값을 그대로 씀. LLM/외부 API 호출 없이 로컬 hwpx 필드 치환만 하는 구조라
+// 실제로는 훨씬 짧게 끝나는 경우가 대부분이다.
+const FILL_WAIT_MAX_SECONDS = 30;
 
 // ============================================================
 // [실험용, 2026-09-11] "채워질 정보 미리보기" 카드 - 사용자 확인 중인 실험 기능.
@@ -121,6 +128,9 @@ function DocPreview() {
   // 모달에서 "로컬저장" 눌렀을 때만 실제로 저장한다(attachmentId 없는 더미 fallback
   // 케이스는 채울 blob 자체가 없어서 null로 둠).
   const [filledBlob, setFilledBlob] = useState<Blob | null>(null);
+  // fetchFilledDocument 응답이 실제로 왔는지 - ReportWaitPopup 진행바가 100%까지
+  // 채워지는 걸 보여준 다음(onDone) 모달을 연다(DiagnosisIndustryResult.tsx 등과 동일 패턴).
+  const [fillReady, setFillReady] = useState(false);
 
   const handleBack = () => {
     navigate(`/matching/${id}`);
@@ -135,13 +145,19 @@ function DocPreview() {
     }
     setFillError("");
     setFilling(true);
+    setFillReady(false);
     const result = await fetchFilledDocument(attachmentId);
-    setFilling(false);
     if ("error" in result) {
+      setFilling(false);
       setFillError(result.error);
       return;
     }
     setFilledBlob(result.blob);
+    setFillReady(true);
+  };
+
+  const handleFillPopupDone = () => {
+    setFilling(false);
     setDownloadOpen(true);
   };
 
@@ -218,6 +234,15 @@ function DocPreview() {
           {filling ? "채우는 중..." : "나의 정보로 채우기"}
         </button>
       </div>
+
+      {filling && (
+        <ReportWaitPopup
+          title="서류를 채우고 있어요"
+          ready={fillReady}
+          onDone={handleFillPopupDone}
+          maxSeconds={FILL_WAIT_MAX_SECONDS}
+        />
+      )}
 
       {downloadOpen && (
         <div className={styles.overlay} onClick={handleCloseModal}>

@@ -62,7 +62,7 @@
 .hero {
   position: relative;
   overflow: hidden;
-  padding: 52px var(--spacing-outer) 72px;
+  padding: 75px var(--spacing-outer) 72px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -77,12 +77,19 @@
   );
 }
 
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateY(-20px);
+}
+
 .badge {
   width: 132px;
   height: 132px;
   border-radius: 50%;
   background: var(--color-white);
-  box-shadow: var(--shadow-app);
+  box-shadow: var(--shadow-login-badge);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,7 +101,7 @@
 }
 
 .wordmark {
-  margin: 20px 0 0;
+  margin: 34px 0 0;
   font-family: var(--font-family-logo);
   font-size: var(--font-size-logo);
   font-weight: var(--font-weight-logo);
@@ -103,8 +110,8 @@
 }
 
 .tagline {
-  margin: 8px 0 0;
-  font-size: var(--font-size-caption);
+  margin: 12px 0 0;
+  font-size: 13px;
   font-weight: var(--font-weight-h1);
   color: var(--color-white);
 }

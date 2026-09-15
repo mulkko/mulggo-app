@@ -65,7 +65,7 @@ function Home() {
       <header className={styles.header}>
         <div className={styles.brand}>
           <span className={styles.brandName}>LET'S MULKKO</span>
-          <span className={styles.brandTagline}>창업의 물꼬를 트다.</span>
+          <span className={styles.brandTagline}>창업의 물꼬를 트다</span>
         </div>
       </header>
 
