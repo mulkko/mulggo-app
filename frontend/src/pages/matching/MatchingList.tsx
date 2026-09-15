@@ -429,7 +429,7 @@ function MatchingList() {
           {/* [2026-09-13] 업종코드 필터가 걸려있으면(분석 리포트에서 넘어온 경우) 업종
               맞춤 섹션(total)만이 아니라 업종무관 섹션(unclassifiedTotal)까지 합친 값을
               보여준다(사용자 확인) - 필터 없을 땐 unclassifiedTotal이 0이라 total 그대로. */}
-          <span className={styles.countValue}>{total + unclassifiedTotal}건</span>
+          <span className={styles.countValue}>{(total + unclassifiedTotal).toLocaleString()}건</span>
         </div>
 
         {loading && <p className={styles.guide}>불러오는 중...</p>}
