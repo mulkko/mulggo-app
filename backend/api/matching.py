@@ -4,12 +4,15 @@
 import os
 import tempfile
 from datetime import date
+from urllib.parse import quote
 
 import requests
 from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import Response
 from fastapi.responses import FileResponse, JSONResponse
 
 from backend.assistant.hwpx_fill import fill_hwpx_all
+from backend.assistant.hwpx_view import hwpx_to_html
 from backend.assistant.pipeline import _load_mapping
 from backend.auth.session import get_current_user_id, get_optional_user_id
 from backend.db.connection import get_connection
@@ -540,7 +543,7 @@ def get_announcement_detail(
             """
             SELECT a.title, a.content, a.host_org_name, a.supervising_org, a.target_summary,
                    a.apply_method, a.contact, a.apply_start_date, a.apply_end_date,
-                   a.detail_page_url, b.hashtags
+                   a.detail_page_url, b.hashtags, b.print_file_nm, b.file_nm
             FROM announcements a
             LEFT JOIN announcements_raw_bizinfo b ON b.raw_bizinfo_id = a.raw_bizinfo_id
             WHERE a.announcement_id = %s
@@ -553,7 +556,12 @@ def get_announcement_detail(
 
         (title, content, host_org_name, supervising_org, target_summary,
          apply_method, contact, apply_start_date, apply_end_date,
-         detail_page_url, raw_hashtags) = row
+         detail_page_url, raw_hashtags, print_file_nm, file_nm) = row
+
+        # [2026-09-15] 원본 공고문(PDF/HWP) - 기업마당(bizinfo) 공고만 있음(K-Startup 원본엔
+        # 이 파일 경로 자체가 없음). 실제 파일은 용량 크고 자주 안 쓰여서 여기선 파일명만
+        # 내려주고, 실제 다운로드는 버튼 눌렀을 때 GET /{id}/notice-file이 그때 가져온다.
+        notice_file_name = print_file_nm or (file_nm.split("@")[0] if file_nm else None)
 
         # 해시태그는 기업마당(bizinfo) 원본에만 있는 필드 (K-Startup 원본엔 없음).
         # 원본은 "경영,전남광주,홍보시책" 처럼 콤마로만 구분돼있어 "#" 붙여서 공백으로 이어붙인다.
@@ -605,8 +613,72 @@ def get_announcement_detail(
             "content": content or "",
             "docs": docs,
             "homepageUrl": detail_page_url,
+            "noticeFileName": notice_file_name,
         },
     }
+
+
+@router.get("/{announcement_id}/notice-file")
+def get_notice_file(announcement_id: int) -> Response:
+    """[2026-09-15] "원본 공고문 보기" - 기업마당(bizinfo) 원본 첨부(대표 공고문)를 서버가
+    대신 받아서 그대로 돌려준다. 브라우저가 bizinfo.go.kr을 직접 못 여는 문제(User-Agent
+    없으면 403, 세션 쿠키 기반이라 크로스오리진 iframe으론 안 뜸)를 피하려고 서버 대 서버로
+    받는다 - backend/preprocessing/extract_all_texts.py::get_notice_full_text()가 이미 이
+    방식(같은 User-Agent)으로 성공적으로 받아오고 있는 것과 동일한 접근.
+    대표 파일(print_flpth_nm) 실패 시 flpth_nm의 나머지 후보를 순서대로 시도한다
+    (그쪽 원문 추출 로직과 동일한 폴백)."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT b.print_flpth_nm, b.print_file_nm, b.flpth_nm, b.file_nm
+            FROM announcements a
+            JOIN announcements_raw_bizinfo b ON b.raw_bizinfo_id = a.raw_bizinfo_id
+            WHERE a.announcement_id = %s
+            """,
+            (announcement_id,),
+        )
+        row = cur.fetchone()
+    finally:
+        conn.close()
+
+    if row is None:
+        return JSONResponse(status_code=404, content={"success": False, "error": {"message": "원본 공고문이 없습니다.", "code": "NOT_FOUND"}})
+
+    print_flpth_nm, print_file_nm, flpth_nm, file_nm = row
+    urls = ([print_flpth_nm] if print_flpth_nm else []) + (flpth_nm.split("@") if flpth_nm else [])
+    names = ([print_file_nm] if print_file_nm else []) + (file_nm.split("@") if file_nm else [])
+    if not urls:
+        return JSONResponse(status_code=404, content={"success": False, "error": {"message": "원본 공고문이 없습니다.", "code": "NOT_FOUND"}})
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    for i, url in enumerate(urls):
+        try:
+            resp = requests.get(url, headers=headers, timeout=20)
+            if resp.status_code == 200 and resp.content:
+                file_name = names[i] if i < len(names) else "공고문"
+                ext = os.path.splitext(file_name)[1].lower()
+                # HWPX(신버전)만 서버가 HTML로 변환해 그대로 보여준다 - PDF는 브라우저 내장
+                # 뷰어가 바로 렌더링하고, HWP(구버전)는 LibreOffice로 실제 샘플 변환해보니
+                # 텍스트가 깨져(9600여 페이지짜리 쓰레기 PDF) 포기 - 다운로드로만 처리한다.
+                if ext == ".hwpx":
+                    try:
+                        return Response(content=hwpx_to_html(resp.content), media_type="text/html; charset=utf-8")
+                    except Exception:
+                        pass
+                content_type = "application/pdf" if ext == ".pdf" else "application/octet-stream"
+                # Content-Disposition 헤더는 라틴1만 허용 - 한글 파일명은 RFC 5987로 인코딩.
+                encoded_name = quote(file_name)
+                return Response(
+                    content=resp.content,
+                    media_type=content_type,
+                    headers={"Content-Disposition": f"inline; filename*=UTF-8''{encoded_name}"},
+                )
+        except requests.RequestException:
+            continue
+
+    return JSONResponse(status_code=502, content={"success": False, "error": {"message": "원본 공고문을 불러오지 못했습니다.", "code": "FETCH_FAILED"}})
 
 
 @router.post("/{announcement_id}/bookmark")

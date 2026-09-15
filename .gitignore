@@ -43,6 +43,11 @@ data/uploads/
 data/test_uploads/
 frontend/dev/*_test.*
 
+# 시연 영상 촬영용 데모 진입/간지 페이지, 관련 스크립트/유틸 (개인 확인용, 실제 서비스 아님 — 절대 커밋 안 함)
+frontend/src/pages/_demo/
+**/_demo_*
+frontend/src/utils/demo*.ts
+
 # 관리자 "통합 반영" 실행 로그 (subprocess stdout)
 logs/
 

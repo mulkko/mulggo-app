@@ -114,24 +114,19 @@ function DocPreview() {
   const fileName = doc?.fileName ?? "신청 서류";
   const attachmentId = doc?.attachmentId;
 
-  // 다운로드 모달 open 여부 — 이 화면 안에서만 쓰는 로컬 UI 상태
-  const [downloadOpen, setDownloadOpen] = useState(false);
   const [fillError, setFillError] = useState("");
   const [filling, setFilling] = useState(false);
-  // [2026-09-10] 채우기 성공 시 바로 다운로드하지 않고 여기 잠깐 들고 있다가,
-  // 모달에서 "로컬저장" 눌렀을 때만 실제로 저장한다(attachmentId 없는 더미 fallback
-  // 케이스는 채울 blob 자체가 없어서 null로 둠).
-  const [filledBlob, setFilledBlob] = useState<Blob | null>(null);
 
   const handleBack = () => {
     navigate(`/matching/${id}`);
   };
 
+  // [2026-09-15, 사용자 확인] "로컬저장/카카오공유" 선택 모달 없앰 - 채우기 성공하면
+  // 바로 다운로드시키고 곧장 마이페이지로 이동한다(채우기 이용내역에서 다시 받을 수 있음).
   const handleFill = async () => {
     if (!attachmentId) {
-      // attachmentId 없이 들어온 경우(더미데이터 fallback) - 실제 실행할 대상이 없어 모달만 보여준다.
-      setFilledBlob(null);
-      setDownloadOpen(true);
+      // attachmentId 없이 들어온 경우(더미데이터 fallback) - 실제 채울 대상이 없어 이동만 한다.
+      navigate("/mypage");
       return;
     }
     setFillError("");
@@ -142,22 +137,8 @@ function DocPreview() {
       setFillError(result.error);
       return;
     }
-    setFilledBlob(result.blob);
-    setDownloadOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setDownloadOpen(false);
-  };
-
-  const handleLocalSave = () => {
-    if (filledBlob) saveFilledBlob(filledBlob, fileName);
-    setDownloadOpen(false);
-  };
-
-  const handleKakaoShare = () => {
-    // TODO: 카카오톡 공유 SDK 연동 — 지금은 모달만 닫는다
-    setDownloadOpen(false);
+    saveFilledBlob(result.blob, fileName);
+    navigate("/mypage");
   };
 
   if (loading) {
@@ -211,60 +192,6 @@ function DocPreview() {
         </button>
       </div>
 
-      {downloadOpen && (
-        <div className={styles.overlay} onClick={handleCloseModal}>
-          <div
-            className={styles.modalCard}
-            role="dialog"
-            aria-modal="true"
-            aria-label="서류 다운로드"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className={styles.modalHead}>
-              <p className={styles.modalTitle}>서류가 준비됐어요</p>
-              <p className={styles.modalSub}>{fileName}</p>
-            </div>
-            <div className={styles.modalButtons}>
-              <button
-                type="button"
-                className={styles.localSaveButton}
-                onClick={handleLocalSave}
-              >
-                <svg
-                  className={styles.modalIcon}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M12 3v12" />
-                  <path d="M7 11l5 5 5-5" />
-                  <path d="M5 20h14" />
-                </svg>
-                <span className={styles.modalButtonText}>{"로컬 저장소에\n저장하기"}</span>
-              </button>
-              <button
-                type="button"
-                className={styles.kakaoButton}
-                onClick={handleKakaoShare}
-              >
-                <svg
-                  className={styles.modalIcon}
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M12 3.5C6.75 3.5 2.5 6.9 2.5 11.1c0 2.7 1.79 5.06 4.5 6.42-.2.72-.72 2.62-.83 3.03-.13.5.19.5.39.36.16-.1 2.55-1.73 3.58-2.44.44.06.9.09 1.36.09 5.25 0 9.5-3.4 9.5-7.6S17.25 3.5 12 3.5z" />
-                </svg>
-                <span className={styles.modalButtonText}>{"카카오톡\n공유하기"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

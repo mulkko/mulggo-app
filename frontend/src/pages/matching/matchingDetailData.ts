@@ -54,4 +54,7 @@ export interface AnnouncementDetail {
   docs: RequiredDoc[];
   /** 원 공고 홈페이지 URL (기업마당 pblanc_url) */
   homepageUrl: string | null;
+  /** [2026-09-15] 원본 공고문 파일명 - 기업마당 공고만 있음(K-Startup은 항상 null).
+   * 있으면 GET /api/matching/:id/notice-file로 실제 파일을 받아올 수 있다. */
+  noticeFileName: string | null;
 }
