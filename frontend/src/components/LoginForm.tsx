@@ -1,5 +1,5 @@
 import { useState, type SubmitEvent } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "../styles/login.module.css";
 import { ADMIN_AUTH_KEY } from "../pages/admin/AdminRoute";
 import { getAuthToken, setSession } from "../auth/session";
@@ -28,34 +28,19 @@ const VARIANT_CONFIG = {
   },
 } as const;
 
-// [2026-09-14, 사용자 확인] 회원가입은 가입 직후 자동로그인을 안 해서(backend/api/auth.py
-// 주석 참고) Signup.tsx가 온보딩으로 바로 보내면 로그인 세션이 없는 채로 진단하기를
-// 진행하다가 맨 마지막(업종코드 확인) 단계에서야 401로 막히는 문제가 있었다. Signup.tsx가
-// 이제 "/login"으로 이 state를 실어 보내고, 로그인이 실제로 성공하면 "/home" 대신
-// 온보딩으로 이어서 보낸다(회원가입 때 쓰던 것과 동일한 { userId, name } state).
-interface LoginLocationState {
-  justSignedUp?: boolean;
-  email?: string;
-  name?: string;
-}
-
 function LoginForm({ variant }: LoginFormProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const { title, endpoint } = VARIANT_CONFIG[variant];
-  const locationState = (location.state ?? null) as LoginLocationState | null;
 
-  const [email, setEmail] = useState(locationState?.email ?? "");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const isLoggedIn = Boolean(getAuthToken());
 
-  const goToNextScreen = (userId: number, name: string) => {
+  const goToNextScreen = () => {
     if (variant === "admin") {
       localStorage.setItem(ADMIN_AUTH_KEY, "true");
       navigate("/admin");
-    } else if (locationState?.justSignedUp) {
-      navigate("/onboarding", { state: { userId, name: locationState.name ?? name } });
     } else {
       navigate("/home");
     }
@@ -82,7 +67,7 @@ function LoginForm({ variant }: LoginFormProps) {
         setSession(data.data.token, data.data.user_id, data.data.email);
       }
 
-      goToNextScreen(data.data?.user_id ?? 0, data.data?.name ?? "");
+      goToNextScreen();
     } catch {
       setErrorMessage("서버에 연결할 수 없습니다.");
     }

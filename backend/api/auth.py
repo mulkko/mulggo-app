@@ -149,7 +149,7 @@ class AuthUserData(BaseModel):
     user_id: int
     email: str
     name: str
-    token: str | None = None  # 로그인 성공 시에만 채움(회원가입 응답엔 없음 - 가입 직후 자동로그인 안 함)
+    token: str | None = None  # 로그인/회원가입 성공 시 채움
 
 
 class AuthErrorDetail(BaseModel):
@@ -308,5 +308,11 @@ def signup_endpoint(
                     process_biz_cert_ocr, user["user_id"], save_path, biz_cert_file.filename
                 )
 
+    # [2026-09-15, 사용자 확인] 가입 직후 자동로그인 - 예전엔 세션 없이 user_id만 들고
+    # 온보딩→진단하기를 진행하다가 맨 마지막(업종코드 확인) 단계에서만 401로 막혀서,
+    # 프론트가 "/login"으로 우회 이동시킨 뒤 로그인을 한 번 더 받는 임시방편을 썼다
+    # (Onboarding.tsx 주석 참고). login_endpoint와 동일하게 여기서 바로 세션을 만들어
+    # 그 근본 원인을 없앤다.
+    token = create_session(user["user_id"])
     response.status_code = 201
-    return AuthResponse(success=True, data=AuthUserData(**user))
+    return AuthResponse(success=True, data=AuthUserData(**user, token=token))
