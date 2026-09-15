@@ -7,6 +7,7 @@ import { authHeaders } from "../../auth/session";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
+import ReportWaitPopup from "../../components/ReportWaitPopup/ReportWaitPopup";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const POLL_INTERVAL_MS = 2000;
@@ -53,6 +54,7 @@ function DiagnosisIndustryResult() {
   const [track, setTrack] = useState<"cafe" | "tech" | undefined>(undefined);
   const [checking, setChecking] = useState(false);
   const [checkError, setCheckError] = useState("");
+  const [reportReadyToProceed, setReportReadyToProceed] = useState(false);
   // [2026-09-12] handleNext는 useEffect가 아니라 버튼 클릭 핸들러라 return값으로
   // cleanup을 걸 수 없다 - 폴링 도중 화면을 벗어나도 계속 도는 걸 막으려고 언마운트
   // 여부를 ref로 따로 들고 있는다.
@@ -92,6 +94,7 @@ function DiagnosisIndustryResult() {
 
     setChecking(true);
     setCheckError("");
+    setReportReadyToProceed(false);
     let networkRetries = 0;
     // [2026-09-13] "ready: false"만 계속 오는 경우엔 재시도 횟수 제한이 아예 없었다
     // (네트워크 오류일 때만 세던 MAX_NETWORK_RETRIES와 별개) - 분석이 비정상적으로
@@ -139,7 +142,9 @@ function DiagnosisIndustryResult() {
           targetAnchor: body.data.targetAnchor ?? undefined,
           differentiatorAnchor: body.data.differentiatorAnchor ?? undefined,
         });
-        navigate("/diagnosis/report");
+        // 실제 데이터는 이미 저장했으니, 진행바가 100%로 채워지는 걸 보여준 다음
+        // (ReportWaitPopup의 onDone) 다음 화면으로 넘어간다.
+        setReportReadyToProceed(true);
       } catch {
         if (unmountedRef.current) return;
         networkRetries += 1;
@@ -240,15 +245,11 @@ function DiagnosisIndustryResult() {
         </button>
       </div>
       {checking && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.loadingBox} role="status" aria-live="polite">
-            <div className={styles.spinner} />
-            <p className={styles.loadingText}>
-              {track === "cafe" ? "상권리포트를 분석하고 있어요" : "기술창업 리포트를 분석하고 있어요"}
-            </p>
-            <p className={styles.loadingHint}>잠시만 기다려주세요. (최대 30초 정도 걸려요)</p>
-          </div>
-        </div>
+        <ReportWaitPopup
+          title={track === "cafe" ? "상권리포트를 분석하고 있어요" : "기술창업 리포트를 분석하고 있어요"}
+          ready={reportReadyToProceed}
+          onDone={() => navigate("/diagnosis/report")}
+        />
       )}
 
       <BottomNav active="idea" />

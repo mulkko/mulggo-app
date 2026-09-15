@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "../../styles/diagnosis.module.css";
 import DiagnosisHeader from "./DiagnosisHeader";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
-import ReportWaitPopup from "./ReportWaitPopup";
+import ReportWaitPopup from "../../components/ReportWaitPopup/ReportWaitPopup";
 import { authHeaders } from "../../auth/session";
 import { getDiagnosisAnswers, saveDiagnosisAnswers, type Origin, type StoreType } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";

@@ -1,0 +1,78 @@
+/* [2026-09-15] diagnosis.module.css에 있던 .loadingOverlay/.loadingBox/.reportWait* -
+   여러 페이지(diagnosis/matching)가 공유하는 컴포넌트로 옮기면서 이 모듈로 이전.
+   StageLoadingPopup(components/StageLoadingPopup/stageLoadingPopup.module.css)과
+   같은 카드+일러스트+진행바 톤 - 저쪽은 경과시간 기준 여러 단계로 이미지·문구가
+   바뀌는 구조이고, 이 컴포넌트는 이미지·문구가 고정이고 진행바만 채워지는 단일 단계용. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-outer);
+  box-sizing: border-box;
+  background: var(--color-scrim);
+}
+
+.loadingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 32px 24px;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
+  text-align: center;
+}
+
+.image {
+  width: 132px;
+  height: 132px;
+  border-radius: 20px;
+  object-fit: cover;
+}
+
+.progressTrack {
+  width: 150px;
+  height: 8px;
+  border-radius: 6px;
+  background: var(--color-border-web);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--color-light-teal), var(--color-teal-green));
+  background-size: 200% 100%;
+  transition-property: width;
+  transition-timing-function: linear;
+  /* [2026-09-15, 사용자 확인] fillPercent에서 멈춰 실제 응답을 기다리는 동안 진행바가
+     "정지한 것처럼" 보인다는 피드백 - 너비 변화와 무관하게 항상 은은한 빛이 훑고
+     지나가게 해서(채워지는 중이든 대기 중이든) 계속 움직이는 것처럼 보이게 한다. */
+  animation: reportWaitShimmer 1.4s linear infinite;
+}
+
+@keyframes reportWaitShimmer {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: -200% 0%;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-ink-charcoal);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  color: var(--color-stone-gray);
+}

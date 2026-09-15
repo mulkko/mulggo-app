@@ -8,6 +8,7 @@ import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import BackButton from "../../components/BackButton/BackButton";
 import logo from "../../assets/logo.svg";
+import ReportWaitPopup from "../../components/ReportWaitPopup/ReportWaitPopup";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const POLL_INTERVAL_MS = 2000;
@@ -780,6 +781,9 @@ function DiagnosisReport() {
   const viewSessionId = sessionIdParam ? Number(sessionIdParam) : undefined;
   const [ready, setReady] = useState(false);
   const [reportReady, setReportReady] = useState(false);
+  // ReportWaitPopup이 진행바를 100%까지 채우는 완료 연출(0.3초)을 다 보여준 뒤에야
+  // 오버레이를 걷어낸다 - reportReady만으로 바로 걷으면 그 연출 없이 뚝 끊겨 보인다.
+  const [waitPopupDismissed, setWaitPopupDismissed] = useState(false);
   const [reportError, setReportError] = useState("");
   const [track, setTrack] = useState<"cafe" | "tech" | undefined>(undefined);
   const [mode, setMode] = useState<"fast" | "precise">("precise");
@@ -1229,13 +1233,12 @@ function DiagnosisReport() {
           </svg>
         </button>
       </div>
-      {!reportReady && !reportError && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.simpleLoading} role="status" aria-live="polite">
-            <div className={styles.simpleLoadingSpinner} />
-            <p className={styles.simpleLoadingText}>로딩중</p>
-          </div>
-        </div>
+      {!waitPopupDismissed && !reportError && (
+        <ReportWaitPopup
+          title={track === "cafe" ? "상권리포트를 분석하고 있어요" : "기술창업 리포트를 분석하고 있어요"}
+          ready={reportReady}
+          onDone={() => setWaitPopupDismissed(true)}
+        />
       )}
 
       <BottomNav active="idea" />

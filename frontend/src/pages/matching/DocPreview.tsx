@@ -132,8 +132,8 @@ function DocPreview() {
     setFillError("");
     setFilling(true);
     const result = await fetchFilledDocument(attachmentId);
-    setFilling(false);
     if ("error" in result) {
+      setFilling(false);
       setFillError(result.error);
       return;
     }
@@ -191,7 +191,6 @@ function DocPreview() {
           {filling ? "채우는 중..." : "나의 정보로 채우기"}
         </button>
       </div>
-
     </div>
   );
 }
