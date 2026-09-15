@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styles from "../../styles/onboarding.module.css";
+import { getUserId } from "../../auth/session";
 import BizCertUpload, {
   type BizCertUploadHandle,
 } from "../../components/BizCertUpload/BizCertUpload";
@@ -111,11 +112,18 @@ function Onboarding() {
   const location = useLocation();
   const [step, setStep] = useState<Step>(0);
 
-  // dev_links.html의 "회원가입_완료"가 /onboarding으로 직접 연결돼 있어서(실제 회원가입을
-  // 안 거친 진입), 그 경우 location.state가 비어 userId가 없다 - 폴백값으로 채워서
-  // 팝업 자체는 항상 테스트 가능하게 한다(MyPage.tsx/ProfileEdit.tsx의 FALLBACK_USER_ID와 동일 이유).
-  const FALLBACK_USER_ID = 27;
-  const userId = (location.state as { userId?: number; name?: string } | null)?.userId ?? FALLBACK_USER_ID;
+  // [2026-09-15, 사용자 확인] 예전엔 location.state에 userId가 없으면(dev_links.html
+  // "회원가입_완료"로 직접 진입 등) 폴백 계정(27번)으로 채워서 항상 테스트 가능하게
+  // 했는데, 로그인 안 한 사람한테도 화면이 그대로 떠서 없앰 - state에 없으면 실제
+  // 로그인 세션(getUserId)을 대신 쓰고, 그것도 없으면(둘 다 없음 = 진짜 비로그인) 로그인
+  // 화면으로 보낸다. 정상 흐름(Signup→로그인→온보딩)은 로그인 시 setSession이 먼저
+  // 실행돼서 위 두 값 중 하나는 항상 있다.
+  const stateUserId = (location.state as { userId?: number; name?: string } | null)?.userId;
+  const userId = stateUserId ?? getUserId();
+
+  useEffect(() => {
+    if (!userId) navigate("/login");
+  }, [userId, navigate]);
 
   // [2026-09-14, 사용자 확인] "김창업"(더미데이터)로 고정돼있던 걸 실제 가입자 이름으로
   // 교체 - Signup.tsx가 가입 성공 응답의 name을 navigate state로 같이 넘겨준다(정상

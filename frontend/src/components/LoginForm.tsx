@@ -21,12 +21,10 @@ const VARIANT_CONFIG = {
   user: {
     title: "로그인",
     endpoint: "/api/auth/login",
-    devAutoLoginEndpoint: "/api/auth/dev-auto-login",
   },
   admin: {
     title: "관리자 로그인",
     endpoint: "/api/auth/admin-login",
-    devAutoLoginEndpoint: "/api/auth/dev-auto-login-admin",
   },
 } as const;
 
@@ -44,7 +42,7 @@ interface LoginLocationState {
 function LoginForm({ variant }: LoginFormProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { title, endpoint, devAutoLoginEndpoint } = VARIANT_CONFIG[variant];
+  const { title, endpoint } = VARIANT_CONFIG[variant];
   const locationState = (location.state ?? null) as LoginLocationState | null;
 
   const [email, setEmail] = useState(locationState?.email ?? "");
@@ -85,26 +83,6 @@ function LoginForm({ variant }: LoginFormProps) {
       }
 
       goToNextScreen(data.data?.user_id ?? 0, data.data?.name ?? "");
-    } catch {
-      setErrorMessage("서버에 연결할 수 없습니다.");
-    }
-  };
-
-  // [임시/개발용] 테스트 계정으로 바로 로그인 - .env에 DEV_(ADMIN_)AUTO_LOGIN_*이 없으면
-  // 서버가 404를 주므로 그 경우엔 에러 메시지만 뜨고 아무 일도 안 일어남.
-  const handleDevAutoLogin = async () => {
-    setErrorMessage("");
-    try {
-      const response = await fetch(`${API_BASE_URL}${devAutoLoginEndpoint}`, { method: "POST" });
-      const data: AuthResponse = await response.json();
-
-      if (!data.success || !data.data?.token) {
-        setErrorMessage(data.error?.message ?? "자동 로그인에 실패했습니다.");
-        return;
-      }
-
-      setSession(data.data.token, data.data.user_id, data.data.email);
-      goToNextScreen(data.data.user_id, data.data.name);
     } catch {
       setErrorMessage("서버에 연결할 수 없습니다.");
     }
@@ -170,10 +148,6 @@ function LoginForm({ variant }: LoginFormProps) {
           </div>
           <button type="submit" className={styles.submitBtn}>로그인</button>
         </form>
-
-        <button type="button" className={styles.devAutoLoginBtn} onClick={handleDevAutoLogin}>
-          [DEV] 테스트 계정으로 바로 로그인
-        </button>
 
         {errorMessage && <p className={styles.error}>{errorMessage}</p>}
       </div>

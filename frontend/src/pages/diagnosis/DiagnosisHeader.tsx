@@ -1,5 +1,6 @@
 import styles from "../../styles/diagnosis.module.css";
 import logo from "../../assets/logo.svg";
+import BackButton from "../../components/BackButton/BackButton";
 
 interface DiagnosisHeaderProps {
   onBack: () => void;
@@ -22,11 +23,7 @@ function DiagnosisHeader({ onBack, pct, stepLabel, hideProgress }: DiagnosisHead
   return (
     <>
       <div className={styles.reportHeaderTop}>
-        <button type="button" className={styles.backButton} onClick={onBack} aria-label="뒤로가기">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M16 5l-8 7 8 7" />
-          </svg>
-        </button>
+        <BackButton onClick={onBack} />
         <span className={styles.logo}>
           <span className={styles.logoText}>MULKKO IDEA</span>
           <img src={logo} alt="물꼬 로고" className={styles.logoMark} />

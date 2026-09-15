@@ -17,6 +17,34 @@ from backend.db.connection import get_connection
 router = APIRouter(prefix="/api/matching", tags=["matching"])
 
 
+@router.get("/my-ksic")
+def get_my_ksic(user_id: int = Depends(get_current_user_id)) -> dict:
+    """[2026-09-15] 로그인한 사용자의 매칭 필터용 확정 업종코드 목록 - 프론트(MatchingList.tsx)가
+    업종 드롭다운에 "업종 전체"와 별개로 "매칭된 업종" 옵션을 만들 때 쓴다. 예전엔 이 코드를
+    /api/matching이 쿼리에 ksic이 없을 때 서버에서 조용히 채워 넣었는데, 그러면 프론트는
+    "업종 전체"를 선택한 것처럼 보여주면서 실제로는 이미 좁혀진 결과를 보여주는 불일치가
+    있었다(사용자 확인) - 이제 필터링은 프론트가 이 값을 받아 명시적으로 ksic 쿼리에 실어
+    보낼 때만 적용되고, 기본값(빈 쿼리)은 진짜로 전체 공고를 보여준다."""
+    conn = get_connection()
+    try:
+        codes = _lookup_profile_ksic_code(conn, user_id)
+    finally:
+        conn.close()
+    return {"success": True, "data": {"codes": codes}}
+
+
+@router.get("/my-regions")
+def get_my_regions(user_id: int = Depends(get_current_user_id)) -> dict:
+    """[2026-09-15] get_my_ksic과 같은 이유 - 지역 필터도 서버가 조용히 채워 넣던 걸
+    없애고, 프론트가 이 값을 받아 "내 지역" 옵션을 명시적으로 보여주게 한다."""
+    conn = get_connection()
+    try:
+        regions = _lookup_profile_regions(conn, user_id)
+    finally:
+        conn.close()
+    return {"success": True, "data": {"regions": regions}}
+
+
 def _lookup_profile_ksic_code(conn, user_id: int) -> list[str]:
     """로그인한 user_id 본인의 매칭 필터용 KSIC 코드 목록.
     1순위: 사업자등록증에서 확정한 코드(profile_business_types, 기존사업자).
@@ -163,11 +191,12 @@ def list_announcements(
     ksic_codes_matched 배열과 하나라도 겹치는 것만 필터. [2026-09-09, 테스트용]
     지금은 업종 드롭다운에 전체 KSIC(1,200여개)가 아니라 실제로 매칭된 것 중
     자주 나오는 몇 개만 넣어서 필터링 자체가 되는지 확인하는 용도.
-    [2026-09-11] 비워서 호출하고 로그인 상태면, 사용자가 사업자등록증에서 확정한
-    ksic_code(profile_business_types)로 대신 채운다 - 프론트가 매번 안 넘겨도
-    "내 업종 기준" 매칭이 되게. [2026-09-15] 그마저 없으면(예비창업자 등 등록증
-    미등록/업종 미확정) 가장 최근에 완료한 사업구체화 리포트의 resolved_ksic_codes로
-    대신 채운다(_lookup_profile_ksic_code 참고) - 둘 다 없으면 그냥 전체 공고.
+    [2026-09-15] 비워서 호출하면(로그인 여부 무관) 진짜 전체 공고를 보여준다 - 예전엔
+    로그인 상태면 사용자의 확정 업종코드(_lookup_profile_ksic_code)로 서버가 조용히
+    채워 넣었는데, 그러면 프론트 드롭다운은 "업종 전체"를 보여주면서 실제로는 이미
+    좁혀진 결과라 화면과 실제 동작이 어긋났다(사용자 확인). 이제 "내 업종 기준" 필터는
+    GET /api/matching/my-ksic로 프론트가 값을 받아 명시적으로 이 쿼리에 실어 보낼
+    때만 적용된다.
 
     [2026-09-12, 사용자 확인] ksic_status가 "업종무관(기본값)"/"특정불가"인 공고는
     ksic_codes_matched가 항상 빈 배열이라(schema.sql 참고 - decide_industry()가 특정
@@ -187,8 +216,10 @@ def list_announcements(
     region: 콤마로 구분된 시/도 목록 (예: "서울특별시,경기도"). 공고의 regions
     배열과 하나라도 겹치는 것만 필터. regions는 시/군 단위까지만 있고 구 단위는
     없음(extract_region.py 팀 결정 - 오탐 위험 때문에 의도적으로 제외).
-    [2026-09-14] 비워서 호출하고 로그인 상태면, ksic과 동일한 패턴으로 사업자등록증
-    주소에서 자동으로 뽑힌(또는 직접 추가한) business_profiles.regions로 대신 채운다.
+    [2026-09-15] 비워서 호출하면(로그인 여부 무관) 진짜 전체 지역을 보여준다 - ksic과
+    같은 이유로 서버가 조용히 채워 넣던 걸 없앴다. "내 지역 기준" 필터는
+    GET /api/matching/my-regions로 프론트가 값을 받아 명시적으로 이 쿼리에 실어
+    보낼 때만 적용된다.
 
     company: 콤마로 구분된 기업유형 목록 (예: "소상공인,중소기업"). target_summary가
     그중 하나와 정확히 일치하는 것만 필터. bizinfo만 값이 있음(kstartup의
@@ -222,10 +253,6 @@ def list_announcements(
 
     conn = get_connection()
     try:
-        if not ksic_codes and user_id is not None:
-            ksic_codes = _lookup_profile_ksic_code(conn, user_id)
-        if not regions and user_id is not None:
-            regions = _lookup_profile_regions(conn, user_id)
 
         # [2026-09-09] 이미 마감 지난 공고는 리스트에서 아예 뺀다. announcements 원본
         # 데이터는 안 지운다(raw/가공 원칙) - 여기 조회 조건에서만 제외. 마감일이

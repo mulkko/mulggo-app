@@ -4,6 +4,7 @@ import styles from "../../styles/docPreview.module.css";
 import type { RequiredDoc } from "./matchingDetailData";
 import { fetchFilledDocument, saveFilledBlob } from "../../utils/downloadFilledDoc";
 import { authHeaders } from "../../auth/session";
+import BackButton from "../../components/BackButton/BackButton";
 
 // ============================================================
 // [실험용, 2026-09-11] "채워질 정보 미리보기" 카드 - 사용자 확인 중인 실험 기능.
@@ -171,16 +172,7 @@ function DocPreview() {
     <div className={`pageContainer ${styles.page}`}>
       {/* 헤더: 뒤로가기 + 파일명 */}
       <header className={styles.header}>
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={handleBack}
-          aria-label="뒤로가기"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M16 5l-8 7 8 7" />
-          </svg>
-        </button>
+        <BackButton onClick={handleBack} />
         <span className={styles.headerTitle}>{fileName}</span>
       </header>
 

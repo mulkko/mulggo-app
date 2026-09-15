@@ -5,6 +5,9 @@ import type { AnnouncementDetail } from "./matchingDetailData";
 import { authHeaders } from "../../auth/session";
 import BottomNav from "../../components/BottomNav/BottomNav";
 import ChatFab from "../../components/ChatFab/ChatFab";
+import Toast from "../../components/Toast/Toast";
+import { useToast } from "../../components/Toast/useToast";
+import BackButton from "../../components/BackButton/BackButton";
 
 /**
  * 공고 상세(지원사업 상세) 화면.
@@ -56,7 +59,7 @@ function MatchingDetail() {
   const [saved, setSaved] = useState(false);
   const [applied, setApplied] = useState(false);
   const [contentExpanded, setContentExpanded] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const { toastMessage, showToast } = useToast();
 
   useEffect(() => {
     if (!id) {
@@ -90,8 +93,7 @@ function MatchingDetail() {
   // 설명 없이 도로 꺼지는 것처럼 보이는 문제가 있었다(팀원 확인) - 실패 사유를
   // 토스트로 보여주도록 handleToggleSave/handleToggleApplied 둘 다 고친다.
   const showFailureToast = (res: Response) => {
-    setToastMessage(res.status === 401 ? "로그인이 필요합니다" : "처리에 실패했습니다. 다시 시도해주세요.");
-    setTimeout(() => setToastMessage(null), 1500);
+    showToast(res.status === 401 ? "로그인이 필요합니다" : "처리에 실패했습니다. 다시 시도해주세요.");
   };
 
   const handleToggleSave = () => {
@@ -107,12 +109,10 @@ function MatchingDetail() {
         showFailureToast(res);
         return;
       }
-      setToastMessage(next ? "선택하신 공고가 찜하기 되었습니다" : "찜하기가 취소되었습니다");
-      setTimeout(() => setToastMessage(null), 1500);
+      showToast(next ? "선택하신 공고가 찜하기 되었습니다" : "찜하기가 취소되었습니다");
     }).catch(() => {
       setSaved(!next);
-      setToastMessage("서버에 연결할 수 없습니다.");
-      setTimeout(() => setToastMessage(null), 1500);
+      showToast("서버에 연결할 수 없습니다.");
     });
   };
 
@@ -129,12 +129,10 @@ function MatchingDetail() {
         showFailureToast(res);
         return;
       }
-      setToastMessage(next ? "지원한 공고로 표시되었습니다" : "지원 표시가 취소되었습니다");
-      setTimeout(() => setToastMessage(null), 1500);
+      showToast(next ? "지원한 공고로 표시되었습니다" : "지원 표시가 취소되었습니다");
     }).catch(() => {
       setApplied(!next);
-      setToastMessage("서버에 연결할 수 없습니다.");
-      setTimeout(() => setToastMessage(null), 1500);
+      showToast("서버에 연결할 수 없습니다.");
     });
   };
 
@@ -163,16 +161,7 @@ function MatchingDetail() {
       <div className={`pageContainer ${styles.page}`}>
         <header className={styles.header}>
           <div className={styles.headerLeft}>
-            <button
-              type="button"
-              className={styles.backButton}
-              onClick={handleBack}
-              aria-label="뒤로가기"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M16 5l-8 7 8 7" />
-              </svg>
-            </button>
+            <BackButton onClick={handleBack} />
             <span className={styles.headerTitle}>지원사업 상세</span>
           </div>
         </header>
@@ -191,16 +180,7 @@ function MatchingDetail() {
       {/* 헤더: 뒤로가기 + 타이틀 + 북마크(저장) 토글 */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <button
-            type="button"
-            className={styles.backButton}
-            onClick={handleBack}
-            aria-label="뒤로가기"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M16 5l-8 7 8 7" />
-            </svg>
-          </button>
+          <BackButton onClick={handleBack} />
           <span className={styles.headerTitle}>지원사업 상세</span>
         </div>
         <button
@@ -351,11 +331,7 @@ function MatchingDetail() {
         </div>
       </div>
 
-      {toastMessage && (
-        <div className={styles.toast} role="status">
-          {toastMessage}
-        </div>
-      )}
+      <Toast message={toastMessage} />
 
       <BottomNav active="matching" />
       <ChatFab variant="withBottomNav" />

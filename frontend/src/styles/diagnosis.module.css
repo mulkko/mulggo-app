@@ -33,25 +33,6 @@
   box-sizing: border-box;
 }
 
-.backButton {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-ink-charcoal);
-  cursor: pointer;
-}
-
-.backButton svg {
-  width: 100%;
-  height: 100%;
-}
-
 /* [2026-09-13, 사용자 확인] 2단 헤더의 상단(브랜드) 행 - 원래 분석 리포트(DiagnosisReport.tsx)
    전용이었으나, 진단 질응답 화면(DiagnosisHeader.tsx, "MULKKO IDEA")도 같이 재사용한다.
    프로토타입(260911_Mulkko Prototype) 13번 상권분석/14번 기술창업분석 화면 원본 대조로

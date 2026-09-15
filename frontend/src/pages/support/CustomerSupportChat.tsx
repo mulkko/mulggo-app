@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/customerSupportChat.module.css";
 import BottomNav from "../../components/BottomNav/BottomNav";
+import BackButton from "../../components/BackButton/BackButton";
 import chatAvatarIcon from "../../assets/9_mint.svg";
 
 /**
@@ -137,19 +138,7 @@ function CustomerSupportChat() {
   return (
     <div className={`pageContainer ${styles.page}`}>
       <header className={styles.header}>
-        <button type="button" className={styles.backButton} onClick={handleBack} aria-label="뒤로가기">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M16 5l-8 7 8 7" />
-          </svg>
-        </button>
+        <BackButton onClick={handleBack} />
         <span className={styles.headerAvatar}>
           <img className={styles.headerAvatarImg} src={chatAvatarIcon} alt="" />
         </span>

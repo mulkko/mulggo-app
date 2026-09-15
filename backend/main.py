@@ -19,6 +19,7 @@ from backend.api.ksic import router as ksic_router
 from backend.api.matching import router as matching_router
 from backend.api.mypage import router as mypage_router
 from backend.api.support import router as support_router
+from backend.db.connection import get_connection
 
 app = FastAPI(title="mulkko API")
 
@@ -57,6 +58,24 @@ app.include_router(ksic_router)
 app.include_router(matching_router)
 app.include_router(mypage_router)
 app.include_router(support_router)
+
+
+@app.on_event("startup")
+def _clear_sessions_on_restart() -> None:
+    # [2026-09-15, 사용자 확인] 백엔드 재시작 시 기존 로그인 세션을 전부 무효화한다 -
+    # auth_sessions가 DB(팀 공용 Supabase)에 저장돼서 재시작해도 안 지워지다 보니,
+    # 브라우저에 남은 옛 토큰으로 "로그인된 것처럼" 잘못 보이는 문제가 있었다
+    # (Home.tsx가 GET /api/auth/me로 토큰을 검증해서 무효면 자동으로 지워주므로,
+    # 여기서 서버측 세션만 지우면 프론트는 이미 있는 로직으로 따라온다).
+    # 같은 DB를 팀 전체가 써서 이 백엔드가 재시작될 때마다 팀원 전체가 로그아웃되는데,
+    # 사용자 확인 완료.
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM auth_sessions")
+        conn.commit()
+    finally:
+        conn.close()
 
 
 @app.on_event("startup")

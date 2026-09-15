@@ -7,6 +7,7 @@ import AnnouncementCard, {
   type AnnouncementCardData,
 } from "../../components/AnnouncementCard/AnnouncementCard";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
+import BackButton from "../../components/BackButton/BackButton";
 
 /**
  * [DRAFT] 지원사업 매칭 리스트(공고 리스트) 화면 - "업종맞춤/업종무관" 2그룹 분리 검토용 사본.
@@ -246,11 +247,7 @@ function MatchingListDraft() {
       {/* [2026-09-13, 사용자 확인] "<" 뒤로가기 버튼 추가 + "물꼬 분석" 링크 삭제 */}
       <header className={styles.header}>
         <span className={styles.headerLeft}>
-          <button type="button" className={styles.backButton} onClick={handleBack} aria-label="뒤로가기">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M16 5l-8 7 8 7" />
-            </svg>
-          </button>
+          <BackButton onClick={handleBack} />
           <span className={styles.logo}>
             <span className={styles.logoText}>MULKKO MATCHING</span>
             <img src={logo} alt="물꼬 로고" className={styles.logoMark} />
