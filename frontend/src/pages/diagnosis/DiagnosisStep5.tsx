@@ -5,15 +5,7 @@ import DiagnosisHeader from "./DiagnosisHeader";
 import SelectSheet from "../../components/SelectSheet/SelectSheet";
 import { getDiagnosisAnswers, saveDiagnosisAnswers } from "./diagnosisAnswers";
 import BottomNav from "../../components/BottomNav/BottomNav";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-interface RegionRow {
-  sido: string;
-  sigungu: string | null;
-  dong_name: string | null;
-  level: "시도" | "시군구" | "행정동";
-}
+import { getRegions, type RegionRow } from "./regionsData";
 
 const toSelectSheetOptions = (values: string[]) => values.map((v) => ({ label: v, value: v }));
 
@@ -61,12 +53,8 @@ function DiagnosisStep5() {
   }, [navigate]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/analysis/regions`)
-      .then((res) => res.json())
-      .then((body: { success: boolean; data?: RegionRow[] }) => {
-        if (body.success && body.data) setRegions(body.data);
-        else setRegionsError(true);
-      })
+    getRegions()
+      .then(setRegions)
       .catch(() => setRegionsError(true));
   }, []);
 

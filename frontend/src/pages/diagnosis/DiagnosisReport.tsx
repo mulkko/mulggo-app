@@ -623,7 +623,6 @@ function PatentChart({ title, data }: { title: string; data: PatentTrendData }) 
             <p className={techStyles.patentNote}>* 2026년은 특허 공개 지연으로 현재 집계 수치만 제공, 예측 불가</p>
           </>
         )}
-        <p className={techStyles.emptyText}>검색 키워드(AI 자동생성): {data.keyword}</p>
       </div>
     </section>
   );
@@ -1232,12 +1231,9 @@ function DiagnosisReport() {
       </div>
       {!reportReady && !reportError && (
         <div className={styles.loadingOverlay}>
-          <div className={styles.loadingBox} role="status" aria-live="polite">
-            <div className={styles.spinner} />
-            <p className={styles.loadingText}>
-              {track === "cafe" ? "상권 리포트를 분석하고 있어요..." : "기술창업 리포트를 분석하고 있어요..."}
-            </p>
-            <p className={styles.loadingHint}>업종코드 매칭은 끝났어요 - 데이터만 마저 준비할게요</p>
+          <div className={styles.simpleLoading} role="status" aria-live="polite">
+            <div className={styles.simpleLoadingSpinner} />
+            <p className={styles.simpleLoadingText}>로딩중</p>
           </div>
         </div>
       )}

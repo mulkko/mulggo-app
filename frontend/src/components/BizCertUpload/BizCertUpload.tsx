@@ -9,23 +9,11 @@ function Chevron() {
   return <SharedChevron className={styles.chevron} />;
 }
 
-// OCR 하이브리드 구조: 팀원 각자 자기 PC에서 localhost로 프론트를 띄우지만,
-// OCR(무거운 모델)만은 GPU가 있는 고정 PC로 보낸다.
-//   1) 브라우저에 저장해둔 주소가 있으면 그걸 우선 사용
-//      (주소가 바뀌면 개발자 콘솔에서 localStorage.setItem("ocr_api_base_url", "http://새주소:8000") 로 갱신)
-//   2) 없으면 GPU PC 고정 주소 사용
-const OCR_SERVER_HOST = "192.168.0.160";
-
-function resolveOcrApiBaseUrl(): string {
-  const saved = localStorage.getItem("ocr_api_base_url");
-  if (saved) return saved;
-  return `http://${OCR_SERVER_HOST}:8000`;
-}
-
-const OCR_API_BASE_URL = resolveOcrApiBaseUrl();
-
-// KSIC 업종 목록(GET /api/ksic/options)은 GPU 없이도 되는 일반 DB 조회라, OCR 전용인
-// OCR_API_BASE_URL이 아니라 프론트가 원래 쓰는 메인 백엔드 주소를 그대로 쓴다.
+// [2026-09-15] OCR(무거운 비전 모델)을 예전엔 GPU가 있는 특정 PC(192.168.0.160)로
+// 하드코딩해서 우회 호출했었다 - 사설 LAN IP라 그 PC와 같은 네트워크 밖(실서버 등)
+// 에서는 아예 연결이 안 되고, 실서버가 HTTPS면 Mixed Content로 막히는 문제도 있었다
+// (사용자 확인, 실서버에서 업로드 안 되던 원인). 이제 OCR 모델을 실서버에도 올렸으므로
+// 메인 백엔드 주소(API_BASE_URL) 하나로 통일한다 - 다른 API 호출과 동일.
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".pdf"];
@@ -412,7 +400,7 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
     formData.append("file", target);
 
     try {
-      const response = await fetch(`${OCR_API_BASE_URL}/api/auth/biz-cert-ocr`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/biz-cert-ocr`, {
         method: "POST",
         body: formData,
       });

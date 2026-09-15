@@ -61,12 +61,17 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .agency {
   font-size: 12px;
   font-weight: 500;
   color: var(--color-deep-navy);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .dday {
