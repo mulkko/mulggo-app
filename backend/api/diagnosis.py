@@ -80,6 +80,7 @@
 # 완료 여부 자체는 이제 DB(analysis_by_code)로 판단하므로 재시작에 안전하다.
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, BackgroundTasks, Depends
 from fastapi.responses import JSONResponse
@@ -361,6 +362,23 @@ def _run_candidate_analysis(
             _report_status[session_id] = {"status": "error", "targetAnchor": None, "differentiatorAnchor": None}
 
 
+def _run_candidate_analyses_concurrently(
+    session_id: int, resolved_ksic_codes: list[str], has_store: bool,
+    sido: str, sigungu: str, dong: str, seed: str, problem: str, solution: str,
+) -> None:
+    """[2026-09-15] 후보(최대 3개) 분석을 FastAPI BackgroundTasks에 하나씩 걸면
+    (add_task 여러 번) 순서대로 하나씩만 실행돼서(Starlette가 태스크를 직렬로 await함)
+    후보 3개면 대기시간이 최대 3배로 늘어났다(실측) - 서로 독립적인 분석(상권/기술
+    리포트 + 특허 API 호출)이라 병렬로 돌려도 안전해서, 여기서 스레드풀로 동시에
+    쏘고 이 함수 자체를 background_tasks에 하나만 건다."""
+    with ThreadPoolExecutor(max_workers=len(resolved_ksic_codes)) as executor:
+        for i, code in enumerate(resolved_ksic_codes):
+            executor.submit(
+                _run_candidate_analysis, session_id, code, i == 0, has_store,
+                sido, sigungu, dong, seed, problem, solution,
+            )
+
+
 @router.post("/start")
 def start_diagnosis(
     payload: DiagnosisStartRequest, background_tasks: BackgroundTasks, user_id: int = Depends(get_current_user_id)
@@ -409,12 +427,11 @@ def start_diagnosis(
     finally:
         conn.close()
 
-    for i, code in enumerate(resolved_ksic_codes):
-        background_tasks.add_task(
-            _run_candidate_analysis, session_id, code, i == 0, payload.has_store,
-            payload.sido, payload.sigungu, payload.dong,
-            payload.seed_interest, payload.problem_to_solve, payload.solution_approach,
-        )
+    background_tasks.add_task(
+        _run_candidate_analyses_concurrently, session_id, resolved_ksic_codes, payload.has_store,
+        payload.sido, payload.sigungu, payload.dong,
+        payload.seed_interest, payload.problem_to_solve, payload.solution_approach,
+    )
 
     return JSONResponse(content={
         "success": True,

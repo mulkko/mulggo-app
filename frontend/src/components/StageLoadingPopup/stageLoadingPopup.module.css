@@ -1,0 +1,62 @@
+/* [2026-09-15] BizCertUpload/bizCertUpload.module.css의 OCR 진행 팝업(.overlay/.loadingBox/
+   .ocrProgressTrack/.ocrProgressFill/.ocrStageTitle/.ocrStageSubtitle)과 동일 스펙 -
+   범용 컴포넌트라 이름만 일반화해서 그대로 가져왔다. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-outer);
+  box-sizing: border-box;
+  background: var(--color-scrim);
+}
+
+.loadingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 32px 24px;
+  border-radius: var(--radius-input);
+  background: var(--color-white);
+  box-shadow: var(--shadow-app);
+  text-align: center;
+}
+
+.stageImage {
+  width: 132px;
+  height: 132px;
+  border-radius: 20px;
+  object-fit: cover;
+}
+
+.progressTrack {
+  width: 150px;
+  height: 8px;
+  border-radius: 6px;
+  background: var(--color-border-web);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--color-light-teal), var(--color-teal-green));
+  transition: width 0.3s ease;
+}
+
+.stageTitle {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-stone-gray);
+}
