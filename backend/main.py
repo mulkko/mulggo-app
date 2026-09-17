@@ -4,6 +4,7 @@
 """
 
 import os
+import threading
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -84,10 +85,21 @@ def _warm_industry_matcher() -> None:
     # chroma_db는 커서 git에 안 올라가 있어(.gitignore) 없는 개발 환경에서는 예열이
     # 실패할 수 있는데, 그래도 다른 기능은 그대로 떠야 하므로 실패를 삼킨다 -
     # 실제로 /api/industry-code를 호출할 때 그 시점에 다시 에러가 난다.
-    try:
-        warm_industry_matcher()
-    except Exception as e:  # noqa: BLE001
-        print(f"[industry_code] 예열 실패 (요청 시점에 재시도됨): {e}")
+    #
+    # [2026-09-17] 이 함수를 startup에서 동기(블로킹)로 부르면, 임베딩 모델(bge-m3,
+    # 2.27GB)이 로컬에 캐시돼 있지 않은 환경(클라우드 서버 최초 기동 등)에서는
+    # Hugging Face 다운로드가 끝날 때까지 uvicorn이 포트를 안 열어서 "서버가 아예
+    # 안 뜨는 것처럼" 보인다(사용자 확인 - 실측, 다운로드 중 서버 응답 자체가 없었음).
+    # 백그라운드 스레드로 돌려서 서버는 즉시 뜨게 하고, 예열이 끝나기 전에 들어온
+    # 첫 /api/industry-code 요청은 기존과 동일하게(예열 없었을 때처럼) 그 자리에서
+    # 모델을 로드해 처리한다 - 예열은 순수 최적화라 늦게 끝나도 정확성에 영향 없음.
+    def _warm():
+        try:
+            warm_industry_matcher()
+        except Exception as e:  # noqa: BLE001
+            print(f"[industry_code] 예열 실패 (요청 시점에 재시도됨): {e}")
+
+    threading.Thread(target=_warm, daemon=True).start()
 
 
 def main():
