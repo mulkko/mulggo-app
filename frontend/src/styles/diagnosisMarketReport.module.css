@@ -320,18 +320,18 @@
    받쳐줘서 두 극단 모두 잘 보인다. */
 .densityCellMarker {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 6px;
-  height: 6px;
+  top: 3px;
+  right: 3px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--color-deep-navy);
-  box-shadow: 0 0 0 1px var(--color-white);
+  box-shadow: 0 0 0 1.5px var(--color-white);
 }
 
 .densityCellMarkerLegend {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--color-deep-navy);
   box-shadow: 0 0 0 1px var(--color-white), 0 0 0 2px var(--color-border-nav);

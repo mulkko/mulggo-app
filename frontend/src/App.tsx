@@ -14,6 +14,7 @@ import RequireAuth from "./components/RequireAuth/RequireAuth";
 import AdminStyleGuide from "./components/AdminStyleGuide/AdminStyleGuide";
 import WebStyleGuide from "./components/WebStyleGuide/WebStyleGuide";
 import WebStyleGuideByFeature from "./components/WebStyleGuideByFeature/WebStyleGuideByFeature";
+import WebStyleGuideCompact from "./components/WebStyleGuideCompact/WebStyleGuideCompact";
 import MatchingList from "./pages/matching/MatchingList";
 import MatchingListDraft from "./pages/matching/MatchingListDraft";
 import MatchingDetail from "./pages/matching/MatchingDetail";
@@ -172,6 +173,7 @@ function App() {
         <Route path="/style-guide" element={<AdminStyleGuide />} />
         <Route path="/dev/web-style-guide" element={<WebStyleGuide />} />
         <Route path="/dev/web-style-guide-by-feature" element={<WebStyleGuideByFeature />} />
+        <Route path="/dev/web-style-guide-compact" element={<WebStyleGuideCompact />} />
         <Route path="/dev/report-summary-preview" element={<DiagnosisReportSummaryPreview />} />
         <Route path="/dev/report-summary-fixed-layout-test" element={<DiagnosisReportSummaryFixedLayoutTest />} />
         <Route path="/dev/ocr-popup-preview" element={<OcrPopupPreview />} />

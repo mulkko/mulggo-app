@@ -223,6 +223,12 @@
   margin-bottom: 20px;
 }
 
+/* [2026-09-16, 사용자 확인] "업종 무관 공고" 타이틀 위 여백 - 위 "업종 맞춤 공고"
+   섹션(margin-bottom 20px)+.scrollArea gap(12px)과 별도로 추가. */
+.unclassifiedSection {
+  margin-top: 15px;
+}
+
 .sectionHead {
   display: flex;
   flex-direction: column;

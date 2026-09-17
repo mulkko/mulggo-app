@@ -1155,7 +1155,7 @@ function DiagnosisReport() {
                 track="cafe"
               />
             )}
-            <p className={marketStyles.sourceText}>출처: 소상공인시장진흥공단 상권데이터·기업마당(bizinfo) 기준 · 예측 아님</p>
+            <p className={marketStyles.sourceText}>출처: 소상공인시장진흥공단 상권데이터·기업마당(bizinfo) 기준</p>
           </>
         )}
 
@@ -1207,7 +1207,7 @@ function DiagnosisReport() {
                 <p className={techStyles.emptyText}>표시할 밀집도 데이터가 없어요.</p>
               )}
             </section>
-            <p className={techStyles.sourceText}>출처: 중기부 벤처기업명단·특허청 KIPRIS 기준 · 개별 성공 확률 아님</p>
+            <p className={techStyles.sourceText}>출처: 중기부 벤처기업명단·특허청 KIPRIS 기준</p>
           </>
         )}
 
