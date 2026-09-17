@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, DragEvent } from "react";
 import styles from "./bizCertUpload.module.css";
 import { Chevron as SharedChevron } from "../FormField/FormField";
 import OcrStagePopup from "./OcrStagePopup";
@@ -371,6 +371,8 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
   const [entityTypePopupOpen, setEntityTypePopupOpen] = useState(false);
   // [2026-09-11] 업종(KSIC) 선택 팝업 - 위와 동일한 패턴(값 버튼 누르면 팝업).
   const [ksicPopupOpen, setKsicPopupOpen] = useState(false);
+  // [2026-09-16] 드래그앤드롭 - 드롭존 위에 파일을 끌고 있는 동안만 true(hover 스타일용).
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     if (phase !== "uploading") return;
@@ -450,9 +452,9 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
     reset,
   }));
 
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0];
-    event.target.value = ""; // 같은 파일 다시 선택해도 onChange 다시 뜨게
+  // 파일 선택(클릭)과 드래그앤드롭이 공유하는 처리 로직 - 검증 → state 반영 →
+  // (deferStart면 대기, 아니면 바로 업로드) 순서는 두 입력 경로 모두 동일해야 한다.
+  const processFile = async (selected: File | undefined | null) => {
     if (!selected) return;
 
     const validationError = validateFile(selected);
@@ -472,6 +474,28 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
     }
 
     await startUpload(selected);
+  };
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0];
+    event.target.value = ""; // 같은 파일 다시 선택해도 onChange 다시 뜨게
+    await processFile(selected);
+  };
+
+  // idle 단계 드롭존 전용 - 클릭(label+input)과 별개로 파일을 직접 끌어다 놓는 경로.
+  const handleDragOver = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault(); // 기본 동작(브라우저가 파일을 새 탭으로 여는 것)을 막아야 drop이 발생함
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    await processFile(event.dataTransfer.files?.[0]);
   };
 
   const handleFieldChange = (key: string, value: string) => {
@@ -499,7 +523,12 @@ const BizCertUpload = forwardRef<BizCertUploadHandle, BizCertUploadProps>(functi
   if (phase === "idle") {
     // 라벨("사업자등록증 (선택)")은 부모(회원가입 화면)에서 그리므로 여기선 드롭존만.
     return (
-      <label className={styles.dropzone}>
+      <label
+        className={isDragOver ? `${styles.dropzone} ${styles.dropzoneDragOver}` : styles.dropzone}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <input
           type="file"
           accept="image/*,.pdf"

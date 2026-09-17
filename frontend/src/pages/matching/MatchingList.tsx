@@ -35,7 +35,11 @@ import BackButton from "../../components/BackButton/BackButton";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // [2026-09-10] 한 화면에 카드가 너무 많이 보인다는 피드백 - 처음엔 8개만 보여주고,
 // "더보기" 누를 때마다 12개씩 추가로 불러온다(기존엔 둘 다 20개였음).
-const INITIAL_PAGE_SIZE = 8;
+// [2026-09-16, 사용자 확인] "업종·지역 맞춤 공고" 섹션은 처음에 5개만 보이게 더 줄임 -
+// 백엔드가 limit+1건을 조회해 has_more를 판정하므로(_fetch_announcement_page 참고),
+// 이 값을 5로 낮추면 총 매칭 건수가 5건 초과일 때만 "더보기" 버튼이 자동으로 뜬다
+// (5건 이하면 has_more=false라 버튼 자체가 안 보임 - 별도 조건 분기 불필요).
+const INITIAL_PAGE_SIZE = 5;
 const LOAD_MORE_PAGE_SIZE = 12;
 // [2026-09-12] 업종무관/특정불가 섹션은 참고용이라 매칭 섹션(8개)보다 더 적게,
 // 6개만 기본으로 보여주고 "더보기"로 나머지를 불러온다(사용자 확인).
@@ -477,8 +481,14 @@ function MatchingList() {
         {announcements.length > 0 && (
           <div className={styles.section}>
             <div className={styles.sectionHead}>
-              <span className={styles.sectionTitle}>업종 맞춤 공고</span>
-              <span className={styles.sectionHint}>업종별로 보고 싶다면 업종 필터를 이용해주세요</span>
+              {/* [2026-09-16, 사용자 확인] ksic 필터가 없으면 매칭/업종무관으로 안 나뉘고
+                  전체 공고가 그대로 여기 담기는데("업종·지역 맞춤"이라는 이름이 그대로
+                  붙어있으면 실제로 전혀 안 걸러진 결과인데도 걸러진 것처럼 보여 헷갈림) -
+                  ksic 유무로 제목·안내문구를 다르게 보여준다. */}
+              <span className={styles.sectionTitle}>{ksic ? "업종·지역 맞춤 공고" : "전체 공고"}</span>
+              <span className={styles.sectionHint}>
+                {ksic ? "업종별로 보고 싶다면 업종 필터를 이용해주세요" : "업종을 선택하면 업종에 맞는 공고만 따로 볼 수 있어요"}
+              </span>
             </div>
             <ul className={styles.cardList}>
               {announcements.map((item) => (
@@ -487,25 +497,24 @@ function MatchingList() {
                 </li>
               ))}
             </ul>
+            {hasMore && (
+              <button
+                type="button"
+                className={styles.loadMoreButton}
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? "불러오는 중..." : "더보기"}
+              </button>
+            )}
           </div>
-        )}
-
-        {hasMore && (
-          <button
-            type="button"
-            className={styles.loadMoreButton}
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-          >
-            {loadingMore ? "불러오는 중..." : "더보기"}
-          </button>
         )}
 
         {/* [2026-09-12] 업종무관/특정불가 섹션 - ksic 필터가 걸려 매칭 섹션과 분리된
             경우에만 응답에 딸려온다. 로드된 게 하나도 없으면(0건) 섹션 자체를 안 보여준다.
             매칭 섹션과 완전히 독립적인 자기 페이지네이션(더보기)을 그대로 유지. */}
         {unclassifiedAnnouncements.length > 0 && (
-          <div className={styles.section}>
+          <div className={`${styles.section} ${styles.unclassifiedSection}`}>
             <div className={styles.sectionHead}>
               <span className={styles.sectionTitle}>업종 무관 공고</span>
               <span className={styles.sectionHint}>자세한 사항은 공고상세를 이용해주세요</span>

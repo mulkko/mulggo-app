@@ -1,0 +1,117 @@
+/* WebStyleGuideCompact 전용 - PPT 캡처용이라 개발자용 스타일가이드(webStyleGuide.module.css)
+   보다 여백을 넉넉하게, 카드 수를 적게 잡아서 한 화면에 다 들어오게 만든다. */
+
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 40px 60px;
+  font-family: var(--font-family-base);
+  background: var(--color-white);
+  box-sizing: border-box;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-stone-gray);
+}
+
+.title {
+  margin: 0 0 36px;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--color-ink-charcoal);
+}
+
+.colorGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.groupLabel {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-stone-gray);
+}
+
+.swatchRow {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.swatchCard {
+  width: 120px;
+  text-align: center;
+}
+
+.swatch {
+  width: 100%;
+  height: 72px;
+  border-radius: var(--radius-card);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  margin-bottom: 8px;
+}
+
+.swatchName {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-charcoal);
+}
+
+.swatchHex {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-family: var(--font-family-logo);
+  color: var(--color-stone-gray);
+}
+
+.typeRow {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border-web);
+}
+
+.typeCard {
+  flex: 1;
+  min-width: 160px;
+  padding: 16px;
+  border-radius: var(--radius-card);
+  background: var(--color-stone-mist);
+}
+
+.typeTag {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-navy-sphere);
+  color: var(--color-white);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.typeSample {
+  margin: 0 0 6px;
+  color: var(--color-ink-charcoal);
+  font-weight: 700;
+}
+
+.typeSpec {
+  font-size: 12px;
+  color: var(--color-stone-gray);
+}

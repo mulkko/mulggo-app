@@ -56,9 +56,19 @@ dryrun_sync_*.xlsx
 
 # 로컬에서 backend/frontend를 백그라운드로 띄울 때 생기는 임시 stdout/stderr 로그
 /_*.log
+*.log
+
+# 데모/기능 테스트 중 curl 등으로 임시로 만든 요청 페이로드 파일 (루트에 바로 생김 — 커밋 금지)
+*_payload.json
 
 # 작업 중 임시로 남겨둔 백업 파일 (예: 프론트 붙이기 전 원본 보관용, 다 되면 삭제 예정)
 *.bak
+
+# 작업/데모 중 생기는 스크래치 파일 (임시 스크립트, 테스트 이미지, 중간 산출물 — 절대 커밋 안 함)
+.scratch/
+
+# graphify 스킬 산출물 (로컬 확인용, 커밋 대상 아님)
+graphify-out/
 
 # 업종코드 매칭 — 로컬 벡터DB (바이너리, 74MB). 재생성:
 #   cd backend/ml/industry_code_matching
