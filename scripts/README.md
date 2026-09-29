@@ -2,6 +2,19 @@
 
 로컬 PC 스케줄러로 돌리는 배치 스크립트 모음.
 
+## 수집 직후 통합 반영 자동 실행 (2026-09-29 추가)
+
+두 `.bat` 모두 원본 수집이 성공(exit 0)하면 이어서 raw -> `announcements` 통합 반영을
+**미반영분만** 실행한다 (관리자 메인 "배치하기"와 같은 동작, 이미 반영된 공고는 건너뜀).
+작업 스케줄러 등록은 그대로 두고, 스케줄러가 도는 PC에서 `git pull`만 하면 적용된다.
+
+- 실행 로그: `logs\sync_bizinfo_auto.log`, `logs\sync_kstartup_auto.log`
+  (관리자 "통합 반영(임시)" 화면용 `sync_<source>.log`와 섞이지 않게 분리)
+- DB 실행 이력: `crawl_batch_logs`의 `source = 'bizinfo-auto-sync'` / `'kstartup-auto-sync'`
+  (fetched_count = 반영 대상 raw 조회 건수, inserted_count = 반영 건수). 관리자 메인에 "통합 반영(자동)"으로 표시됨
+- 기업마당은 첨부 다운로드·본문 추출(필요 시 OCR)·업종 분류를 거쳐 건당 약 30초(CPU 기준) 걸린다.
+  하루 신규 수십 건이면 수십 분이지만, 반영이 끝날 때까지 PC가 켜져 있어야 한다.
+
 ## crawl_bizinfo.bat — 기업마당 원본 공고 매일 수집
 
 ### 왜 GitHub Actions가 아니라 로컬인가

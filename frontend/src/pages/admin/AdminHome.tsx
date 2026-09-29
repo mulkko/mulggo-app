@@ -35,6 +35,8 @@ const LOG_SOURCE_LABELS: Record<string, string> = {
   "kstartup-manual": "K-스타트업 수집(수동호출)",
   "bizinfo-sync": "기업마당 통합 반영",
   "kstartup-sync": "K-스타트업 통합 반영",
+  "bizinfo-auto-sync": "기업마당 통합 반영(자동)",
+  "kstartup-auto-sync": "K-스타트업 통합 반영(자동)",
 };
 
 function formatLogTime(isoString: string): string {

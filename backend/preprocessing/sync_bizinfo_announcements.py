@@ -713,10 +713,11 @@ def run(
     limit: int | None = None,
     offset: int | None = None,
 ):
+    """반환값: (RAW 조회 건수, UPSERT 건수) - --log-source로 crawl_batch_logs에 남길 때 씀."""
     raw_df = load_raw_bizinfo_from_postgres(only_unprocessed=only_unprocessed, limit=limit, offset=offset)
     print(f"RAW 조회: {len(raw_df)}건")
     if raw_df.empty:
-        return
+        return 0, 0
 
     clean_df = clean_bizinfo(raw_df)
     common_df = transform_bizinfo_to_common(clean_df)
@@ -733,6 +734,7 @@ def run(
     attachments_by_raw_id = dict(zip(raw_df["raw_bizinfo_id"], zip(raw_df["file_nm"], raw_df["flpth_nm"])))
     n = upsert_announcements(final_df, attachments_by_raw_id)
     print(f"UPSERT 완료: {n}건")
+    return len(raw_df), n
 
 
 if __name__ == "__main__":
@@ -747,5 +749,18 @@ if __name__ == "__main__":
         help="이미 announcements에 반영된 공고도 포함해 전부 다시 처리(재검증/로그 확인용). "
         "기본은 아직 반영 안 된 것만 처리",
     )
+    # [2026-09-29] 새벽 수집 직후 자동 반영(scripts/crawl_bizinfo.bat)에서 씀.
+    # 지정하면 결과를 crawl_batch_logs에 이 source 이름으로 한 줄 남긴다
+    # (관리자 버튼 경로는 admin.py::_run_sync가 따로 남기므로 거기선 안 넘김).
+    parser.add_argument("--log-source", default=None, help="crawl_batch_logs.source 값 (예: bizinfo-auto-sync)")
     args = parser.parse_args()
-    run(only_unprocessed=not args.all, limit=args.limit, offset=args.offset)
+    try:
+        fetched, upserted = run(only_unprocessed=not args.all, limit=args.limit, offset=args.offset)
+    except Exception:
+        if args.log_source:
+            from backend.db.connection import log_crawl_batch
+            log_crawl_batch(args.log_source, 0, 0, "error")
+        raise
+    if args.log_source:
+        from backend.db.connection import log_crawl_batch
+        log_crawl_batch(args.log_source, fetched, upserted, "success")
