@@ -519,10 +519,11 @@ def upsert_announcements(final_df: pd.DataFrame) -> int:
 # ==================================================================
 
 def run(only_unprocessed: bool = True, limit: int | None = None, offset: int | None = None):
+    """반환값: (RAW 조회 건수, UPSERT 건수) - --log-source로 crawl_batch_logs에 남길 때 씀."""
     raw_df = load_raw_kstartup_from_postgres(only_unprocessed=only_unprocessed, limit=limit, offset=offset)
     print(f"RAW 조회: {len(raw_df)}건")
     if raw_df.empty:
-        return
+        return 0, 0
 
     clean_df = clean_kstartup(raw_df)
     print(f"모집중 필터 후: {len(clean_df)}건")
@@ -531,7 +532,7 @@ def run(only_unprocessed: bool = True, limit: int | None = None, offset: int | N
         # 컬럼 없는 빈 DataFrame이 되어 이후 단계(parse_target_conditions 등)에서
         # KeyError('_biz_trgt_age_single')로 죽었음 - 실측 확인(raw 21건 전부
         # 마감이라 여기서 0건 됨). raw_df.empty와 동일하게 여기서도 조기 종료.
-        return
+        return len(raw_df), 0
     common_df = transform_kstartup_to_common(clean_df)
     common_df = parse_target_conditions(common_df)
     common_df = normalize_support_fields(common_df)
@@ -545,6 +546,7 @@ def run(only_unprocessed: bool = True, limit: int | None = None, offset: int | N
 
     n = upsert_announcements(final_df)
     print(f"UPSERT 완료: {n}건")
+    return len(raw_df), n
 
 
 if __name__ == "__main__":
@@ -559,5 +561,17 @@ if __name__ == "__main__":
         help="이미 announcements에 반영된 공고도 포함해 전부 다시 처리(재검증/로그 확인용). "
         "기본은 아직 반영 안 된 것만 처리",
     )
+    # [2026-09-29] 새벽 수집 직후 자동 반영(scripts/crawl_kstartup.bat)에서 씀.
+    # sync_bizinfo_announcements.py의 --log-source와 동일.
+    parser.add_argument("--log-source", default=None, help="crawl_batch_logs.source 값 (예: kstartup-auto-sync)")
     args = parser.parse_args()
-    run(only_unprocessed=not args.all, limit=args.limit, offset=args.offset)
+    try:
+        fetched, upserted = run(only_unprocessed=not args.all, limit=args.limit, offset=args.offset)
+    except Exception:
+        if args.log_source:
+            from backend.db.connection import log_crawl_batch
+            log_crawl_batch(args.log_source, 0, 0, "error")
+        raise
+    if args.log_source:
+        from backend.db.connection import log_crawl_batch
+        log_crawl_batch(args.log_source, fetched, upserted, "success")

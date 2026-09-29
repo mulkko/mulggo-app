@@ -29,4 +29,17 @@ echo [%date% %time%] kstartup crawl start (%PY%)>> "logs\crawl_kstartup.log"
 set "RC=%ERRORLEVEL%"
 echo [%date% %time%] kstartup crawl end (exit %RC%)>> "logs\crawl_kstartup.log"
 
+REM  [2026-09-29] 수집 성공 시 이어서 raw -> announcements 통합 반영(미반영분만, 마감 공고는 제외).
+REM  관리자 "배치하기"와 같은 동작. 로그는 관리자 "통합 반영(임시)" 화면용 sync_kstartup.log와
+REM  섞이지 않게(그 화면이 마지막 "=== 성공" 줄로 다음 시작 위치를 계산함) 별도 파일에 남긴다.
+REM  결과 요약은 crawl_batch_logs의 source='kstartup-auto-sync' 행으로 관리자 메인에 표시된다.
+if not "%RC%"=="0" goto :done
+set "PYTHONUNBUFFERED=1"
+echo.>> "logs\sync_kstartup_auto.log"
+echo [%date% %time%] kstartup auto-sync start (%PY%)>> "logs\sync_kstartup_auto.log"
+"%PY%" -m backend.preprocessing.sync_kstartup_announcements --log-source kstartup-auto-sync >> "logs\sync_kstartup_auto.log" 2>&1
+set "RC=%ERRORLEVEL%"
+echo [%date% %time%] kstartup auto-sync end (exit %RC%)>> "logs\sync_kstartup_auto.log"
+
+:done
 endlocal & exit /b %RC%

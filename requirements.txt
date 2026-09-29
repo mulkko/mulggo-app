@@ -14,6 +14,8 @@ bcrypt            # 비밀번호 해싱 (backend/auth/login.py, signup.py)
 
 openai==3.7.0     # 고객센터 챗봇(backend/customer_chatbot/) + 아이디어 카드 생성(backend/chatbot/) LLM 호출
                   # + ksic_core(업종코드 분류기) LLM Resolver/Verifier — 이 버전으로 테스트됨
+# 업종 분류 LLM을 Gemini로 바꿀 때만(.env LLM_PROVIDER=gemini, llm_match.py) 별도 설치:
+#   pip install google-generativeai
 
 # --- AI 신청서 어시스턴트 (backend/assistant/) ---
 openpyxl          # 필드매핑 xlsx 로드 (biz_cert_ocr.py)
@@ -21,6 +23,10 @@ pymupdf==1.28.2   # 사업자등록증 PDF -> 이미지 변환 (+ ksic_core 첨�
 opencv-python-headless  # 이미지 전처리 (category_ocr.py, biz_cert_quality.py)
 lxml              # 신청서 HWPX 표 파싱·값 입력 (hwpx_fill.py) — 네임스페이스 보존
 langchain-core    # '대표자' 계열 라벨 판별 체인 (label_llm.py) — 로컬 Qwen 재사용, langchain 에 딸려 설치됨
+pdf2image         # PDF 사업자등록증 -> 이미지 변환 (biz_cert_ocr.py) + ksic_core 스캔 PDF 변환(file_extract.py)
+                  # Poppler 프로그램이 별도로 필요함 (pip로 안 깔림):
+                  #   Windows: https://github.com/oschwartz10612/poppler-windows/releases 압축 해제 후 Library\bin 을 PATH에 추가
+pywin32; sys_platform == "win32"  # HWP -> HWPX 변환 (hwp_to_hwpx.py, win32com) — 한글(HWP) 프로그램 설치된 Windows에서만 동작
 
 # OCR은 GPU 권장(CPU도 동작). 무거워서 기본 설치에서 제외 — 별도 설치 (CUDA 환경):
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
